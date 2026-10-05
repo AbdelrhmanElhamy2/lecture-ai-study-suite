@@ -1,0 +1,11 @@
+# Normalize line endings in the repository (fixes LF/CRLF warnings)
+* text=auto
+
+# Windows batch files must keep CRLF to run correctly
+*.bat text eol=crlf
+
+# Binary assets
+*.ico binary
+*.png binary
+*.jpg binary
+*.pdf binary

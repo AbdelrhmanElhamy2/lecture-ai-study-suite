@@ -4,10 +4,10 @@
 
 ---
 
-> [!CAUTION]
-> ### 🚨 MANDATORY DEVELOPER & AI AGENT DIRECTIVE: UPDATE THIS LOG FILE AFTER ANY WORK
-> **ATTENTION TO ANY HUMAN DEVELOPER OR AI AGENT ENTERING THIS CODEBASE:**
-> Whenever you make **ANY** modifications, bug fixes, refactorings, feature additions, UI adjustments, or backend enhancements to this repository, you are **STRICTLY REQUIRED** to update this file (`LECTUREAI_FULL_DOCUMENTATION.md`) and [`README.md`](README.md) before concluding your session.
+> [!NOTE]
+> ### 📝 Contributor Note: Keep This Log Up To Date
+> **For contributors (human or AI-assisted):**
+> Whenever you make **ANY** modifications, bug fixes, refactorings, feature additions, UI adjustments, or backend enhancements to this repository, please update this file (`LECTUREAI_FULL_DOCUMENTATION.md`) and [`README.md`](README.md) before concluding your session.
 >
 > **Your documentation update must include:**
 > 1. **Problem Statement & Root Cause**: Why the change was needed and what caused the defect.
@@ -72,7 +72,7 @@ flowchart TD
 ## 🗂️ Codebase Architecture & File Locations
 
 All source code files are located in the project directory at:  
-📂 **`C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\`**
+📂 **`<project-folder>\`**
 
 Here is the complete inventory of files, their exact paths, and their architectural responsibilities:
 
@@ -80,16 +80,16 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | File Name | Absolute Path | Description & Architectural Responsibility |
 | :--- | :--- | :--- |
-| **`app.py`** | [`app.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/app.py) | **FastAPI Web Server & API Router**: Exposes REST endpoints (`/api/process_audio`, `/api/status/{job_id}`, `/api/config`, `/api/set_key`, `/api/history`, `/api/download/{filename}`), mounts static assets, and manages asynchronous background workers. |
-| **`pipeline.py`** | [`pipeline.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pipeline.py) | **Central Pipeline Orchestrator**: Coordinates the complete 5-step flow: audio ingestion &rarr; multimodal synthesis &rarr; audio fact-check & audit &rarr; diagram generation &rarr; PDF compilation. |
-| **`pedagogy_engine.py`** | [`pedagogy_engine.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pedagogy_engine.py) | **Google Gemini Multimodal AI & Auditor**: Connects to the Gemini File API and `gemini-3.8-flash`. Contains the master academic system instruction, bilingual translation, strict lecture fidelity mandate, and the `verify_and_reconcile_study_guide()` contradiction auditor. |
-| **`models.py`** | [`models.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/models.py) | **Pydantic Data Models**: Defines strict schema contracts for `LectureStudyGuide`, `LectureSection`, `DoctorAlert`, `TableDefinition`, `DiagramDefinition`, `KeyFormula`, `ExamQuestion`, `ContradictionItem`, `VerificationAuditReport`, and `VerificationResult`. |
-| **`visualizer.py`** | [`visualizer.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/visualizer.py) | **Academic Diagram Rendering Engine**: Generates 250+ DPI figures across 8 universal visual types (Flowcharts, System Block Diagrams, Timelines, Concept Maps, Function Plots, Cycles, Comparison Bars, Rectifier Waveforms). |
-| **`pdf_builder.py`** | [`pdf_builder.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pdf_builder.py) | **ReportLab Publication PDF Compiler**: Builds formal two-pass PDFs (`Page X of Y`), running headers/footers, cover pages, Table of Contents, LaTeX inline math parser, proportional image aspect ratio embedder, Audio Fidelity Certificate, and verbatim transcript appendix. |
-| **`config.py`** | [`config.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/config.py) | **System Configuration & Storage Manager**: Sets directory paths (`uploads/`, `output_pdfs/`, `generated_assets/`), resolves Gemini API keys from `.env` or environment variables, and configures default model tiers. |
-| **`mock_generator.py`** | [`mock_generator.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/mock_generator.py) | **Instant Demo Generator**: Generates a complete, realistic Operating Systems (CS302) lecture study guide with Peterson's algorithm, semaphores, deadlock cycles, and Amdahl's Law for instant offline testing without uploading audio. |
-| **`verify_audio_fidelity.py`** | [`verify_audio_fidelity.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/verify_audio_fidelity.py) | **Standalone Contradiction Auditor CLI**: Takes an audio recording and study guide JSON, cross-examines them for discrepancies, resolves contradictions, and re-compiles the verified PDF on demand. |
-| **`cli.py`** | [`cli.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/cli.py) | **Terminal Command-Line Interface**: Allows running the complete pipeline from PowerShell or CMD with `--audio`, `--model`, `--subject`, `--mode`, and `--output` flags. |
+| **`app.py`** | [`app.py`](app.py) | **FastAPI Web Server & API Router**: Exposes REST endpoints (`/api/process_audio`, `/api/status/{job_id}`, `/api/config`, `/api/set_key`, `/api/history`, `/api/download/{filename}`), mounts static assets, and manages asynchronous background workers. |
+| **`pipeline.py`** | [`pipeline.py`](pipeline.py) | **Central Pipeline Orchestrator**: Coordinates the complete 5-step flow: audio ingestion &rarr; multimodal synthesis &rarr; audio fact-check & audit &rarr; diagram generation &rarr; PDF compilation. |
+| **`pedagogy_engine.py`** | [`pedagogy_engine.py`](pedagogy_engine.py) | **Google Gemini Multimodal AI & Auditor**: Connects to the Gemini File API and `gemini-3.8-flash`. Contains the master academic system instruction, bilingual translation, strict lecture fidelity mandate, and the `verify_and_reconcile_study_guide()` contradiction auditor. |
+| **`models.py`** | [`models.py`](models.py) | **Pydantic Data Models**: Defines strict schema contracts for `LectureStudyGuide`, `LectureSection`, `DoctorAlert`, `TableDefinition`, `DiagramDefinition`, `KeyFormula`, `ExamQuestion`, `ContradictionItem`, `VerificationAuditReport`, and `VerificationResult`. |
+| **`visualizer.py`** | [`visualizer.py`](visualizer.py) | **Academic Diagram Rendering Engine**: Generates 250+ DPI figures across 8 universal visual types (Flowcharts, System Block Diagrams, Timelines, Concept Maps, Function Plots, Cycles, Comparison Bars, Rectifier Waveforms). |
+| **`pdf_builder.py`** | [`pdf_builder.py`](pdf_builder.py) | **ReportLab Publication PDF Compiler**: Builds formal two-pass PDFs (`Page X of Y`), running headers/footers, cover pages, Table of Contents, LaTeX inline math parser, proportional image aspect ratio embedder, Audio Fidelity Certificate, and verbatim transcript appendix. |
+| **`config.py`** | [`config.py`](config.py) | **System Configuration & Storage Manager**: Sets directory paths (`uploads/`, `output_pdfs/`, `generated_assets/`), resolves Gemini API keys from `.env` or environment variables, and configures default model tiers. |
+| **`mock_generator.py`** | [`mock_generator.py`](mock_generator.py) | **Instant Demo Generator**: Generates a complete, realistic Operating Systems (CS302) lecture study guide with Peterson's algorithm, semaphores, deadlock cycles, and Amdahl's Law for instant offline testing without uploading audio. |
+| **`verify_audio_fidelity.py`** | [`verify_audio_fidelity.py`](verify_audio_fidelity.py) | **Standalone Contradiction Auditor CLI**: Takes an audio recording and study guide JSON, cross-examines them for discrepancies, resolves contradictions, and re-compiles the verified PDF on demand. |
+| **`cli.py`** | [`cli.py`](cli.py) | **Terminal Command-Line Interface**: Allows running the complete pipeline from PowerShell or CMD with `--audio`, `--model`, `--subject`, `--mode`, and `--output` flags. |
 
 ---
 
@@ -97,8 +97,8 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | File Name | Absolute Path | Description & Architectural Responsibility |
 | :--- | :--- | :--- |
-| **`templates/index.html`** | [`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html) | **Responsive Web Dashboard**: Built with Tailwind CSS and Plus Jakarta Sans font. Features audio dropzone, academic presets (`🩺 Medicine`, `💻 CS`, `⚖️ Law`, `⚡ Engineering`, `📊 Economics`, `📖 Humanities`), 5-step live progress bar, Audio Fidelity Verification card, local history viewer, tabbed preview, and API key modal. |
-| **`static/app_icon.png`** | [`static/app_icon.png`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/static/app_icon.png) | **Application Brand Icon**: High-resolution PNG logo used in the web navigation bar, favicon, and desktop window header. |
+| **`templates/index.html`** | [`templates/index.html`](templates/index.html) | **Responsive Web Dashboard**: Built with Tailwind CSS and Plus Jakarta Sans font. Features audio dropzone, academic presets (`🩺 Medicine`, `💻 CS`, `⚖️ Law`, `⚡ Engineering`, `📊 Economics`, `📖 Humanities`), 5-step live progress bar, Audio Fidelity Verification card, local history viewer, tabbed preview, and API key modal. |
+| **`static/app_icon.png`** | [`static/app_icon.png`](static/app_icon.png) | **Application Brand Icon**: High-resolution PNG logo used in the web navigation bar, favicon, and desktop window header. |
 
 ---
 
@@ -106,11 +106,11 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | File Name | Absolute Path | Description & Architectural Responsibility |
 | :--- | :--- | :--- |
-| **`launcher.py`** | [`launcher.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/launcher.py) | **Silent Desktop Launcher**: Executes silently via `pythonw.exe` (no black terminal window), starts the local FastAPI server if inactive, and launches Edge or Chrome in native frameless `--app=http://127.0.0.1:8000` mode. |
-| **`Launch_LectureAI.bat`** | [`Launch_LectureAI.bat`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/Launch_LectureAI.bat) | **Windows Batch Launcher**: Double-clickable batch script to start the web server and open the browser. |
-| **`app_icon.ico`** | [`app_icon.ico`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/app_icon.ico) | **Multi-Resolution Windows Icon**: High-res ICO file containing 16x16, 32x32, 48x48, 64x64, 128x128, and 256x256 icon mipmaps for Windows Desktop. |
-| **`create_desktop_shortcut.py`** | [`create_desktop_shortcut.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/create_desktop_shortcut.py) | **Windows Shell Script**: Automates creating the desktop shortcut pointing to `launcher.py` with `app_icon.ico`. |
-| **Desktop Shortcut** | `C:\Users\abdel\OneDrive\Desktop\LectureAI.lnk` | **1-Click Desktop Icon**: Clickable shortcut on the user's Windows Desktop to launch LectureAI as a standalone desktop application. |
+| **`launcher.py`** | [`launcher.py`](launcher.py) | **Silent Desktop Launcher**: Executes silently via `pythonw.exe` (no black terminal window), starts the local FastAPI server if inactive, and launches Edge or Chrome in native frameless `--app=http://127.0.0.1:8000` mode. |
+| **`Launch_LectureAI.bat`** | [`Launch_LectureAI.bat`](Launch_LectureAI.bat) | **Windows Batch Launcher**: Double-clickable batch script to start the web server and open the browser. |
+| **`app_icon.ico`** | [`app_icon.ico`](app_icon.ico) | **Multi-Resolution Windows Icon**: High-res ICO file containing 16x16, 32x32, 48x48, 64x64, 128x128, and 256x256 icon mipmaps for Windows Desktop. |
+| **`create_desktop_shortcut.py`** | [`create_desktop_shortcut.py`](create_desktop_shortcut.py) | **Windows Shell Script**: Automates creating the desktop shortcut pointing to `launcher.py` with `app_icon.ico`. |
+| **Desktop Shortcut** | `%USERPROFILE%\Desktop\LectureAI.lnk` | **1-Click Desktop Icon**: Clickable shortcut on the user's Windows Desktop to launch LectureAI as a standalone desktop application. |
 
 ---
 
@@ -118,7 +118,7 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | File Name | Absolute Path | Description |
 | :--- | :--- | :--- |
-| **`tests/test_suite.py`** | [`tests/test_suite.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/tests/test_suite.py) | **Comprehensive Unit & Integration Test Suite**: 5 unit tests covering Pydantic model validation, diagram rendering, PDF compilation, demo pipeline orchestration, and verification audit reconciliation. |
+| **`tests/test_suite.py`** | [`tests/test_suite.py`](tests/test_suite.py) | **Comprehensive Unit & Integration Test Suite**: 5 unit tests covering Pydantic model validation, diagram rendering, PDF compilation, demo pipeline orchestration, and verification audit reconciliation. |
 
 ---
 
@@ -126,11 +126,11 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | Directory Name | Absolute Path | Description |
 | :--- | :--- | :--- |
-| **`uploads/`** | `C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\uploads` | Stores uploaded audio files (`.mp3`, `.wav`, `.m4a`, etc.) with streaming upload protection. |
-| **`generated_assets/`** | `C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\generated_assets` | Stores generated 250+ DPI visual diagram PNGs and transparent LaTeX formula PNGs. |
-| **`output_pdfs/`** | `C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\output_pdfs` | Stores finalized, publication-quality compiled study guide PDFs. |
-| **`lecture_history.json`** | `C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\lecture_history.json` | Stores recent-guide metadata, verification audits, and JSON guides for the 50 most recent lectures. |
-| **`cached_last_guide.json`**| `C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite\cached_last_guide.json` | Stores cached structured JSON from the real lecture test (`lecture 1 power.m4a`). |
+| **`uploads/`** | `<project-folder>\uploads` | Stores uploaded audio files (`.mp3`, `.wav`, `.m4a`, etc.) with streaming upload protection. |
+| **`generated_assets/`** | `<project-folder>\generated_assets` | Stores generated 250+ DPI visual diagram PNGs and transparent LaTeX formula PNGs. |
+| **`output_pdfs/`** | `<project-folder>\output_pdfs` | Stores finalized, publication-quality compiled study guide PDFs. |
+| **`lecture_history.json`** | `<project-folder>\lecture_history.json` | Stores recent-guide metadata, verification audits, and JSON guides for the 50 most recent lectures. |
+| **`cached_last_guide.json`**| `<project-folder>\cached_last_guide.json` | Stores cached structured JSON from the real lecture test (`lecture 1 power.m4a`). |
 
 ---
 
@@ -317,8 +317,8 @@ To ensure universal reliability, study guides across multiple faculties were com
 | Discipline | Subject & Topic | Generated PDF Artifact | Status |
 | :--- | :--- | :--- | :--- |
 | **Biomedical Engineering** | *Bioinstrumentation & Biosensors*<br>Biopotentials, ECG & Op-Amps | Verified via Multimodal Engine & Simulation | **VERIFIED** |
-| **Engineering** | *Power Electronics (EE301)*<br>Power Diodes & Waveforms | [`Lecture_1_Power_Fixed_Verification.pdf`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/output_pdfs/Lecture_1_Power_Fixed_Verification.pdf) (18 pages, 893 KB) | **VERIFIED** |
-| **Medicine** | *Medical Pharmacology (MED305)*<br>Beta-Blocker Receptor Selectivity | [`Medicine_Beta_Blockers_Guide.pdf`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/output_pdfs/Medicine_Beta_Blockers_Guide.pdf) (6 pages, 392 KB) | **VERIFIED** |
+| **Engineering** | *Power Electronics (EE301)*<br>Power Diodes & Waveforms | [`Lecture_1_Power_Fixed_Verification.pdf`](output_pdfs/Lecture_1_Power_Fixed_Verification.pdf) (18 pages, 893 KB) | **VERIFIED** |
+| **Medicine** | *Medical Pharmacology (MED305)*<br>Beta-Blocker Receptor Selectivity | [`Medicine_Beta_Blockers_Guide.pdf`](output_pdfs/Medicine_Beta_Blockers_Guide.pdf) (6 pages, 392 KB) | **VERIFIED** |
 | **Computer Science** | *Operating Systems (CS302)*<br>Concurrency, Semaphores & Deadlocks | Verified via Live Web Server Instant Demo (`http://127.0.0.1:8000`) | **VERIFIED** |
 
 ---
@@ -361,15 +361,15 @@ OK
 ### Milestone 15: High-Demand Resilience & Multi-Tier Model Fallback (503 Bypass)
 - **Root Cause Analysis**: Google's Gemini servers experienced temporary traffic spikes on preview and latest endpoints (`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, and `gemini-flash-latest`), returning `503 Service Unavailable (High demand)`. Because `gemini-3.5-flash` was missing from the internal candidate fallback list, requests failed instead of transparently cascading to available server capacity.
 - **Architectural Enhancements**:
-  - **Base Model Retained**: [`config.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/config.py) and [`.env`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/.env) retain **`gemini-3.8-flash`** as the default primary base model.
-  - **Auto-Cascading Fallback Chain**: [`pedagogy_engine.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pedagogy_engine.py) structures candidate models strictly by capability hierarchy: `[chosen_model, "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"]`. It evaluates the best available model first: if `gemini-3.8-flash` has a demand spike (503), it promptly tries `gemini-3.7-flash`, then `gemini-3.6-flash`, then `gemini-3.5-flash` (high-availability safety net).
-  - **UI Synchronized**: [`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html) presents `gemini-3.8-flash (Recommended Base Model)` as the default selection, ordered down to `gemini-3.5-flash (High Availability Safety Net)`.
+  - **Base Model Retained**: [`config.py`](config.py) and [`.env`](.env) retain **`gemini-3.8-flash`** as the default primary base model.
+  - **Auto-Cascading Fallback Chain**: [`pedagogy_engine.py`](pedagogy_engine.py) structures candidate models strictly by capability hierarchy: `[chosen_model, "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"]`. It evaluates the best available model first: if `gemini-3.8-flash` has a demand spike (503), it promptly tries `gemini-3.7-flash`, then `gemini-3.6-flash`, then `gemini-3.5-flash` (high-availability safety net).
+  - **UI Synchronized**: [`templates/index.html`](templates/index.html) presents `gemini-3.8-flash (Recommended Base Model)` as the default selection, ordered down to `gemini-3.5-flash (High Availability Safety Net)`.
 - **Verification**: Ran full unit test suite (`Ran 7 tests in 22.1s - OK`). Verified live API connectivity and confirmed server response via `/api/config`.
 
 ### Milestone 16: Complete Form & Upload Selection Locking During Generation
 - **Problem Statement**: Users needed all form options, uploaded files (audio and slides), slide bounds, course context, and study focus settings frozen during generation so selections cannot be accidentally altered or cleared while processing, ensuring full visibility into their exact choices.
 - **Architectural Enhancements**:
-  - **State-Driven UI Locking Engine**: Added `setFormLocked(locked)` and an `isGenerating` guard in [`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html).
+  - **State-Driven UI Locking Engine**: Added `setFormLocked(locked)` and an `isGenerating` guard in [`templates/index.html`](templates/index.html).
   - **Comprehensive Control Freezing**: Automatically locks audio & slides file pickers, drag-and-drop dropzones, slide range bounds (`#startSlideInput`, `#endSlideInput`), course & lecturer inputs, custom subject badges, model selector, study focus mode, checkboxes, and action buttons.
   - **Selection Lock Banner**: Added an animated amber banner (`#selectionLockBanner`) notifying users that selections are locked while keeping all filenames, sizes, and inputs clearly visible.
   - **Lifecycle Safety**: Engages lock on `startProcessing()` and safely releases controls on completion or error in `pollStatus()`, keeping all user selections intact.
@@ -378,18 +378,18 @@ OK
 ### Milestone 17: Direct Google Drive & Cloud Link Import for Audio and Slides
 - **Problem Statement**: Students often have university lecture recordings and slide decks stored in Google Drive folders or shared cloud links. Downloading multi-gigabyte audio files and slide decks to their laptop before uploading them to LectureAI was cumbersome, consumed local bandwidth, and was prone to download interruptions.
 - **Architectural Enhancements**:
-  - **Link Downloader Engine ([`link_downloader.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/link_downloader.py))**:
+  - **Link Downloader Engine ([`link_downloader.py`](link_downloader.py))**:
     - Built-in support for single file Google Drive links (`drive.google.com/file/d/...`, `open?id=...`, `uc?id=...`, `uc?export=download`).
     - Full Google Drive folder link support (`drive.google.com/drive/folders/...`, `folderview?id=...`) via `gdown.download_folder`, automatically identifying the audio recording and slide PDF from the folder.
     - Direct HTTP/HTTPS public file download streaming with Content-Disposition header extraction and extension fallback.
     - Integrated real-time progress callbacks for accurate dashboard feedback during download.
-  - **Backend API Integration ([`app.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/app.py))**:
+  - **Backend API Integration ([`app.py`](app.py))**:
     - Extended `/api/process` endpoint to accept `folder_url`, `audio_url`, and `notes_url` form parameters.
     - Background task automatically downloads cloud assets into `uploads/` before invoking the processing pipeline.
-  - **Dashboard Web UI ([`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html))**:
+  - **Dashboard Web UI ([`templates/index.html`](templates/index.html))**:
     - Added interactive Google Drive link input tabs allowing students to paste single file URLs or full folder links directly.
     - Seamless validation and form state handling during link downloads.
-  - **Dependency Updates ([`requirements.txt`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/requirements.txt))**:
+  - **Dependency Updates ([`requirements.txt`](requirements.txt))**:
     - Added `requests>=2.30.0` and `gdown>=6.4.0` to automate cloud downloads.
 - **Verification**: Full unit test suite (`Ran 7 tests in 4.87s - OK`). Verified link extraction regexes, error handling, and end-to-end pipeline compatibility.
 
@@ -400,28 +400,28 @@ OK
   3. *Course Folder Scanning & Material Discovery*: Students organize semester materials into unified course folders (such as `G:\My Drive\fall 2026\<Course Name>\...`). Downloading entire multi-gigabyte folders is slow and wasteful. Students required an intelligent search mechanism to input a target session (e.g., "Lecture 1", "Section 1"), scan the folder structure, detect corresponding audio and notes, ask whether to include full materials (notes + record) or audio-only, and provide clear alerts if recordings or notes are missing.
   4. *Fall 2026 Academic Sequence Alignment*: The application needed to align with the student's actual laptop folder sequence (`G:\My Drive\fall 2026`) discovering courses like *Bio Informatics*, *Power Electronics*, *Electronic Vision*, *Physiotherapy Equipment*, *Artificial Intelligence And Expert Systems*, and *Feasibility Study*.
 - **Architectural Enhancements**:
-  - **Intelligent Link Downloader & Folder Engine ([`link_downloader.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/link_downloader.py))**:
+  - **Intelligent Link Downloader & Folder Engine ([`link_downloader.py`](link_downloader.py))**:
     - `detect_local_fall_courses()`: Automatically discovers synced course folders on local storage (`G:\My Drive\fall 2026`), cataloging notes and audio files per course with zero network overhead.
     - `download_multiple_links()`: Sequentially downloads and normalizes multiple audio part URLs or slide deck URLs.
     - `parse_session_query()`: Extracts target session type (`lecture` vs `section`) and number, safely handling abbreviations (`lec 1`, `sec 2`, `Lecuture 1`).
     - `scan_course_folder()`: Performs instant zero-download recursive scans for local directories or metadata inspection for remote Drive folders without downloading unnecessary files.
     - `search_session_in_folder()`: Robustly matches session numbers, strips `part \d+` to avoid part misclassification, identifies matched recordings (ordered chronologically) and matched slides, categorizes status (`found_both`, `no_notes`, `no_record`, `not_found`), and lists detected session numbers.
     - `download_selected_folder_items()`: Directly maps local files on disk (0s delay) or selectively downloads only the targeted files by Google Drive ID.
-  - **Pedagogy & Synthesis Engine ([`pedagogy_engine.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pedagogy_engine.py))**:
+  - **Pedagogy & Synthesis Engine ([`pedagogy_engine.py`](pedagogy_engine.py))**:
     - `analyze_lecture_audio`: Accepts `List[Path]` for multi-part audio and multi-deck notes. Uploads all files to the Gemini File API.
     - Prompt Engineering: Guides Gemini to synthesize multiple audio parts chronologically into a unified lecture timeline, while enforcing audio as the absolute ground truth across multi-deck slide transitions.
     - Dual-Source Auditor (`verify_and_reconcile_study_guide`): Cross-examines generated guides against all audio parts and slide decks.
-  - **Central Orchestrator Pipeline ([`pipeline.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/pipeline.py))**:
+  - **Central Orchestrator Pipeline ([`pipeline.py`](pipeline.py))**:
     - Accepts single or list inputs for audio and notes, seamlessly normalizing paths before invoking synthesis and verification.
-  - **FastAPI Endpoints ([`app.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/app.py))**:
+  - **FastAPI Endpoints ([`app.py`](app.py))**:
     - `GET /api/detected_courses`: Exposes detected Fall 2026 courses with item counts for one-click selection.
     - `POST /api/search_course_folder`: Real-time session material search returning status, records, notes, and available sessions.
     - `POST /api/process_audio`: Ingests `audio_urls` (JSON list or multi-line), `notes_urls`, `folder_url`, `session_query`, `folder_selection_mode` (`both` vs `record_only`), and `selected_items`.
-  - **Interactive Dashboard UI ([`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html))**:
+  - **Interactive Dashboard UI ([`templates/index.html`](templates/index.html))**:
     - **Drive Links Tab**: Dynamic multi-row link inputs for Audio Recordings ("+ Add Another Audio Part") and Slide Decks ("+ Add Another Slide Deck") with automatic multi-line paste splitting (`handleMultiLinkPaste`).
     - **Course Folder Tab**: Fall 2026 Quick Course Pills for 1-click selection, Target Session search bar (e.g. `Lecture 1`, `Section 1`), and instant results panel.
     - **Interactive Ingestion Dialog**: Prompts user with "Add Full Lecture (Notes + Record)" vs "Just the Record (Audio Only)" when materials are found, and presents clear alerts when notes or recordings are absent.
-  - **CLI Interface ([`cli.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/cli.py))**:
+  - **CLI Interface ([`cli.py`](cli.py))**:
     - Updated `--audio` and `--notes` flags with `nargs="*"` to accept multiple files or URLs.
     - Added `--folder` combined with `--session` (e.g. `--folder "Bio Informatics" --session "Lecture 1"`).
     - Added `--record-only` flag and interactive terminal prompt.
@@ -438,7 +438,7 @@ OK
   3. *Clean Filename Requirement*: When saving directly into Google Drive, files must preserve their original clean names without arbitrary hex prefixes.
   4. *Study Guide Centralization*: Students needed the generated publication-quality study guide PDF to be placed directly in their course folder in Google Drive (under `lectures\summaries\`).
 - **Architectural Enhancements**:
-  - **Intelligent Drive Destination Resolver ([`link_downloader.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/link_downloader.py))**:
+  - **Intelligent Drive Destination Resolver ([`link_downloader.py`](link_downloader.py))**:
     - `get_drive_fall_root()`: Locates active Fall 2026 directories on local Google Drive (`G:\My Drive\fall 2026`).
     - `is_drive_target(target_dir)`: Verifies if a folder is inside Google Drive.
     - `resolve_drive_destination(course_name_or_folder, expected_type, session_query, fallback_dir)`: Dynamically routes downloads directly into the student's exact semester structure:
@@ -449,14 +449,14 @@ OK
       - Study guide summaries: `G:\My Drive\fall 2026\<Course>\lectures\summaries\`
     - `save_summary_to_drive(pdf_path, course_name_or_folder)`: Automatically saves a permanent copy of the generated PDF into the course's `lectures\summaries\` directory in Google Drive.
     - `download_from_link()`: Clean file placement; when downloading to Google Drive, preserves clean filenames (`lecture 1 Bioinformatics part 1.ogg`) instead of adding random UUID prefixes.
-  - **Backend Pipeline & Storage Engine ([`app.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/app.py))**:
+  - **Backend Pipeline & Storage Engine ([`app.py`](app.py))**:
     - Automatically resolves `drive_audio_dir` and `drive_notes_dir` for all incoming Drive links, remote folder items, and web file uploads.
     - Automatically executes `save_summary_to_drive()` and attaches `drive_pdf_path`, `drive_pdf_filename`, and `drive_folder_path` to the result and job status.
-  - **Terminal CLI Support ([`cli.py`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/cli.py))**:
+  - **Terminal CLI Support ([`cli.py`](cli.py))**:
     - Added `--course` / `-c` flag to map standalone link downloads directly to any Fall 2026 Drive course.
     - Downloads directly to the respective Drive folders with real-time feedback.
     - Automatically copies finalized study guides to Drive and reports the path upon completion.
-  - **Web Dashboard Feedback ([`templates/index.html`](file:///C:/Users/abdel/.gemini/antigravity/scratch/lecture_ai_study_suite/templates/index.html))**:
+  - **Web Dashboard Feedback ([`templates/index.html`](templates/index.html))**:
     - Added `#resDriveBadge` in the study guide ready banner, notifying students: `💾 Saved directly to Google Drive: <Filename>`.
 - **Verification Evidence**:
   - Verified path resolution across all 6 Fall 2026 courses (*Artificial Intelligence*, *Bio Informatics*, *Electronic Vision*, *Feasibility Study*, *Physiotherapy Equipment*, *Power Electronics*).
@@ -471,14 +471,14 @@ OK
 
 ### Method 1: Desktop Application Icon (Easiest)
 Simply double-click the **LectureAI** shortcut on your Windows Desktop:  
-`C:\Users\abdel\OneDrive\Desktop\LectureAI.lnk`
+`%USERPROFILE%\Desktop\LectureAI.lnk`
 - Automatically starts the local background server if not already active.
 - Opens in a clean, dedicated app window with zero browser URL bar or tab clutter.
 
 ### Method 2: Interactive Web Dashboard
 Open PowerShell or Command Prompt inside the project directory and run:
 ```powershell
-cd "C:\Users\abdel\.gemini\antigravity\scratch\lecture_ai_study_suite"
+cd lecture-ai-study-suite
 python app.py
 ```
 Open your browser at:  

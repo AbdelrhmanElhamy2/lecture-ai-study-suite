@@ -46,6 +46,10 @@ test_*.pdf
 test_*.m4a
 test_*.mp3
 verify_render_pdf.py
+# test_img1.py depends on an ignored local test_img1.txt file
+test_img1.py
+# Personal helper for pushing this repo (contains machine-specific paths)
+Upload_To_GitHub.bat
 
 # 7. Operating System & IDE Files
 .vscode/

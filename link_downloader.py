@@ -22,7 +22,10 @@ GDRIVE_FOLDER_PATTERNS = [
     r"drive\.google\.com/folderview\?id=([a-zA-Z0-9_-]+)",
 ]
 
-FALL_DRIVE_CANDIDATE_ROOTS = [
+# Optional override: set LECTUREAI_COURSES_DIR in .env to point at your own semester/courses folder.
+_CUSTOM_COURSES_DIR = os.environ.get("LECTUREAI_COURSES_DIR", "").strip()
+
+FALL_DRIVE_CANDIDATE_ROOTS = ([Path(_CUSTOM_COURSES_DIR)] if _CUSTOM_COURSES_DIR else []) + [
     Path(r"G:\My Drive\fall 2026"),
     Path(r"G:\My Drive\Fall 2026"),
     Path.home() / "Google Drive" / "fall 2026",

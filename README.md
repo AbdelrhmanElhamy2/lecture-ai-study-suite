@@ -33,7 +33,8 @@ University lectures in Engineering, Medicine, Science, and STEM often move fast.
 ## 🌟 Key Capabilities
 
 ### 🎙️ 1. Multimodal Audio & Slide Ingestion
-- **Any Audio/Video Format**: Supports `.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `.flac`, `.mp4`, `.mov`, `.mkv`.
+- **Audio Formats**: `.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `.flac`, `.webm`, `.wma`.
+- **Notes / Slides Formats**: `.pdf`, `.txt`, `.md`.
 - **Direct Cloud & Google Drive Streaming**: Paste public or shareable Google Drive links or direct URLs.
 - **Multi-Part Lectures**: Handles multiple consecutive recordings (Part 1, Part 2) and merges them chronologically into one unified narrative.
 - **Slide Range Bounds**: Target specific slides (e.g. `Slides 5–28`). If left blank, LectureAI inspects the full deck and includes only concepts verbally taught.
@@ -59,7 +60,7 @@ Generates high-resolution vector diagrams via Matplotlib with collision-free lay
 ### 🛡️ 5. Audio & Slides Contradiction Auditor
 - Every generated guide is automatically cross-examined against the original spoken audio and slides.
 - Contradictions, misheard numbers, or slide discrepancies are caught and reconciled before PDF compilation.
-- Embeds a cryptographically timestamped **Audio & Slides Fidelity Certificate** directly in the PDF.
+- Embeds a timestamped **Audio & Slides Fidelity Certificate** (audit summary + list of corrections) directly in the PDF.
 
 ### ⚠️ 6. "Doctor's Spoken Exam Traps" & Exam Kit
 - **Doctor Alerts**: Highlights verbal warnings, grading pitfalls, and "this will be on the final" hints in prominent amber callout boxes.
@@ -83,37 +84,37 @@ Generates high-resolution vector diagrams via Matplotlib with collision-free lay
 ```mermaid
 flowchart TD
     subgraph INPUT["1. Input Sources"]
-        A["Spoken Lecture Audio / Video\n(.m4a, .mp3, .wav, .mp4)"]
-        B["Lecture Slides / Notes\n(PDF, Markdown, Text)"]
+        A["Spoken Lecture Audio / Video<br/>(.m4a, .mp3, .wav, .mp4)"]
+        B["Lecture Slides / Notes<br/>(PDF, Markdown, Text)"]
         C["Cloud / Google Drive Links"]
     end
 
     subgraph INGEST["2. Ingestion & Preprocessing"]
-        A & C --> D["Chunked Audio Streamer\n& Media Normalizer"]
-        B --> E["Slide Slicer & Page Extractor\n(PyPDF)"]
+        A & C --> D["Chunked Audio Streamer<br/>& Media Normalizer"]
+        B --> E["Slide Slicer & Page Extractor<br/>(PyPDF)"]
     end
 
     subgraph ENGINE["3. Pedagogical AI Engine"]
-        D & E --> F["Google Gemini 3.8 Flash\nMultimodal Analysis"]
-        F --> G["Pedagogical Breakdown\n(Sections, Alerts, Formulas)"]
-        F --> H["Exam Readiness Kit\n(Vignettes, Derivations, MCQs)"]
+        D & E --> F["Google Gemini 3.8 Flash<br/>Multimodal Analysis"]
+        F --> G["Pedagogical Breakdown<br/>(Sections, Alerts, Formulas)"]
+        F --> H["Exam Readiness Kit<br/>(Vignettes, Derivations, MCQs)"]
         F --> I["Verbatim Spoken Transcript"]
     end
 
     subgraph AUDIT["4. Fidelity & Verification"]
-        G & D --> J["Contradiction Auditor\nCross-Examines Draft vs Audio"]
-        J --> K["Reconciled Study Guide\n+ Fidelity Certificate"]
+        G & D --> J["Contradiction Auditor<br/>Cross-Examines Draft vs Audio"]
+        J --> K["Reconciled Study Guide<br/>+ Fidelity Certificate"]
     end
 
     subgraph VISUALS["5. Visual Schematics Generator"]
-        G --> L["Universal Visualizer Engine\n(Matplotlib)"]
-        L --> M["Waveforms, Block Diagrams,\nFlowcharts, Timelines, Maps"]
+        G --> L["Universal Visualizer Engine<br/>(Matplotlib)"]
+        L --> M["Waveforms, Block Diagrams,<br/>Flowcharts, Timelines, Maps"]
     end
 
     subgraph OUTPUT["6. Distribution & UI"]
-        K & M --> N["ReportLab PDF Builder\n(Two-Pass Dynamic Numbering)"]
+        K & M --> N["ReportLab PDF Builder<br/>(Two-Pass Dynamic Numbering)"]
         N --> O["📄 Publication-Grade PDF Guide"]
-        K --> P["💻 Interactive Web Dashboard\n& Active Recall Quiz"]
+        K --> P["💻 Interactive Web Dashboard<br/>& Active Recall Quiz"]
     end
 ```
 
@@ -165,7 +166,7 @@ flowchart TD
 
 5. **Run the application:**
    ```bash
-   # Option 1: Start the desktop launcher (with system tray / auto-browser)
+   # Option 1: Desktop launcher (starts the server in the background and opens the app window)
    python launcher.py
 
    # Option 2: Run the FastAPI web server directly
@@ -192,7 +193,7 @@ LectureAI includes a feature-rich terminal CLI for automated or headless environ
 python cli.py --demo
 
 # 2. Process a lecture audio file
-python cli.py --audio "path/to/lecture.m4a" --course "Bioinstrumentation"
+python cli.py --audio "path/to/lecture.m4a" --mode exam   # modes: detailed | revision | exam
 
 # 3. Process lecture audio with accompanying slides (slides 1 to 20)
 python cli.py --audio "lecture.m4a" --notes "slides.pdf" --start-slide 1 --end-slide 20
@@ -206,6 +207,21 @@ python cli.py --course "Power Electronics" --audio "https://drive.google.com/fil
 # 6. Run standalone Audio & Slides Contradiction Auditor
 python verify_audio_fidelity.py --audio "lecture.m4a" --notes "slides.pdf" --guide "cached_last_guide.json"
 ```
+
+### 📂 Optional: Course Folder & Google Drive Integration
+
+If you keep your semester materials in a folder (e.g. synced with Google Drive for Desktop), LectureAI can find lecture recordings/slides by session name and save finished PDFs back into each course's `lectures/summaries/` folder.
+
+Set the folder in `.env`:
+```ini
+LECTUREAI_COURSES_DIR=G:\My Drive\fall 2026
+```
+Then:
+```bash
+python cli.py --list-courses
+python cli.py --folder "Power Electronics" --session "Lecture 1"
+```
+Expected layout: `<courses dir>/<Course>/record (<Course>)/lectures/` for audio and `<courses dir>/<Course>/lectures/` for slides.
 
 ---
 
@@ -232,9 +248,9 @@ All 9 comprehensive tests run locally and verify:
 
 ## 🔒 Security & Privacy
 
-- **Zero Secret Leakage**: Your API key stays strictly on your local machine (`.env` is excluded via `.gitignore`).
-- **No Cloud Storage Dependency**: All uploaded recordings (`uploads/`) and compiled study guides (`output_pdfs/`) remain stored locally on your device.
-- **Ephemeral Session Data**: Cached runs and history (`lecture_history.json`, `cached_last_guide.json`) are kept local to your installation.
+- **Your API key stays local**: It is read from `.env` (excluded via `.gitignore`) and is never committed.
+- **What leaves your machine**: Lecture audio and slides are uploaded to the **Google Gemini API** for transcription and analysis (subject to [Google's Gemini API terms](https://ai.google.dev/gemini-api/terms)). Demo mode (`--demo`) sends nothing.
+- **What stays local**: Uploaded files (`uploads/`), generated PDFs (`output_pdfs/`), diagrams (`generated_assets/`), and history (`lecture_history.json`, `cached_last_guide.json`) are stored only on your device — unless you enable the optional Google Drive folder sync.
 
 ---
 
@@ -253,10 +269,16 @@ lecture-ai-study-suite/
 ├── link_downloader.py         # Google Drive & cloud file downloader
 ├── mock_generator.py          # Demo simulation guide generator
 ├── config.py                  # Environment & directory configuration
+├── verify_audio_fidelity.py   # Standalone audio/slides contradiction auditor
+├── create_desktop_shortcut.py # Creates a Windows desktop shortcut
+├── create_icon.py             # Builds the multi-resolution app icon
+├── test_*.py                  # Standalone demo/render scripts (not unit tests)
 ├── requirements.txt           # Python package dependencies
 ├── .env.example               # Template environment configuration
 ├── .gitignore                 # Excludes .env, recordings, and outputs
+├── pytest.ini                 # Limits pytest to the tests/ folder
 ├── LICENSE                    # MIT Open Source License
+├── LECTUREAI_FULL_DOCUMENTATION.md  # In-depth architecture & development log
 ├── Install_Dependencies.bat   # 1-click installer for Windows
 ├── Launch_LectureAI.bat       # 1-click launcher for Windows
 ├── templates/
