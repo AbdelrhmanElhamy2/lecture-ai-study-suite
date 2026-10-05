@@ -1,0 +1,2551 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LectureAI — Bilingual Lecture to Study Guide & Exam Prep</title>
+  <link rel="icon" type="image/png" href="/static/app_icon.png?v=3">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              500: '#3B82F6',
+              600: '#2563EB',
+              700: '#1D4ED8',
+              800: '#1E40AF',
+              900: '#1E3A8A',
+              950: '#0F172A'
+            },
+            alert: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              500: '#F59E0B',
+              600: '#D97706',
+              700: '#B45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html.dark {
+      color-scheme: dark;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      background-color: #f7fafc;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -15%, rgba(13, 148, 136, 0.08), transparent 70%),
+        linear-gradient(rgba(13, 148, 136, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13, 148, 136, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+      background-attachment: fixed;
+    }
+    html.dark body {
+      background-color: #060e18;
+      background-image: 
+        radial-gradient(ellipse 90% 50% at 50% -15%, rgba(20, 184, 166, 0.16), transparent 70%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08), transparent 50%),
+        linear-gradient(rgba(45, 212, 191, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 212, 191, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      background-attachment: fixed;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(204, 235, 230, 0.85);
+      box-shadow: 0 4px 20px -2px rgba(15, 76, 92, 0.05);
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dark .glass-card {
+      background: rgba(10, 20, 32, 0.85);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(45, 212, 191, 0.18);
+      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(45, 212, 191, 0.1);
+    }
+    /* Dark scrollbar */
+    .dark ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: #060e18;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #193542;
+      border-radius: 4px;
+      border: 1px solid rgba(45, 212, 191, 0.15);
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #254a5c;
+    }
+  </style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200">
+
+  <!-- Navigation Bar -->
+  <header class="bg-white/90 dark:bg-[#07131f]/90 backdrop-blur-md border-b border-slate-200 dark:border-teal-500/20 sticky top-0 z-30 shadow-xs transition-colors duration-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <img src="/static/app_icon.png?v=3" alt="LectureAI Biomedical Engineering Edition" class="w-10 h-10 rounded-xl shadow-md ring-1 ring-teal-400/40 object-cover" title="LectureAI Biomedical Engineering Edition">
+        <div>
+          <h1 class="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            LectureAI
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700/80 inline-flex items-center gap-1.5 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-teal-400 animate-pulse"></span>
+              Biomedical Engineering Edition
+            </span>
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Audio & Lecture Slides &rarr; BME Study Guides, Waveforms, Schematics & Exam Traps</p>
+        </div>
+      </div>
+
+      <!-- Quick Settings / Key Badge & Model Selector -->
+      <div class="flex items-center space-x-3 text-xs flex-wrap gap-y-2">
+        <!-- Model Dropdown -->
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold shadow-xs">
+          <span class="text-slate-400 dark:text-slate-400 font-medium">Model:</span>
+          <select id="modelSelect" class="bg-transparent font-bold text-brand-700 dark:text-brand-400 focus:outline-none cursor-pointer">
+            <option value="gemini-3.8-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" selected>gemini-3.8-flash (Recommended Base Model)</option>
+            <option value="gemini-3.7-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.7-flash</option>
+            <option value="gemini-3.6-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.6-flash</option>
+            <option value="gemini-3.5-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.5-flash (High Availability Safety Net)</option>
+            <option value="gemini-flash-latest" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-flash-latest</option>
+          </select>
+        </div>
+
+        <div id="keyBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+          <span class="w-2 h-2 rounded-full bg-slate-400" id="keyIndicator"></span>
+          <span id="keyText">Checking API Key...</span>
+        </div>
+        <button onclick="openKeyModal()" class="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-semibold underline cursor-pointer">
+          Configure Key
+        </button>
+
+        <!-- Dark / Light Mode Toggle Button -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer" title="Toggle Dark/Light Mode">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleText">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+
+    <!-- Hero Banner -->
+    <div class="rounded-2xl p-6 bg-gradient-to-r from-[#032926] via-[#092231] to-[#051622] text-white shadow-xl relative overflow-hidden border border-teal-500/30">
+      <!-- Decorative ECG Pulse Waveform in Background -->
+      <svg class="absolute right-0 top-1/2 -translate-y-1/2 h-44 w-96 text-teal-400/10 pointer-events-none select-none" viewBox="0 0 500 150" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M0,75 L120,75 L140,45 L160,115 L180,15 L200,135 L220,75 L245,75 L260,55 L275,95 L290,75 L500,75" />
+      </svg>
+      <div class="relative z-10 max-w-3xl space-y-3">
+        <div class="inline-flex flex-wrap items-center gap-2 px-2.5 py-1 rounded-full bg-teal-950/70 text-teal-200 border border-teal-500/30 text-xs font-medium backdrop-blur-md">
+          <span>🧬 Bioinstrumentation & Bio-Signals</span>
+          <span>&bull; Dual Audio & Slide Slicing</span>
+          <span>&bull; ECG/EMG, Schematics & Exam Traps</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+          Turn BME Lectures & Slides into Rigorous College Study Guides.
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Engineered for Biomedical Engineering students: Bioinstrumentation, ECG/EMG/EEG signals, Biomechanics, Biomaterials, Medical Imaging (MRI/CT/US), and Medical Device Safety. Save your college subjects, select your lecture slide ranges, and generate complete exam-grade guides.
+        </p>
+      </div>
+    </div>
+
+    <!-- Upload & Action Area (Full Width) -->
+    <div class="glass-card rounded-2xl p-6 sm:p-7 shadow-lg flex flex-col justify-between space-y-5">
+      <div class="space-y-4">
+          <!-- Selection Lock Banner (Shown while generating) -->
+          <div id="selectionLockBanner" class="hidden flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs transition-all animate-pulse">
+            <div class="flex items-center gap-2">
+              <span class="text-base leading-none">🔒</span>
+              <span>All options & uploaded files are locked during generation. Your choices remain visible below.</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 tracking-wider uppercase">LOCKED</span>
+          </div>
+
+          <!-- Intake Mode Segmented Switcher -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Choose Intake Source:</span>
+              <span class="text-[10px] text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-full border border-brand-200 dark:border-brand-900/60">
+                ✨ Direct Google Drive Links Supported
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs font-semibold">
+              <button type="button" id="tabUploadBtn" onclick="switchIntakeMode('upload')" class="py-2 px-2 sm:px-3 rounded-lg bg-white dark:bg-slate-700 text-brand-700 dark:text-brand-300 shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+                <span>📁</span> <span class="truncate">Upload File</span>
+              </button>
+              <button type="button" id="tabLinkBtn" onclick="switchIntakeMode('link')" class="py-2 px-2 sm:px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+                <span>🔗</span> <span class="truncate">Drive Links</span>
+              </button>
+              <button type="button" id="tabFolderBtn" onclick="switchIntakeMode('folder')" class="py-2 px-2 sm:px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+                <span>📂</span> <span class="truncate">Drive Folder</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 1: Upload Files (Local) -->
+          <div id="uploadModeSection" class="space-y-4">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+                <span>&bull;</span> Step 1: Upload Lecture Recording
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Supported formats: MP3, WAV, M4A, AAC, OGG, WebM (Long lectures up to hours)</p>
+              
+              <!-- Drag and Drop Dropzone -->
+              <div id="dropzone" 
+                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 hover:bg-brand-50/20 dark:hover:bg-brand-950/20"
+                   onclick="triggerAudioPick()">
+                <input type="file" id="audioInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" class="hidden" onchange="handleFileSelected(event)">
+                
+                <div id="uploadPrompt" class="space-y-2">
+                  <div class="w-10 h-10 mx-auto rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xl">
+                    &uarr;
+                  </div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Click to browse or drag and drop lecture audio
+                  </p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500">Recorded from phone, laptop, or classroom mic</p>
+                </div>
+
+                <!-- Selected File Info -->
+                <div id="fileInfo" class="hidden text-left space-y-1 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" id="fileName">lecture.mp3</span>
+                    <span class="text-xs text-slate-400 dark:text-slate-400" id="fileSize">0 MB</span>
+                  </div>
+                  <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">&check; Audio file selected and ready</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Step: Upload Lecture Notes / Slides -->
+            <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span>📑 Lecture Notes / Slides (Optional PDF):</span>
+                </label>
+                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Leave empty for audio-only</span>
+              </div>
+              
+              <div id="notesDropzone" 
+                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-4 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20"
+                   onclick="triggerNotesPick()">
+                <input type="file" id="notesInput" accept=".pdf,.txt,.md" class="hidden" onchange="handleNotesSelected(event)">
+                
+                <div id="notesUploadPrompt" class="space-y-1.5">
+                  <div class="w-8 h-8 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
+                    📄
+                  </div>
+                  <p class="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    Click or drag and drop lecture slides / notes (PDF)
+                  </p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500">Audio remains ground truth: AI only incorporates slides doctor discussed</p>
+                </div>
+
+                <!-- Selected Notes Info -->
+                <div id="notesFileInfo" class="hidden text-left space-y-1.5 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 truncate">
+                      <span class="text-indigo-600 dark:text-indigo-400 text-sm">📑</span>
+                      <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" id="notesFileName">slides.pdf</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[11px] text-slate-400 dark:text-slate-400" id="notesFileSize">0 MB</span>
+                      <button type="button" id="clearNotesBtn" onclick="clearNotesFile(event)" class="text-[11px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-1.5 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove slides and run audio only">✕ Remove</button>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">&check; Slides attached &bull; Audio strictly defines scope of what was taught</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Google Drive Individual Links (Multi-part & Multi-deck Supported) -->
+          <div id="linkModeSection" class="hidden space-y-4">
+            <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
+              <div class="flex items-center gap-2 font-bold text-blue-800 dark:text-blue-300">
+                <span>💡</span> <span>Multi-Part Recordings & Multi-Deck Slides Supported:</span>
+              </div>
+              <p class="leading-relaxed">
+                If the lecture was recorded in multiple audio parts, add each link below. If you finished one slide deck and moved into the next, add both slide decks. LectureAI will synthesize all parts into one cohesive study guide.
+              </p>
+            </div>
+
+            <!-- Audio Links Container (Multi-part) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>🎙️</span> <span>Lecture Audio Recording Links (Required):</span>
+                </label>
+                <button type="button" onclick="addAudioLinkRow()" class="text-[11px] text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer">
+                  <span>+ Add Another Audio Part</span>
+                </button>
+              </div>
+              <div id="audioLinksList" class="space-y-2">
+                <div class="audio-link-row flex items-center gap-2">
+                  <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] audio-part-label">Part 1:</span>
+                  <input type="url" class="audio-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                         placeholder="https://drive.google.com/file/d/1.../view?usp=sharing"
+                         onpaste="handleMultiLinkPaste(event, 'audio')">
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">Paste Google Drive link ("Anyone with the link"). You can paste multiple links on separate lines to auto-add parts.</p>
+            </div>
+
+            <!-- Notes Links Container (Multi-deck) -->
+            <div class="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>📑</span> <span>Lecture Notes / Slides PDF Links (Optional):</span>
+                </label>
+                <button type="button" onclick="addNotesLinkRow()" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer">
+                  <span>+ Add Another Slide Deck</span>
+                </button>
+              </div>
+              <div id="notesLinksList" class="space-y-2">
+                <div class="notes-link-row flex items-center gap-2">
+                  <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] notes-deck-label">Deck 1:</span>
+                  <input type="url" class="notes-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                         placeholder="https://drive.google.com/file/d/2.../view?usp=sharing"
+                         onpaste="handleMultiLinkPaste(event, 'notes')">
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">Add slide decks for this lecture and next lecture slides. Audio remains supreme ground truth.</p>
+            </div>
+          </div>
+
+          <!-- Section 3: Google Drive Course Folder & Intelligent Session Search -->
+          <div id="folderModeSection" class="hidden space-y-4">
+            
+            <!-- Quick Local Detected Courses (Fall 2026) -->
+            <div id="detectedCoursesBox" class="hidden p-3 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span>⚡ Detected Laptop Courses (Fall 2026):</span>
+                </span>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">&bull; Instant Access</span>
+              </div>
+              <div id="detectedCoursesChips" class="flex flex-wrap items-center gap-1.5">
+                <!-- Dynamically populated from /api/detected_courses -->
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200 space-y-1.5">
+              <div class="flex items-center gap-2 font-bold text-indigo-800 dark:text-indigo-300">
+                <span>📂</span> <span>Course Folder Session Search:</span>
+              </div>
+              <p class="leading-relaxed">
+                Paste your course folder link from Google Drive or select a course above. Type the target session (e.g. <strong>Lecture 1</strong> or <strong>Section 1</strong>) and LectureAI will scan the folder to find all recordings (including multi-part) and slides, asking you how you wish to proceed.
+              </p>
+            </div>
+
+            <!-- Folder Link or Local Path Input -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <span>🔗</span> <span>Course Folder Link or Local Path:</span>
+              </label>
+              <div class="relative">
+                <input type="text" id="folderUrlInput" placeholder="https://drive.google.com/drive/folders/1...?usp=sharing OR G:\My Drive\fall 2026\Power Electronics"
+                       class="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">Works with public Google Drive folder links or your laptop's synced Google Drive folder.</p>
+            </div>
+
+            <!-- Session Search Query Input & Action -->
+            <div class="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+              <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span>🎯</span> <span>Target Lecture or Section:</span>
+                </span>
+                <span class="text-[10px] text-slate-400">e.g. Lecture 1, Section 1, Lecture 2</span>
+              </label>
+              
+              <div class="flex items-center gap-2">
+                <input type="text" id="folderSessionQueryInput" placeholder="e.g. Lecture 1 (or Section 1)" 
+                       class="flex-1 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                       onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchCourseFolder(); }">
+                <button type="button" id="searchFolderBtn" onclick="searchCourseFolder()" 
+                        class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                  <span id="searchFolderBtnSpinner" class="hidden animate-spin">⏳</span>
+                  <span id="searchFolderBtnText">🔍 Find Materials</span>
+                </button>
+              </div>
+
+              <!-- Quick Query Suggestions -->
+              <div class="flex items-center gap-1.5 text-[11px]">
+                <span class="text-slate-400 dark:text-slate-500 text-[10px]">Quick Search:</span>
+                <button type="button" onclick="setSessionQueryAndSearch('Lecture 1')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 1</button>
+                <button type="button" onclick="setSessionQueryAndSearch('Lecture 2')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 2</button>
+                <button type="button" onclick="setSessionQueryAndSearch('Section 1')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Section 1</button>
+              </div>
+            </div>
+
+            <!-- Dynamic Search Result & Selection Box -->
+            <div id="folderSearchResultsBox" class="hidden p-4 rounded-xl border space-y-3 transition-all">
+              <!-- Content rendered dynamically by renderFolderSearchResults() -->
+            </div>
+
+          </div>
+
+          <!-- Slide Range Filter (Applies to all modes) -->
+          <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Covered Slide Range (Optional):</span>
+              <span class="text-[10px] text-slate-400 dark:text-slate-500">Leave blank if unsure</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">Start:</span>
+                <input type="number" id="startSlideInput" min="1" placeholder="e.g. 1" 
+                       class="w-full text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none bg-transparent">
+              </div>
+              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">End:</span>
+                <input type="number" id="endSlideInput" min="1" placeholder="e.g. 25" 
+                       class="w-full text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none bg-transparent">
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">If you don't know which slide the professor reached, leave blank. The AI will inspect all slides and strictly only include topics explained in the recording.</p>
+          </div>
+
+
+          <!-- Biomedical Engineering Academic Context & Custom Subject Manager -->
+          <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span>🧬 College Course & Lecturer:</span>
+              </label>
+              <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Auto-detected if left empty</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input type="text" id="courseInput" placeholder="Course e.g. Bioinstrumentation, Biomechanics, Medical Imaging" 
+                     class="w-full text-xs px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+              <input type="text" id="lecturerInput" placeholder="Professor / Lecturer Name (Optional)" 
+                     class="w-full text-xs px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+            </div>
+            
+            <!-- Custom College Subjects Manager -->
+            <div class="p-3 bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  <span>🎓 My College Subjects</span>
+                  <span class="text-[10px] font-normal text-slate-400 dark:text-slate-500">(Click to select &bull; Click &times; to delete)</span>
+                </span>
+                <button type="button" id="resetSubjectsBtn" onclick="resetDefaultSubjects()" class="text-[10px] text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-semibold hover:underline cursor-pointer">
+                  ↺ Reset BME Defaults
+                </button>
+              </div>
+
+              <!-- Badges Container -->
+              <div id="subjectBadgesContainer" class="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+                <!-- Populated dynamically from localStorage -->
+              </div>
+
+              <!-- Add New Subject Input Row -->
+              <div class="flex items-center gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
+                <input type="text" id="newSubjectInput" placeholder="Add your college course (e.g. Clinical Engineering, Biosensors)..." 
+                       class="flex-1 text-xs px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                       onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addCustomSubject(); }">
+                <button type="button" id="addSubjectBtn" onclick="addCustomSubject()" 
+                        class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <span>+ Add Course</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-3">
+            <div>
+              <label for="studyMode" class="text-xs font-bold text-slate-700 dark:text-slate-300">Step 2: Choose your study focus</label>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">The same lecture, tailored for the way you want to study today.</p>
+            </div>
+            <select id="studyMode" class="w-full text-xs px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="detailed" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Detailed notes — learn the lecture thoroughly</option>
+              <option value="revision" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Quick revision — compact, high-yield review</option>
+              <option value="exam" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Exam focus — cues, pitfalls, and more practice</option>
+            </select>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+              <label class="flex items-center gap-1.5 cursor-pointer"><input id="includeDiagrams" type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-brand-500"> Include diagrams</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><input id="includeExam" type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-brand-500"> Include exam questions</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><input id="includeTranscript" type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-brand-500"> Include transcript appendix</label>
+            </div>
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-600 dark:text-slate-300">
+                <input id="saveMediaToDrive" type="checkbox" class="rounded border-slate-300 dark:border-slate-700 text-brand-600 focus:ring-brand-500">
+                <span>Also copy uploaded recordings/slides to Google Drive course folder <span class="text-slate-400 text-[10px]">(off by default to avoid duplicate cloud re-sync &amp; save internet bandwidth)</span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <button id="processBtn" onclick="startProcessing(false)" 
+                  class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
+            <span>Generate Study Guide PDF</span>
+          </button>
+          
+          <button id="demoBtn" onclick="startProcessing(true)" 
+                  class="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm border border-slate-300 dark:border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+                  title="Test the complete pipeline immediately without uploading an audio file">
+            <span>&bull; Instant Demo (Simulation)</span>
+          </button>
+      </div>
+
+    <!-- Live Progress Section (Hidden by default) -->
+    <div id="progressSection" class="hidden glass-card rounded-2xl p-6 shadow-sm space-y-4 border-brand-200 dark:border-brand-900/60">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="animate-spin rounded-full h-5 w-5 border-2 border-brand-600 dark:border-brand-400 border-t-transparent"></div>
+          <span class="text-sm font-bold text-slate-800 dark:text-slate-100" id="progressStatusText">Processing audio...</span>
+        </div>
+        <span class="text-sm font-extrabold text-brand-600 dark:text-brand-400" id="progressPercent">10%</span>
+      </div>
+
+      <!-- Animated Progress Bar -->
+      <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+        <div id="progressBar" class="bg-gradient-to-r from-brand-600 to-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+        <div id="stepAudio" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 1. Audio Intake</div>
+        <div id="stepTranslate" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 2. Synthesis</div>
+        <div id="stepAudit" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 3. Audio Audit</div>
+        <div id="stepVisuals" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 4. Diagrams</div>
+        <div id="stepPDF" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 5. Verified PDF</div>
+      </div>
+    </div>
+
+    <!-- Error Alert Box -->
+    <div id="errorBox" class="hidden p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/80 text-red-700 dark:text-red-300 text-xs font-medium space-y-2">
+      <p class="font-bold text-red-800 dark:text-red-200" id="errorTitle">An error occurred</p>
+      <p id="errorMessage" class="leading-relaxed"></p>
+      <button id="retryBtn" onclick="retryLastJob()" class="hidden px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer">Retry</button>
+    </div>
+
+    <!-- Recent Study Guides History -->
+    <section class="glass-card rounded-2xl p-6 shadow-sm space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Recent study guides</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Saved locally on this laptop. The 50 most recent guides are kept.</p>
+        </div>
+        <button onclick="loadHistory()" class="text-xs font-semibold text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300 cursor-pointer">Refresh</button>
+      </div>
+      <div id="historyContainer" class="space-y-2 text-xs text-slate-500 dark:text-slate-400">No saved guides yet.</div>
+    </section>
+
+    <!-- Results Section (Populated on completion) -->
+    <div id="resultsSection" class="hidden space-y-6">
+      
+      <!-- Top Success & Download Header -->
+      <div class="glass-card rounded-2xl p-6 shadow-sm border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold mb-1">
+            &check; STUDY GUIDE READY
+          </div>
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="resLectureTitle">Lecture Title</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400" id="resCourseLecturer">Course &bull; Instructor</p>
+          <div id="resDriveBadge" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold">
+            <span>💾</span> <span id="resDriveBadgeText">Saved directly to Google Drive</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <a id="downloadBtn" href="#" download 
+             class="flex-1 md:flex-initial px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+             title="Downloads the PDF to your browser's download folder. (A copy is also saved automatically to your Google Drive course folder if configured)">
+            <span>&darr; Download Study Guide (PDF)</span>
+          </a>
+          <button id="deleteCurrentResultBtn" onclick="deleteCurrentResult()" 
+             class="px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 font-semibold text-sm transition flex items-center justify-center gap-1.5 cursor-pointer" title="Delete this study guide from records and local disk">
+            <span>🗑️</span> <span class="hidden sm:inline">Delete Record</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Audio Fidelity & Verification Certificate Banner -->
+      <div id="verificationCard" class="glass-card rounded-2xl p-5 shadow-sm border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/20 space-y-2.5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold" id="verifBadgeIcon">&check;</span>
+            <span class="text-xs font-bold tracking-wide uppercase text-emerald-800 dark:text-emerald-300" id="verifBadgeTitle">Audio Fidelity & Contradiction Audit: 100% Verified</span>
+          </div>
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400" id="verifTimestamp">Verified against audio recording</span>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" id="verifSummary">
+          Cross-examined against the original lecture recording. Zero contradictions detected.
+        </p>
+        <div id="verifReconciliationContainer" class="hidden space-y-1.5 pt-2 border-t border-emerald-100 dark:border-emerald-900/60">
+          <p class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Reconciled Discrepancies Log:</p>
+          <div id="verifReconciliationList" class="space-y-1 text-xs text-slate-600 dark:text-slate-400"></div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
+          <p class="text-2xl font-extrabold text-brand-600 dark:text-brand-400" id="metricSections">0</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">In-Depth Chapters</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
+          <p class="text-2xl font-extrabold text-amber-600 dark:text-amber-400" id="metricAlerts">0</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Doctor Exam Highlights</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
+          <p class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400" id="metricDiagrams">0</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Visual Drawings / Charts</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
+          <p class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="metricQuestions">0</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Predicted Exam Questions</p>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="border-b border-slate-200 dark:border-slate-800">
+        <nav class="flex space-x-6 text-sm font-semibold" aria-label="Tabs">
+          <button onclick="switchTab('tabHighlights')" id="btnTabHighlights" class="tab-btn py-3 px-1 border-b-2 border-brand-600 dark:border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer">
+            ⚠️ Doctor's Exam Alerts (<span id="countHighlightsTab">0</span>)
+          </button>
+          <button onclick="switchTab('tabChapters')" id="btnTabChapters" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
+            📖 Notes & Visuals
+          </button>
+          <button onclick="switchTab('tabExam')" id="btnTabExam" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
+            🎯 Exam Prep Questions
+          </button>
+          <button onclick="switchTab('tabTranscript')" id="btnTabTranscript" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
+            📝 English Transcript
+          </button>
+        </nav>
+      </div>
+
+      <!-- Tab Content 1: Doctor Highlights -->
+      <div id="tabHighlights" class="tab-pane space-y-4">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          The following alerts highlight every concept where the doctor gave explicit exam cues, warned about common mistakes, or repeated critical rules.
+        </p>
+        <div id="alertsContainer" class="space-y-4"></div>
+      </div>
+
+      <!-- Tab Content 2: Chapters & Diagrams -->
+      <div id="tabChapters" class="tab-pane hidden space-y-6">
+        <div id="chaptersContainer" class="space-y-6"></div>
+      </div>
+
+      <!-- Tab Content 3: Exam Prep -->
+      <div id="tabExam" class="tab-pane hidden space-y-4">
+        <section class="glass-card rounded-2xl p-5 border border-brand-200 dark:border-brand-900/60 space-y-3" aria-labelledby="recallTitle">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div><h3 id="recallTitle" class="font-bold text-slate-900 dark:text-white">Active recall</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Try each answer from memory before revealing the model answer.</p></div>
+            <button id="recallStartBtn" onclick="startRecallQuiz()" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold cursor-pointer">Start quiz</button>
+          </div>
+          <div id="recallQuiz" class="hidden space-y-3" aria-live="polite">
+            <div class="flex items-center justify-between text-xs"><span id="recallProgress" class="font-semibold text-brand-700 dark:text-brand-300"></span><span id="recallScore" class="text-slate-500 dark:text-slate-400"></span></div>
+            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"><div id="recallProgressBar" class="h-1.5 rounded-full bg-brand-600 transition-all" style="width:0%"></div></div>
+            <div id="recallPrompt" class="font-semibold text-sm text-slate-900 dark:text-white"></div>
+            <div id="recallOptions" class="space-y-1 text-xs text-slate-700 dark:text-slate-300"></div>
+            <button id="recallRevealBtn" onclick="revealRecallAnswer()" class="text-xs font-bold text-brand-700 dark:text-brand-300 hover:underline cursor-pointer">Reveal model answer</button>
+            <div id="recallAnswer" class="hidden p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs space-y-2"></div>
+            <div id="recallRating" class="hidden flex-wrap gap-2">
+              <button onclick="rateRecallAnswer(false)" class="px-3 py-2 rounded-lg border border-amber-300 text-amber-800 dark:text-amber-200 text-xs font-semibold cursor-pointer">Need to review</button>
+              <button onclick="rateRecallAnswer(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer">Got it</button>
+            </div>
+          </div>
+          <p id="recallComplete" class="hidden text-sm font-semibold text-emerald-700 dark:text-emerald-300" aria-live="polite"></p>
+          <button id="recallRetryMissedBtn" onclick="startMissedRecallQuiz()" class="hidden px-3 py-2 rounded-lg border border-brand-300 text-brand-700 dark:text-brand-300 text-xs font-bold cursor-pointer">Practice missed questions</button>
+        </section>
+        <div id="examContainer" class="space-y-4"></div>
+      </div>
+
+      <!-- Tab Content 4: Full English Transcript -->
+      <div id="tabTranscript" class="tab-pane hidden glass-card rounded-2xl p-6">
+        <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-3">Complete Translated English Lecture Transcript</h4>
+        <div id="transcriptContainer" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-mono whitespace-pre-line bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 max-h-96 overflow-y-auto"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Key Configuration Modal -->
+  <div id="keyModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 dark:text-white text-base">Gemini API Key</h3>
+        <button onclick="closeKeyModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-lg cursor-pointer">&times;</button>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Enter your Google Gemini API key. Audio files are processed securely through your personal API quota.
+      </p>
+      <input type="password" id="modalKeyInput" placeholder="AIzaSy..." 
+             class="w-full text-xs font-mono px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+      
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeKeyModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer">Cancel</button>
+        <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg cursor-pointer">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 dark:border-teal-900/40 bg-white/60 dark:bg-[#07131f]/70 backdrop-blur-md py-4 mt-12 text-center text-xs text-slate-500 dark:text-teal-400/70">
+    LectureAI &bull; Biomedical Engineering Edition &bull; Bio-Signals, Waveforms, Schematics & Exam Prep
+  </footer>
+
+  <script>
+    let selectedFile = null;
+    let selectedNotesFile = null;
+    let activeJobId = null;
+    let pollInterval = null;
+    let lastWasDemo = false;
+    let recallQuestions = [];
+    let recallMissed = [];
+    let recallIndex = 0;
+    let recallScore = 0;
+
+    let hasApiKey = false;
+
+    // Theme Management (Defaults to Dark Mode)
+    function applyTheme(theme) {
+      const isDark = theme === 'dark';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      try {
+        localStorage.setItem('lectureai_theme', theme);
+      } catch (e) {
+        console.warn('Storage unavailable', e);
+      }
+      const icon = document.getElementById('themeToggleIcon');
+      const text = document.getElementById('themeToggleText');
+      if (icon && text) {
+        icon.textContent = isDark ? '☀️' : '🌙';
+        text.textContent = isDark ? 'Light' : 'Dark';
+      }
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    // Initialize Theme immediately on load
+    const savedTheme = (() => {
+      try {
+        return localStorage.getItem('lectureai_theme') || 'dark';
+      } catch (e) {
+        return 'dark';
+      }
+    })();
+    applyTheme(savedTheme);
+
+    // Check API key configuration on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      checkKeyStatus();
+      loadHistory();
+      initNotesDropzone();
+      initSubjectPresets();
+      loadDetectedCourses();
+    });
+
+    async function checkKeyStatus() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        const indicator = document.getElementById('keyIndicator');
+        const text = document.getElementById('keyText');
+        hasApiKey = data.has_key;
+        if (data.has_key) {
+          indicator.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          text.innerText = `API Key Configured (${data.masked_key})`;
+        } else {
+          indicator.className = 'w-2 h-2 rounded-full bg-amber-500';
+          text.innerText = 'No API Key Set (Click to Add)';
+        }
+        if (data.model) {
+          const modelSel = document.getElementById('modelSelect');
+          if (modelSel && Array.from(modelSel.options).some(o => o.value === data.model)) {
+            modelSel.value = data.model;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openKeyModal() {
+      document.getElementById('keyModal').classList.remove('hidden');
+      document.getElementById('modalKeyInput').focus();
+    }
+
+    function closeKeyModal() {
+      document.getElementById('keyModal').classList.add('hidden');
+    }
+
+    async function saveApiKey() {
+      const key = document.getElementById('modalKeyInput').value.trim();
+      if (!key) return;
+      const formData = new FormData();
+      formData.append('key', key);
+      try {
+        const res = await fetch('/api/set_key', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          closeKeyModal();
+          checkKeyStatus();
+          showSuccessToast("API Key saved successfully!");
+        }
+      } catch (e) {
+        alert("Failed to save key: " + e);
+      }
+    }
+
+    function showSuccessToast(msg) {
+      const errorBox = document.getElementById('errorBox');
+      errorBox.className = 'p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium space-y-1';
+      document.getElementById('errorTitle').innerText = "✓ Success";
+      document.getElementById('errorMessage').innerText = msg;
+      errorBox.classList.remove('hidden');
+      setTimeout(() => { errorBox.classList.add('hidden'); }, 4000);
+    }
+
+    let isGenerating = false;
+
+    function triggerAudioPick() {
+      if (isGenerating) return;
+      const input = document.getElementById('audioInput');
+      if (input) input.click();
+    }
+
+    function triggerNotesPick() {
+      if (isGenerating) return;
+      const input = document.getElementById('notesInput');
+      if (input) input.click();
+    }
+
+    function handleFileSelected(e) {
+      if (isGenerating) return;
+      if (e.target.files && e.target.files[0]) {
+        selectedFile = e.target.files[0];
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('fileInfo').classList.remove('hidden');
+        document.getElementById('fileName').innerText = selectedFile.name;
+        document.getElementById('fileSize').innerText = (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+      }
+    }
+
+    function handleNotesSelected(e) {
+      if (isGenerating) return;
+      if (e.target.files && e.target.files[0]) {
+        selectedNotesFile = e.target.files[0];
+        document.getElementById('notesUploadPrompt').classList.add('hidden');
+        document.getElementById('notesFileInfo').classList.remove('hidden');
+        document.getElementById('notesFileName').innerText = selectedNotesFile.name;
+        document.getElementById('notesFileSize').innerText = (selectedNotesFile.size / (1024 * 1024)).toFixed(2) + " MB";
+      }
+    }
+
+    function clearNotesFile(e) {
+      if (e) e.stopPropagation();
+      if (isGenerating) return;
+      selectedNotesFile = null;
+      const input = document.getElementById('notesInput');
+      if (input) input.value = '';
+      document.getElementById('notesUploadPrompt').classList.remove('hidden');
+      document.getElementById('notesFileInfo').classList.add('hidden');
+      const startInp = document.getElementById('startSlideInput');
+      const endInp = document.getElementById('endSlideInput');
+      if (startInp) startInp.value = '';
+      if (endInp) endInp.value = '';
+    }
+
+    function initNotesDropzone() {
+      const ndz = document.getElementById('notesDropzone');
+      if (!ndz) return;
+      ndz.addEventListener('dragover', (e) => { 
+        if (isGenerating) return;
+        e.preventDefault(); 
+        ndz.classList.add('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30'); 
+      });
+      ndz.addEventListener('dragleave', () => { 
+        ndz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30'); 
+      });
+      ndz.addEventListener('drop', (e) => {
+        if (isGenerating) return;
+        e.preventDefault();
+        ndz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          selectedNotesFile = e.dataTransfer.files[0];
+          document.getElementById('notesUploadPrompt').classList.add('hidden');
+          document.getElementById('notesFileInfo').classList.remove('hidden');
+          document.getElementById('notesFileName').innerText = selectedNotesFile.name;
+          document.getElementById('notesFileSize').innerText = (selectedNotesFile.size / (1024 * 1024)).toFixed(2) + " MB";
+        }
+      });
+    }
+
+    // Drag and drop listeners
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (e) => { 
+      if (isGenerating) return;
+      e.preventDefault(); 
+      dropzone.classList.add('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30'); 
+    });
+    dropzone.addEventListener('dragleave', () => { 
+      dropzone.classList.remove('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30'); 
+    });
+    dropzone.addEventListener('drop', (e) => {
+      if (isGenerating) return;
+      e.preventDefault();
+      dropzone.classList.remove('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        selectedFile = e.dataTransfer.files[0];
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('fileInfo').classList.remove('hidden');
+        document.getElementById('fileName').innerText = selectedFile.name;
+        document.getElementById('fileSize').innerText = (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+      }
+    });
+
+    const DEFAULT_BME_SUBJECTS = [
+      "Bioinstrumentation & Biosensors",
+      "Biomedical Signal Processing (ECG/EEG/EMG)",
+      "Biomechanics & Biomaterials",
+      "Medical Imaging Systems (MRI/CT/US)",
+      "Human Anatomy & Physiology for Engineers",
+      "Medical Device Design & Electrical Safety"
+    ];
+
+    function getCustomSubjects() {
+      try {
+        const saved = localStorage.getItem('user_bme_subjects');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to load custom subjects:", e);
+      }
+      return [...DEFAULT_BME_SUBJECTS];
+    }
+
+    function saveCustomSubjects(subjects) {
+      try {
+        localStorage.setItem('user_bme_subjects', JSON.stringify(subjects));
+      } catch (e) {
+        console.error("Failed to save custom subjects:", e);
+      }
+    }
+
+    function initSubjectPresets() {
+      const courseInput = document.getElementById('courseInput');
+      if (courseInput) {
+        courseInput.addEventListener('input', () => {
+          renderSubjectPresets();
+        });
+      }
+      renderSubjectPresets();
+    }
+
+    function renderSubjectPresets() {
+      const container = document.getElementById('subjectBadgesContainer');
+      if (!container) return;
+
+      const subjects = getCustomSubjects();
+      const currentCourse = (document.getElementById('courseInput')?.value || '').trim();
+
+      container.innerHTML = '';
+
+      if (subjects.length === 0) {
+        container.innerHTML = '<span class="text-[11px] text-slate-400 dark:text-slate-500 italic">No college subjects saved. Add one below!</span>';
+        return;
+      }
+
+      subjects.forEach((subj, idx) => {
+        const isActive = currentCourse.toLowerCase() === subj.toLowerCase();
+        const badge = document.createElement('div');
+        badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition cursor-pointer select-none ${
+          isActive 
+            ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border-brand-400 dark:border-brand-500 shadow-xs font-semibold ring-1 ring-brand-300 dark:ring-brand-500' 
+            : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+        }`;
+
+        const label = document.createElement('span');
+        label.innerText = subj;
+        label.onclick = () => {
+          setSubjectPreset(subj);
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.innerHTML = '&times;';
+        delBtn.className = 'text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-bold px-1 rounded-full text-xs transition leading-none cursor-pointer';
+        delBtn.title = `Remove "${subj}"`;
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeCustomSubject(idx);
+        };
+
+        badge.appendChild(label);
+        badge.appendChild(delBtn);
+        container.appendChild(badge);
+      });
+    }
+
+    function setSubjectPreset(presetName) {
+      if (isGenerating) return;
+      const input = document.getElementById('courseInput');
+      if (input) {
+        input.value = presetName;
+        input.focus();
+      }
+      renderSubjectPresets();
+    }
+
+    function addCustomSubject() {
+      if (isGenerating) return;
+      const input = document.getElementById('newSubjectInput');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+
+      const subjects = getCustomSubjects();
+      const exists = subjects.some(s => s.toLowerCase() === val.toLowerCase());
+      if (!exists) {
+        subjects.push(val);
+        saveCustomSubjects(subjects);
+      }
+      input.value = '';
+      setSubjectPreset(val);
+    }
+
+    function removeCustomSubject(index) {
+      if (isGenerating) return;
+      const subjects = getCustomSubjects();
+      if (index >= 0 && index < subjects.length) {
+        subjects.splice(index, 1);
+        saveCustomSubjects(subjects);
+        renderSubjectPresets();
+      }
+    }
+
+    function resetDefaultSubjects() {
+      if (isGenerating) return;
+      if (confirm("Reset subjects list to default Biomedical Engineering courses?")) {
+        saveCustomSubjects([...DEFAULT_BME_SUBJECTS]);
+        renderSubjectPresets();
+      }
+    }
+
+    let currentIntakeMode = 'upload'; // 'upload', 'link', 'folder'
+
+    function switchIntakeMode(mode) {
+      if (isGenerating) return;
+      currentIntakeMode = mode;
+      
+      const tabUpload = document.getElementById('tabUploadBtn');
+      const tabLink = document.getElementById('tabLinkBtn');
+      const tabFolder = document.getElementById('tabFolderBtn');
+
+      const activeClasses = ['bg-white', 'dark:bg-slate-700', 'text-brand-700', 'dark:text-brand-300', 'shadow-xs'];
+      const inactiveClasses = ['text-slate-600', 'dark:text-slate-400'];
+
+      [tabUpload, tabLink, tabFolder].forEach(btn => {
+        if (!btn) return;
+        btn.classList.remove(...activeClasses);
+        btn.classList.add(...inactiveClasses);
+      });
+
+      const uploadSec = document.getElementById('uploadModeSection');
+      const linkSec = document.getElementById('linkModeSection');
+      const folderSec = document.getElementById('folderModeSection');
+
+      if (mode === 'upload') {
+        tabUpload?.classList.add(...activeClasses);
+        tabUpload?.classList.remove(...inactiveClasses);
+        uploadSec?.classList.remove('hidden');
+        linkSec?.classList.add('hidden');
+        folderSec?.classList.add('hidden');
+      } else if (mode === 'link') {
+        tabLink?.classList.add(...activeClasses);
+        tabLink?.classList.remove(...inactiveClasses);
+        uploadSec?.classList.add('hidden');
+        linkSec?.classList.remove('hidden');
+        folderSec?.classList.add('hidden');
+      } else if (mode === 'folder') {
+        tabFolder?.classList.add(...activeClasses);
+        tabFolder?.classList.remove(...inactiveClasses);
+        uploadSec?.classList.add('hidden');
+        linkSec?.classList.add('hidden');
+        folderSec?.classList.remove('hidden');
+      }
+    }
+
+    // --- Multi-Link Support for Audio Recordings and Notes ---
+    function updateAudioPartLabels() {
+      const rows = document.querySelectorAll('#audioLinksList .audio-link-row');
+      rows.forEach((row, idx) => {
+        const label = row.querySelector('.audio-part-label');
+        if (label) label.innerText = `Part ${idx + 1}:`;
+        const delBtn = row.querySelector('.remove-audio-link-btn');
+        if (delBtn) {
+          delBtn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+        }
+      });
+    }
+
+    function addAudioLinkRow(initialVal = '') {
+      if (isGenerating) return;
+      const list = document.getElementById('audioLinksList');
+      if (!list) return;
+      const row = document.createElement('div');
+      row.className = 'audio-link-row flex items-center gap-2';
+      row.innerHTML = `
+        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] audio-part-label">Part 1:</span>
+        <input type="url" class="audio-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+               placeholder="https://drive.google.com/file/d/1.../view?usp=sharing"
+               value="${initialVal.replace(/"/g, '&quot;')}"
+               onpaste="handleMultiLinkPaste(event, 'audio')">
+        <button type="button" onclick="removeAudioLinkRow(this)" class="remove-audio-link-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove this audio part">✕</button>
+      `;
+      list.appendChild(row);
+      updateAudioPartLabels();
+    }
+
+    function removeAudioLinkRow(btn) {
+      if (isGenerating) return;
+      const row = btn.closest('.audio-link-row');
+      if (row) {
+        row.remove();
+        updateAudioPartLabels();
+      }
+    }
+
+    function updateNotesDeckLabels() {
+      const rows = document.querySelectorAll('#notesLinksList .notes-link-row');
+      rows.forEach((row, idx) => {
+        const label = row.querySelector('.notes-deck-label');
+        if (label) label.innerText = `Deck ${idx + 1}:`;
+        const delBtn = row.querySelector('.remove-notes-link-btn');
+        if (delBtn) {
+          delBtn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+        }
+      });
+    }
+
+    function addNotesLinkRow(initialVal = '') {
+      if (isGenerating) return;
+      const list = document.getElementById('notesLinksList');
+      if (!list) return;
+      const row = document.createElement('div');
+      row.className = 'notes-link-row flex items-center gap-2';
+      row.innerHTML = `
+        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] notes-deck-label">Deck 1:</span>
+        <input type="url" class="notes-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               placeholder="https://drive.google.com/file/d/2.../view?usp=sharing"
+               value="${initialVal.replace(/"/g, '&quot;')}"
+               onpaste="handleMultiLinkPaste(event, 'notes')">
+        <button type="button" onclick="removeNotesLinkRow(this)" class="remove-notes-link-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove this notes link">✕</button>
+      `;
+      list.appendChild(row);
+      updateNotesDeckLabels();
+    }
+
+    function removeNotesLinkRow(btn) {
+      if (isGenerating) return;
+      const row = btn.closest('.notes-link-row');
+      if (row) {
+        row.remove();
+        updateNotesDeckLabels();
+      }
+    }
+
+    function handleMultiLinkPaste(event, type) {
+      const pasteData = (event.clipboardData || window.clipboardData).getData('text');
+      if (!pasteData) return;
+      const lines = pasteData.split(/[\r\n,]+/).map(s => s.trim()).filter(s => s.startsWith('http://') || s.startsWith('https://'));
+      if (lines.length > 1) {
+        event.preventDefault();
+        const container = type === 'audio' ? document.getElementById('audioLinksList') : document.getElementById('notesLinksList');
+        if (container) {
+          container.innerHTML = '';
+          lines.forEach(url => {
+            if (type === 'audio') addAudioLinkRow(url);
+            else addNotesLinkRow(url);
+          });
+        }
+      }
+    }
+
+    // --- Course Folder Search & Fall 2026 Detection ---
+    let currentFolderSearchData = null;
+    let activeFolderSelectionMode = null; // 'both' or 'record_only'
+
+    async function loadDetectedCourses() {
+      try {
+        const res = await fetch('/api/detected_courses');
+        const data = await res.json();
+        const box = document.getElementById('detectedCoursesBox');
+        const chips = document.getElementById('detectedCoursesChips');
+        if (!box || !chips) return;
+
+        if (data.success && data.courses && data.courses.length > 0) {
+          chips.innerHTML = '';
+          data.courses.forEach(c => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-2xs transition cursor-pointer flex items-center gap-1';
+            btn.innerHTML = `<span>🎓</span> <span class="truncate">${c.name}</span>`;
+            btn.onclick = () => selectCourseFolder(c.path, c.name);
+            chips.appendChild(btn);
+          });
+          box.classList.remove('hidden');
+        } else {
+          box.classList.add('hidden');
+        }
+      } catch (err) {
+        console.warn("Could not load local courses:", err);
+      }
+    }
+
+    function selectCourseFolder(folderPath, courseName) {
+      if (isGenerating) return;
+      const folderInput = document.getElementById('folderUrlInput');
+      const courseInput = document.getElementById('courseInput');
+      const sessionInput = document.getElementById('folderSessionQueryInput');
+      if (folderInput) folderInput.value = folderPath;
+      if (courseInput) courseInput.value = courseName;
+      if (sessionInput && !sessionInput.value.trim()) sessionInput.value = 'Lecture 1';
+      searchCourseFolder();
+    }
+
+    function setSessionQueryAndSearch(query) {
+      if (isGenerating) return;
+      const input = document.getElementById('folderSessionQueryInput');
+      if (input) {
+        input.value = query;
+        searchCourseFolder();
+      }
+    }
+
+    async function searchCourseFolder() {
+      if (isGenerating) return;
+      const folderUrlInput = document.getElementById('folderUrlInput');
+      const sessionInput = document.getElementById('folderSessionQueryInput');
+      const resultBox = document.getElementById('folderSearchResultsBox');
+      const spinner = document.getElementById('searchFolderBtnSpinner');
+      const btnText = document.getElementById('searchFolderBtnText');
+
+      const folderUrl = (folderUrlInput?.value || '').trim();
+      const sessionQuery = (sessionInput?.value || '').trim() || 'Lecture 1';
+
+      if (!folderUrl) {
+        showError("Please enter a Google Drive course folder link or select a detected course folder above.");
+        folderUrlInput?.focus();
+        return;
+      }
+
+      resultBox.classList.remove('hidden');
+      resultBox.className = 'p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3';
+      resultBox.innerHTML = `
+        <div class="flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+          <span class="animate-spin">⏳</span>
+          <span>Scanning course folder for '${sessionQuery}' recordings & slides...</span>
+        </div>
+      `;
+
+      if (spinner) spinner.classList.remove('hidden');
+      if (btnText) btnText.innerText = "Scanning...";
+
+      try {
+        const formData = new FormData();
+        formData.append('folder_url', folderUrl);
+        formData.append('query', sessionQuery);
+
+        const res = await fetch('/api/search_course_folder', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Failed to search folder.");
+        }
+
+        const data = await res.json();
+        renderFolderSearchResults(data);
+      } catch (err) {
+        resultBox.className = 'p-4 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-xs space-y-1.5';
+        resultBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5">
+            <span>❌</span> <span>Error scanning folder:</span>
+          </div>
+          <p class="leading-relaxed">${err.message}</p>
+        `;
+      } finally {
+        if (spinner) spinner.classList.add('hidden');
+        if (btnText) btnText.innerText = "🔍 Find Materials";
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes || bytes <= 0) return '';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0;
+      let val = bytes;
+      while (val >= 1024 && i < units.length - 1) {
+        val /= 1024;
+        i++;
+      }
+      return val.toFixed(1) + ' ' + units[i];
+    }
+
+    let extraLocalFiles = [];
+    window.extraLocalFiles = extraLocalFiles;
+    let isAddNoteDrawerOpen = false;
+
+    function renderFolderSearchResults(data) {
+      currentFolderSearchData = data;
+      extraLocalFiles = [];
+      window.extraLocalFiles = extraLocalFiles;
+      isAddNoteDrawerOpen = false;
+
+      const courseInput = document.getElementById('courseInput');
+      if (courseInput && !courseInput.value.trim() && data.course_hint) {
+        courseInput.value = data.course_hint;
+      }
+
+      // Ensure default selected states (all true initially)
+      if (data.records) {
+        data.records.forEach(r => { if (r.selected === undefined) r.selected = true; });
+      }
+      if (data.notes) {
+        data.notes.forEach(n => { if (n.selected === undefined) n.selected = true; });
+      }
+
+      renderFolderMaterialsUI();
+    }
+
+    function renderFolderMaterialsUI() {
+      const data = currentFolderSearchData;
+      const resultBox = document.getElementById('folderSearchResultsBox');
+      if (!resultBox || !data) return;
+
+      const recs = data.records || [];
+      const notes = data.notes || [];
+      const allCourseNotes = data.all_course_notes || [];
+
+      const selectedRecsCount = recs.filter(r => r.selected !== false).length;
+      const selectedNotesCount = notes.filter(n => n.selected !== false).length;
+
+      const isAllRecs = recs.length > 0 && selectedRecsCount === recs.length;
+      const isNoneRecs = recs.length > 0 && selectedRecsCount === 0;
+
+      const isAllNotes = notes.length > 0 && selectedNotesCount === notes.length;
+      const isNoneNotes = notes.length > 0 && selectedNotesCount === 0;
+
+      activeFolderSelectionMode = selectedNotesCount > 0 ? 'both' : 'record_only';
+
+      let borderClass = 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/70';
+      if (data.status === 'found_both') {
+        borderClass = 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/20';
+      } else if (data.status === 'no_notes' || data.status === 'no_record') {
+        borderClass = 'border-amber-300 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20';
+      } else if (data.status === 'not_found') {
+        borderClass = 'border-red-300 dark:border-red-800 bg-red-50/30 dark:bg-red-950/20';
+      }
+
+      resultBox.className = `p-4 rounded-xl border ${borderClass} space-y-3.5`;
+
+      let html = '';
+
+      // Header summary
+      if (data.status === 'found_both') {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="text-base text-emerald-600 dark:text-emerald-400">✅</span>
+            <div>
+              <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300">${data.message}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Select which recordings and lecture notes you want included in the study guide below.</p>
+            </div>
+          </div>
+        `;
+      } else if (data.status === 'no_notes') {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="text-base text-amber-500">⚠️</span>
+            <div>
+              <p class="text-xs font-bold text-amber-800 dark:text-amber-300">${data.message}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">You can proceed with audio-only, or click "Add Another Lecture Note" to attach slides the doctor continued from.</p>
+            </div>
+          </div>
+        `;
+      } else if (data.status === 'no_record') {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="text-base text-amber-500">⚠️</span>
+            <div>
+              <p class="text-xs font-bold text-amber-800 dark:text-amber-300">${data.message}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">LectureAI needs an audio recording to extract the spoken explanations, emphasis, and exam cues.</p>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="text-base text-red-500">❌</span>
+            <div>
+              <p class="text-xs font-bold text-red-800 dark:text-red-300">${data.message}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Check the spelling or click one of the detected sessions below.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Section AT Banner
+      if (data.is_section_query) {
+        html += `
+          <div class="p-3 rounded-xl bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/80 text-xs text-purple-900 dark:text-purple-200 flex items-start gap-2.5">
+            <span class="text-lg">🎓</span>
+            <div class="space-y-0.5 leading-relaxed">
+              <p class="font-bold text-purple-900 dark:text-purple-200">Teaching Assistant (AT) Section Mode</p>
+              <p class="text-[11px] text-purple-700 dark:text-purple-300">
+                The AT often teaches or reviews concepts from the professor's lecture slides. All slides and sheets from this course are listed below with checkboxes — check whichever slides the AT covered in this section!
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Materials details
+      if (recs.length > 0 || notes.length > 0 || allCourseNotes.length > 0) {
+        html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">`;
+        
+        // Recordings box
+        html += `
+          <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
+            <div class="flex items-center justify-between font-bold text-slate-700 dark:text-slate-200 text-xs pb-1 border-b border-slate-100 dark:border-slate-700">
+              <span class="flex items-center gap-1.5">
+                <span>🎙️</span> <span>Recordings (${selectedRecsCount}/${recs.length})</span>
+              </span>
+              <div class="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 gap-1 shadow-2xs">
+                <button type="button" onclick="setAllRecordsSelected(true)" 
+                  title="Select all recordings"
+                  aria-pressed="${isAllRecs}"
+                  class="px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 flex items-center gap-1 cursor-pointer select-none ${
+                    isAllRecs 
+                      ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300 dark:ring-emerald-400 font-extrabold' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                  }">
+                  ${isAllRecs ? '<span class="text-[9px]">✓</span>' : ''}<span>All</span>
+                </button>
+                <button type="button" onclick="setAllRecordsSelected(false)" 
+                  title="Deselect all recordings"
+                  aria-pressed="${isNoneRecs}"
+                  class="px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 flex items-center gap-1 cursor-pointer select-none ${
+                    isNoneRecs 
+                      ? 'bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.7)] ring-2 ring-rose-300 dark:ring-rose-400 font-extrabold' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                  }">
+                  ${isNoneRecs ? '<span class="text-[9px]">✕</span>' : ''}<span>None</span>
+                </button>
+              </div>
+            </div>
+            ${recs.length === 0 ? '<p class="text-[11px] text-amber-600 dark:text-amber-400 italic py-2">No recording found for this session</p>' : ''}
+            <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              ${recs.map((r, i) => {
+                const isChecked = r.selected !== false;
+                return `
+                  <label class="flex items-center justify-between p-2 rounded-lg border ${isChecked ? 'border-brand-300 dark:border-brand-700 bg-brand-50/50 dark:bg-brand-950/30' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 opacity-60'} transition cursor-pointer select-none">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleRecordItem(${i}, this.checked)" class="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 cursor-pointer shrink-0">
+                      <span class="truncate font-medium text-slate-800 dark:text-slate-200 text-xs" title="${r.name}">${r.name}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 ml-2 shrink-0">
+                      ${recs.length > 1 ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">Part ${i+1}</span>` : ''}
+                      ${r.size ? `<span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${formatFileSize(r.size)}</span>` : ''}
+                    </div>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+
+        // Notes box
+        html += `
+          <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
+            <div class="flex items-center justify-between font-bold text-slate-700 dark:text-slate-200 text-xs pb-1 border-b border-slate-100 dark:border-slate-700">
+              <span class="flex items-center gap-1.5">
+                <span>📑</span> <span>Lecture Notes (${selectedNotesCount}/${notes.length})</span>
+              </span>
+              <div class="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 gap-1 shadow-2xs">
+                <button type="button" onclick="setAllNotesSelected(true)" 
+                  title="Select all lecture notes"
+                  aria-pressed="${isAllNotes}"
+                  class="px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 flex items-center gap-1 cursor-pointer select-none ${
+                    isAllNotes 
+                      ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300 dark:ring-emerald-400 font-extrabold' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                  }">
+                  ${isAllNotes ? '<span class="text-[9px]">✓</span>' : ''}<span>All</span>
+                </button>
+                <button type="button" onclick="setAllNotesSelected(false)" 
+                  title="Deselect all lecture notes"
+                  aria-pressed="${isNoneNotes}"
+                  class="px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 flex items-center gap-1 cursor-pointer select-none ${
+                    isNoneNotes 
+                      ? 'bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.7)] ring-2 ring-rose-300 dark:ring-rose-400 font-extrabold' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                  }">
+                  ${isNoneNotes ? '<span class="text-[9px]">✕</span>' : ''}<span>None</span>
+                </button>
+              </div>
+            </div>
+            ${notes.length === 0 ? '<p class="text-[11px] text-amber-600 dark:text-amber-400 italic py-2">No slides initially attached for this session</p>' : ''}
+            <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              ${notes.map((n, j) => {
+                const isChecked = n.selected !== false;
+                const isContinued = n.is_continued;
+                const isSheet = n.category === 'sheet';
+                return `
+                  <label class="flex items-center justify-between p-2 rounded-lg border ${isChecked ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/30' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 opacity-60'} transition cursor-pointer select-none">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleNoteItem(${j}, this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 cursor-pointer shrink-0">
+                      <div class="min-w-0">
+                        <span class="truncate block font-medium text-slate-800 dark:text-slate-200 text-xs" title="${n.name}">${n.name}</span>
+                        ${isContinued ? `<span class="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Continued Deck</span>` : ''}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 ml-2 shrink-0">
+                      <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded ${isSheet ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'}">
+                        ${isSheet ? 'Sheet' : 'Slide Deck'}
+                      </span>
+                      ${n.size ? `<span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${formatFileSize(n.size)}</span>` : ''}
+                      ${n.is_added ? `<button type="button" onclick="removeAddedNoteItem(${j})" class="text-xs text-red-500 hover:text-red-700 font-bold p-0.5 cursor-pointer" title="Remove">&times;</button>` : ''}
+                    </div>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Continued Notes Button & Drawer -->
+            <div class="pt-1 border-t border-slate-100 dark:border-slate-700/60">
+              <button type="button" onclick="toggleAddNoteDrawer()"
+                      class="w-full py-1.5 px-3 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-700 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>➕</span> <span>Add Another Lecture Note (Continued Deck / Extra Slides)</span>
+              </button>
+
+              <div id="addNoteDrawer" class="${isAddNoteDrawerOpen ? '' : 'hidden'} mt-2 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-slate-50 dark:bg-slate-900/80 space-y-2.5">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span>Add Extra / Continued Lecture Slides:</span>
+                  <button type="button" onclick="toggleAddNoteDrawer()" class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">&times;</button>
+                </div>
+
+                <!-- Course Notes List -->
+                ${(() => {
+                  const existingNames = new Set(notes.map(n => n.name));
+                  const available = allCourseNotes.filter(an => !existingNames.has(an.name));
+                  if (available.length > 0) {
+                    return `
+                      <div class="space-y-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Available from this Course Folder:</span>
+                        <div class="space-y-1 max-h-36 overflow-y-auto pr-1">
+                          ${available.map(an => `
+                            <div class="flex items-center justify-between p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs">
+                              <div class="min-w-0 pr-2">
+                                <p class="truncate font-medium text-slate-800 dark:text-slate-200 text-xs" title="${an.name}">${an.name}</p>
+                                <span class="text-[9px] text-slate-400">${an.category === 'sheet' ? 'Sheet' : 'Slide Deck'}</span>
+                              </div>
+                              <button type="button" onclick="addNoteFromCourseFolder('${encodeURIComponent(an.name)}')"
+                                      class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shrink-0 transition cursor-pointer">
+                                + Add
+                              </button>
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `;
+                  } else {
+                    return '<p class="text-[11px] text-slate-400 italic">All detected slides from this course are already in your list.</p>';
+                  }
+                })()}
+
+                <!-- Browse local PDF or paste link -->
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-700/80 space-y-1.5">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or Attach from PC / Link:</span>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <label class="flex-1 py-1 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-center flex items-center justify-center gap-1">
+                      <span>📁 Browse PDF</span>
+                      <input type="file" accept=".pdf,.ppt,.pptx" class="hidden" onchange="handleExtraLocalNoteFile(event)">
+                    </label>
+                    <div class="flex-1 flex gap-1">
+                      <input type="url" id="extraNoteLinkInput" placeholder="Paste Drive link..." class="flex-1 px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                      <button type="button" onclick="addExtraNoteByLink()" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer">Add</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        html += `</div>`;
+      }
+
+      // Summary & Action Confirmation Box
+      html += `
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 text-xs">
+            <span class="text-lg">${selectedRecsCount > 0 ? '✅' : '⚠️'}</span>
+            <div>
+              <p class="font-bold text-slate-800 dark:text-slate-200">
+                ${selectedRecsCount > 0 ? (selectedNotesCount > 0 ? 'Full Lecture Selected (Notes + Audio)' : 'Audio-Only Selected') : 'No Audio Recording Selected'}
+              </p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                ${selectedRecsCount} recording(s), ${selectedNotesCount} lecture note(s) will be included in the study guide.
+              </p>
+            </div>
+          </div>
+          <button type="button" onclick="startProcessing(false)"
+                  ${selectedRecsCount === 0 ? 'disabled' : ''}
+                  class="w-full sm:w-auto px-4 py-2 rounded-lg ${selectedRecsCount > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs' : 'bg-slate-300 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <span>✨ Generate Study Guide PDF</span>
+          </button>
+        </div>
+      `;
+
+      // Available sessions chips if any
+      if (data.available_sessions && data.available_sessions.length > 0) {
+        html += `
+          <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Other Sessions in this Course Folder:</span>
+            <div class="flex flex-wrap gap-1">
+              ${data.available_sessions.map(s => `
+                <button type="button" onclick="setSessionQueryAndSearch('${s}')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition">
+                  ${s}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      resultBox.innerHTML = html;
+    }
+
+    function toggleRecordItem(index, isChecked) {
+      if (currentFolderSearchData && currentFolderSearchData.records && currentFolderSearchData.records[index]) {
+        currentFolderSearchData.records[index].selected = isChecked;
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function toggleNoteItem(index, isChecked) {
+      if (currentFolderSearchData && currentFolderSearchData.notes && currentFolderSearchData.notes[index]) {
+        currentFolderSearchData.notes[index].selected = isChecked;
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function setAllRecordsSelected(val) {
+      if (isGenerating) return;
+      if (currentFolderSearchData && currentFolderSearchData.records) {
+        currentFolderSearchData.records.forEach(r => r.selected = val);
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function setAllNotesSelected(val) {
+      if (isGenerating) return;
+      if (currentFolderSearchData && currentFolderSearchData.notes) {
+        currentFolderSearchData.notes.forEach(n => n.selected = val);
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function toggleAddNoteDrawer() {
+      isAddNoteDrawerOpen = !isAddNoteDrawerOpen;
+      const drawer = document.getElementById('addNoteDrawer');
+      if (drawer) {
+        if (isAddNoteDrawerOpen) drawer.classList.remove('hidden');
+        else drawer.classList.add('hidden');
+      }
+    }
+
+    function addNoteFromCourseFolder(encodedName) {
+      const name = decodeURIComponent(encodedName);
+      if (!currentFolderSearchData || !currentFolderSearchData.all_course_notes) return;
+      const found = currentFolderSearchData.all_course_notes.find(n => n.name === name);
+      if (found) {
+        const newNote = Object.assign({}, found, {
+          selected: true,
+          is_added: true,
+          is_continued: true
+        });
+        if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
+        currentFolderSearchData.notes.push(newNote);
+        isAddNoteDrawerOpen = false;
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function removeAddedNoteItem(index) {
+      if (currentFolderSearchData && currentFolderSearchData.notes && currentFolderSearchData.notes[index]) {
+        currentFolderSearchData.notes.splice(index, 1);
+        renderFolderMaterialsUI();
+      }
+    }
+
+    function handleExtraLocalNoteFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!window.extraLocalFiles) window.extraLocalFiles = [];
+      window.extraLocalFiles.push(file);
+
+      if (!currentFolderSearchData) currentFolderSearchData = { records: [], notes: [] };
+      if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
+
+      currentFolderSearchData.notes.push({
+        name: file.name,
+        size: file.size,
+        is_notes: true,
+        is_local: true,
+        is_added: true,
+        is_continued: true,
+        category: 'lecture_slide',
+        selected: true
+      });
+      isAddNoteDrawerOpen = false;
+      renderFolderMaterialsUI();
+    }
+
+    function addExtraNoteByLink() {
+      const inp = document.getElementById('extraNoteLinkInput');
+      const link = (inp ? inp.value : '').trim();
+      if (!link) return;
+      if (!currentFolderSearchData) currentFolderSearchData = { records: [], notes: [] };
+      if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
+
+      let inferredName = "Continued_Lecture_Notes.pdf";
+      try {
+        const p = new URL(link).pathname;
+        const fn = p.split('/').pop();
+        if (fn && fn.includes('.')) inferredName = fn;
+      } catch (e) {}
+
+      currentFolderSearchData.notes.push({
+        name: inferredName,
+        url: link,
+        is_notes: true,
+        is_local: false,
+        is_added: true,
+        is_continued: true,
+        category: 'lecture_slide',
+        selected: true
+      });
+      if (inp) inp.value = '';
+      isAddNoteDrawerOpen = false;
+      renderFolderMaterialsUI();
+    }
+
+    function setFormLocked(locked) {
+      isGenerating = locked;
+
+      // File inputs
+      const audioInput = document.getElementById('audioInput');
+      const notesInput = document.getElementById('notesInput');
+      if (audioInput) audioInput.disabled = locked;
+      if (notesInput) notesInput.disabled = locked;
+
+      // Dynamic link inputs
+      document.querySelectorAll('.audio-link-input, .notes-link-input, .remove-audio-link-btn, .remove-notes-link-btn').forEach(el => {
+        el.disabled = locked;
+      });
+
+      // Folder search buttons
+      const searchFolderBtn = document.getElementById('searchFolderBtn');
+      if (searchFolderBtn) searchFolderBtn.disabled = locked;
+
+      // Dropzone visual cues
+      const dropzone = document.getElementById('dropzone');
+      const notesDropzone = document.getElementById('notesDropzone');
+      if (dropzone) {
+        if (locked) {
+          dropzone.classList.add('opacity-75', 'cursor-not-allowed');
+          dropzone.setAttribute('aria-disabled', 'true');
+        } else {
+          dropzone.classList.remove('opacity-75', 'cursor-not-allowed');
+          dropzone.removeAttribute('aria-disabled');
+        }
+      }
+      if (notesDropzone) {
+        if (locked) {
+          notesDropzone.classList.add('opacity-75', 'cursor-not-allowed');
+          notesDropzone.setAttribute('aria-disabled', 'true');
+        } else {
+          notesDropzone.classList.remove('opacity-75', 'cursor-not-allowed');
+          notesDropzone.removeAttribute('aria-disabled');
+        }
+      }
+
+      // Remove notes button
+      const clearNotesBtn = document.getElementById('clearNotesBtn');
+      if (clearNotesBtn) {
+        clearNotesBtn.disabled = locked;
+        if (locked) {
+          clearNotesBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          clearNotesBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
+      // Text inputs, selects, ranges & buttons
+      const elementIds = [
+        'startSlideInput', 'endSlideInput',
+        'folderUrlInput', 'folderSessionQueryInput',
+        'tabUploadBtn', 'tabLinkBtn', 'tabFolderBtn',
+        'courseInput', 'lecturerInput',
+        'newSubjectInput', 'studyMode', 'modelSelect',
+        'includeDiagrams', 'includeExam', 'includeTranscript', 'saveMediaToDrive',
+        'processBtn', 'demoBtn', 'resetSubjectsBtn', 'addSubjectBtn'
+      ];
+      elementIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.disabled = locked;
+          if (locked) {
+            el.classList.add('opacity-70', 'cursor-not-allowed');
+          } else {
+            el.classList.remove('opacity-70', 'cursor-not-allowed');
+          }
+        }
+      });
+
+      // Subject presets badges
+      const subjectBadges = document.getElementById('subjectBadgesContainer');
+      if (subjectBadges) {
+        if (locked) {
+          subjectBadges.classList.add('pointer-events-none', 'opacity-60');
+        } else {
+          subjectBadges.classList.remove('pointer-events-none', 'opacity-60');
+        }
+      }
+
+      // Selection Lock Banner
+      const lockBanner = document.getElementById('selectionLockBanner');
+      if (lockBanner) {
+        if (locked) {
+          lockBanner.classList.remove('hidden');
+        } else {
+          lockBanner.classList.add('hidden');
+        }
+      }
+    }
+
+    async function startProcessing(isDemo) {
+      const errorBox = document.getElementById('errorBox');
+      errorBox.classList.add('hidden');
+      errorBox.className = 'p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/80 text-red-700 dark:text-red-300 text-xs font-medium space-y-1';
+      document.getElementById('errorTitle').innerText = "An error occurred";
+      document.getElementById('retryBtn').classList.add('hidden');
+      lastWasDemo = isDemo;
+      
+      if (!isDemo && !hasApiKey) {
+        openKeyModal();
+        showError("A Gemini API Key is required to transcribe live audio files. Please enter your API key in the popup, or use 'Instant Demo' to test without a key.");
+        return;
+      }
+
+      const formData = new FormData();
+      const chosenModel = document.getElementById('modelSelect') ? document.getElementById('modelSelect').value : 'gemini-3.8-flash';
+      formData.append('model', chosenModel);
+      formData.append('study_mode', document.getElementById('studyMode').value);
+      formData.append('include_diagrams', document.getElementById('includeDiagrams').checked);
+      formData.append('include_exam_questions', document.getElementById('includeExam').checked);
+      formData.append('include_transcript', document.getElementById('includeTranscript').checked);
+      formData.append('save_media_to_drive', document.getElementById('saveMediaToDrive') ? document.getElementById('saveMediaToDrive').checked : false);
+      
+      const courseHint = document.getElementById('courseInput') ? document.getElementById('courseInput').value.trim() : '';
+      const lecturerHint = document.getElementById('lecturerInput') ? document.getElementById('lecturerInput').value.trim() : '';
+      if (courseHint) formData.append('course_hint', courseHint);
+      if (lecturerHint) formData.append('lecturer_hint', lecturerHint);
+
+      const startSlideVal = document.getElementById('startSlideInput') ? document.getElementById('startSlideInput').value.trim() : '';
+      const endSlideVal = document.getElementById('endSlideInput') ? document.getElementById('endSlideInput').value.trim() : '';
+      if (startSlideVal) formData.append('start_slide', startSlideVal);
+      if (endSlideVal) formData.append('end_slide', endSlideVal);
+
+      if (isDemo) {
+        formData.append('demo_mode', 'true');
+      } else {
+        if (currentIntakeMode === 'upload') {
+          if (!selectedFile) {
+            showError("Please select a lecture audio file to upload, or switch to 'Drive Links' tab.");
+            return;
+          }
+          formData.append('audio', selectedFile);
+          if (selectedNotesFile) {
+            formData.append('notes', selectedNotesFile);
+          }
+        } else if (currentIntakeMode === 'link') {
+          const audioInputs = document.querySelectorAll('.audio-link-input');
+          const audioUrls = Array.from(audioInputs).map(inp => inp.value.trim()).filter(v => v.length > 0);
+          
+          const notesInputs = document.querySelectorAll('.notes-link-input');
+          const notesUrls = Array.from(notesInputs).map(inp => inp.value.trim()).filter(v => v.length > 0);
+
+          if (audioUrls.length === 0) {
+            showError("Please enter at least one Google Drive link for your lecture audio recording.");
+            return;
+          }
+          formData.append('audio_urls', JSON.stringify(audioUrls));
+          if (notesUrls.length > 0) {
+            formData.append('notes_urls', JSON.stringify(notesUrls));
+          }
+        } else if (currentIntakeMode === 'folder') {
+          const folderUrl = document.getElementById('folderUrlInput') ? document.getElementById('folderUrlInput').value.trim() : '';
+          const sessionQuery = document.getElementById('folderSessionQueryInput') ? document.getElementById('folderSessionQueryInput').value.trim() : '';
+          if (!folderUrl) {
+            showError("Please enter a Google Drive course folder link or select a course above.");
+            return;
+          }
+          formData.append('folder_url', folderUrl);
+          if (sessionQuery) {
+            formData.append('session_query', sessionQuery);
+          }
+          if (currentFolderSearchData) {
+            const selectedRecords = (currentFolderSearchData.records || []).filter(r => r.selected !== false);
+            const selectedNotes = (currentFolderSearchData.notes || []).filter(n => n.selected !== false);
+
+            if (!isDemo && selectedRecords.length === 0) {
+              showError("Please check at least one audio recording to process.");
+              return;
+            }
+
+            formData.append('folder_selection_mode', selectedNotes.length > 0 ? 'both' : 'record_only');
+            formData.append('selected_items', JSON.stringify({
+              records: selectedRecords,
+              notes: selectedNotes
+            }));
+
+            // Handle any extra local uploaded note files
+            if (window.extraLocalFiles && window.extraLocalFiles.length > 0) {
+              window.extraLocalFiles.forEach(f => {
+                formData.append('notes', f);
+              });
+            }
+
+            // Handle any extra notes URLs
+            const noteUrlsFromItems = selectedNotes.filter(n => n.url).map(n => n.url);
+            if (noteUrlsFromItems.length > 0) {
+              formData.append('notes_urls', JSON.stringify(noteUrlsFromItems));
+            }
+          }
+        }
+      }
+
+      setFormLocked(true);
+      document.getElementById('progressSection').classList.remove('hidden');
+      document.getElementById('resultsSection').classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/process_audio', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          let errorMsg = "Processing request failed";
+          const rawText = await res.text();
+          try {
+            const errData = JSON.parse(rawText);
+            errorMsg = errData.detail || errorMsg;
+          } catch (jsonErr) {
+            errorMsg = rawText || errorMsg;
+          }
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        activeJobId = data.job_id;
+        pollStatus();
+      } catch (e) {
+        showError(e.message);
+        document.getElementById('progressSection').classList.add('hidden');
+        setFormLocked(false);
+      }
+    }
+
+    function pollStatus() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        if (!activeJobId) return;
+        try {
+          const res = await fetch(`/api/status/${activeJobId}`);
+          if (res.status === 404) {
+            clearInterval(pollInterval);
+            activeJobId = null;
+            document.getElementById('progressSection').classList.add('hidden');
+            setFormLocked(false);
+            showError("This job is no longer tracked by the server (it may have been restarted). Please start the generation again.");
+            document.getElementById('retryBtn').classList.remove('hidden');
+            return;
+          }
+          if (!res.ok) return;
+          const job = await res.json();
+
+          // Update UI
+          document.getElementById('progressPercent').innerText = `${job.progress}%`;
+          document.getElementById('progressBar').style.width = `${job.progress}%`;
+          document.getElementById('progressStatusText').innerText = job.status_message;
+
+          // Highlight steps
+          const activeStepClass = 'p-2 rounded bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-bold border border-brand-300 dark:border-brand-700';
+          if (job.progress >= 15) document.getElementById('stepAudio').className = activeStepClass;
+          if (job.progress >= 40) document.getElementById('stepTranslate').className = activeStepClass;
+          if (job.progress >= 70) document.getElementById('stepAudit').className = activeStepClass;
+          if (job.progress >= 85) document.getElementById('stepVisuals').className = activeStepClass;
+          if (job.progress >= 95) document.getElementById('stepPDF').className = activeStepClass;
+
+          if (job.status === 'completed') {
+            clearInterval(pollInterval);
+            document.getElementById('progressSection').classList.add('hidden');
+            setFormLocked(false);
+            displayResults(job.result);
+            loadHistory();
+          } else if (job.status === 'failed') {
+            clearInterval(pollInterval);
+            document.getElementById('progressSection').classList.add('hidden');
+            setFormLocked(false);
+            showError(job.error || "Generation encountered a failure");
+            document.getElementById('retryBtn').classList.remove('hidden');
+          }
+        } catch (e) {
+          console.error("Polling error", e);
+        }
+      }, 1500);
+    }
+
+    function showError(msg) {
+      const errorBox = document.getElementById('errorBox');
+      errorBox.className = 'p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/80 text-red-700 dark:text-red-300 text-xs font-medium space-y-2';
+      errorBox.classList.remove('hidden');
+      let displayMsg = msg;
+      if (msg && (msg.includes("503") || msg.includes("UNAVAILABLE"))) {
+        displayMsg = "Google's Gemini servers are temporarily experiencing high demand (503 Service Unavailable). Spikes in demand are temporary and typically clear within 15–30 seconds. Please wait a moment and click 'Retry', or choose a different model in the top bar.";
+      }
+      document.getElementById('errorMessage').innerText = displayMsg;
+    }
+
+    function retryLastJob() {
+      document.getElementById('retryBtn').classList.add('hidden');
+      startProcessing(lastWasDemo);
+    }
+
+    async function loadHistory() {
+      const container = document.getElementById('historyContainer');
+      try {
+        const res = await fetch('/api/history');
+        if (!res.ok) throw new Error('Could not load local history');
+        const entries = await res.json();
+        container.innerHTML = '';
+        if (!entries.length) {
+          container.textContent = 'No saved guides yet.';
+          return;
+        }
+        entries.forEach(entry => {
+          const result = entry.result;
+          const row = document.createElement('div');
+          row.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5';
+          const info = document.createElement('div');
+          const title = document.createElement('p');
+          title.className = 'font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 flex-wrap';
+          title.textContent = result.lecture_title || entry.source_name;
+          if (entry.notes_reference || result.notes_reference) {
+            const badge = document.createElement('span');
+            badge.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800';
+            badge.textContent = `📑 ${entry.notes_reference || result.notes_reference}`;
+            title.appendChild(badge);
+          }
+          const meta = document.createElement('p');
+          meta.className = 'text-[11px] text-slate-500 dark:text-slate-400';
+          const date = new Date(entry.created_at).toLocaleString();
+          meta.textContent = `${result.course_name || 'Unknown course'} • ${entry.study_mode || 'detailed'} • ${date}`;
+          info.append(title, meta);
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-2 shrink-0';
+
+          const link = document.createElement('a');
+          link.className = 'px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer';
+          link.href = `/api/download/${encodeURIComponent(result.pdf_filename)}`;
+          link.download = '';
+          link.innerHTML = '<span>📥</span> Download PDF';
+
+          const reviewBtn = document.createElement('button');
+          reviewBtn.className = 'px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition cursor-pointer';
+          reviewBtn.textContent = 'Review';
+          reviewBtn.onclick = () => openHistoryEntry(entry.id, reviewBtn);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/60 transition flex items-center gap-1 cursor-pointer text-xs font-semibold';
+          delBtn.title = 'Delete from records and disk';
+          delBtn.innerHTML = '<span>🗑️</span> <span class="hidden sm:inline">Delete</span>';
+          delBtn.onclick = (e) => deleteHistoryEntry(entry.id, result.lecture_title || entry.source_name, e);
+
+          actions.append(reviewBtn, link, delBtn);
+          row.append(info, actions);
+          container.appendChild(row);
+        });
+      } catch (e) {
+        container.textContent = 'Local history is unavailable right now.';
+      }
+    }
+
+    let currentResultHistoryId = null;
+
+    async function openHistoryEntry(historyId, button) {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Loading…';
+      try {
+        const res = await fetch(`/api/history/${encodeURIComponent(historyId)}`);
+        if (!res.ok) throw new Error('This saved guide could not be loaded.');
+        const entry = await res.json();
+        if (!entry.result || !entry.result.guide) throw new Error('This guide does not contain reviewable study content.');
+        displayResults(entry.result);
+        currentResultHistoryId = entry.id;
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        alert(error.message || 'Could not open this saved guide.');
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    async function deleteHistoryEntry(historyId, title, event) {
+      if (event) event.stopPropagation();
+      const confirmMsg = title ? `Are you sure you want to delete "${title}" from your records and local disk?` : 'Are you sure you want to delete this study guide from your records and local disk?';
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const res = await fetch(`/api/history/${encodeURIComponent(historyId)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showSuccessToast('Study guide deleted from records and disk.');
+          if (currentResultHistoryId === historyId) {
+            document.getElementById('resultsSection').classList.add('hidden');
+            currentResultHistoryId = null;
+          }
+          loadHistory();
+        } else {
+          alert(data.detail || data.message || 'Failed to delete record.');
+        }
+      } catch (err) {
+        alert('Error communicating with server to delete record: ' + err);
+      }
+    }
+
+    async function deleteCurrentResult() {
+      if (currentResultHistoryId) {
+        deleteHistoryEntry(currentResultHistoryId, document.getElementById('resLectureTitle').innerText);
+        return;
+      }
+      try {
+        const res = await fetch('/api/history');
+        if (res.ok) {
+          const list = await res.json();
+          const curHref = document.getElementById('downloadBtn').getAttribute('href') || '';
+          const curPdf = decodeURIComponent(curHref.replace('/api/download/', ''));
+          const match = list.find(e => e.result && (e.result.pdf_filename === curPdf || encodeURIComponent(e.result.pdf_filename) === curPdf));
+          if (match) {
+            deleteHistoryEntry(match.id, document.getElementById('resLectureTitle').innerText);
+            return;
+          }
+        }
+      } catch (e) {}
+      alert("Could not locate record ID. Please delete directly from the 'Recent study guides' list below.");
+    }
+
+
+    function displayResults(data) {
+      document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('resLectureTitle').innerText = data.lecture_title;
+
+      const notesRef = data.notes_reference || (data.guide && data.guide.notes_reference);
+      const notesAudited = Boolean(data.notes_audited || (data.verification_report && data.verification_report.notes_audited) || notesRef);
+      const notesLabel = notesRef ? ` • 📑 Slides: ${notesRef}` : '';
+      document.getElementById('resCourseLecturer').innerText = `${data.course_name} • Instructor: ${data.lecturer_name}${notesLabel}`;
+      
+      document.getElementById('downloadBtn').href = `/api/download/${encodeURIComponent(data.pdf_filename)}`;
+
+      // Drive sync badge
+      const driveBadge = document.getElementById('resDriveBadge');
+      const driveBadgeText = document.getElementById('resDriveBadgeText');
+      if (data.drive_pdf_path) {
+        if (driveBadge && driveBadgeText) {
+          driveBadge.classList.remove('hidden');
+          const driveName = document.createElement('strong');
+          driveName.className = 'font-bold underline';
+          driveName.textContent = data.drive_pdf_filename || 'Study Guide.pdf';
+          driveBadgeText.replaceChildren('Saved directly to Google Drive: ', driveName);
+        }
+      } else {
+        if (driveBadge) driveBadge.classList.add('hidden');
+      }
+
+      // Refresh history and set currentResultHistoryId
+      loadHistory().then(() => {
+        fetch('/api/history').then(r => r.json()).then(list => {
+          const match = list.find(e => e.result && e.result.pdf_filename === data.pdf_filename);
+          if (match) currentResultHistoryId = match.id;
+        }).catch(() => {});
+      }).catch(() => {});
+
+      document.getElementById('metricSections').innerText = data.sections_count;
+      document.getElementById('metricAlerts').innerText = data.alerts_count;
+      document.getElementById('metricDiagrams').innerText = data.diagrams_count;
+      document.getElementById('metricQuestions').innerText = data.exam_questions_count;
+      document.getElementById('countHighlightsTab').innerText = data.alerts_count;
+
+      // Populate Audio & Slides Fidelity & Verification Card
+      const report = data.verification_report || (data.guide && data.guide.verification_report);
+      const verifCard = document.getElementById('verificationCard');
+      const verifTitle = document.getElementById('verifBadgeTitle');
+      const verifSummary = document.getElementById('verifSummary');
+      const verifIcon = document.getElementById('verifBadgeIcon');
+      const verifTimestamp = document.getElementById('verifTimestamp');
+      const reconcContainer = document.getElementById('verifReconciliationContainer');
+      const reconcList = document.getElementById('verifReconciliationList');
+
+      if (report) {
+        verifCard.classList.remove('hidden');
+        if (report.verified_at) {
+          try {
+            verifTimestamp.innerText = `Verified: ${new Date(report.verified_at).toLocaleTimeString()}`;
+          } catch (_) {
+            verifTimestamp.innerText = notesAudited ? 'Verified against audio & lecture slides' : 'Verified against audio recording';
+          }
+        }
+        const auditScopeTitle = notesAudited ? 'Audio & Slides Fidelity' : 'Audio Fidelity';
+        if (report.contradictions_detected > 0) {
+          verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-blue-200 dark:border-blue-800/60 bg-blue-50/30 dark:bg-blue-950/30 space-y-2.5';
+          verifIcon.className = 'w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold';
+          verifIcon.innerHTML = '&check;';
+          verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-blue-800 dark:text-blue-300';
+          verifTitle.innerText = `${auditScopeTitle} Audit: ${report.contradictions_detected} Issue(s) Reconciled`;
+          verifSummary.innerText = report.overall_fidelity_summary;
+
+          if (report.contradictions && report.contradictions.length > 0) {
+            reconcContainer.classList.remove('hidden');
+            reconcList.innerHTML = report.contradictions.map(c => `
+              <div class="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/60 space-y-1">
+                <p class="font-bold text-slate-800 dark:text-slate-100 text-xs">${c.section_title}</p>
+                <p class="text-red-600 dark:text-red-400 text-[11px]"><span class="font-semibold">Initial Claim:</span> ${c.guide_statement}</p>
+                <p class="text-emerald-700 dark:text-emerald-400 text-[11px]"><span class="font-semibold">Audio Truth:</span> ${c.audio_truth}</p>
+                <p class="text-brand-700 dark:text-brand-300 text-[11px] font-medium"><span class="font-semibold">Reconciliation:</span> ${c.correction_applied}</p>
+              </div>
+            `).join('');
+          } else {
+            reconcContainer.classList.add('hidden');
+          }
+        } else {
+          verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/30 space-y-2.5';
+          verifIcon.className = 'w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold';
+          verifIcon.innerHTML = '&check;';
+          verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-emerald-800 dark:text-emerald-300';
+          verifTitle.innerText = `${auditScopeTitle} & Scope Audit: 100% Verified`;
+          verifSummary.innerText = report.overall_fidelity_summary || (notesAudited
+            ? 'Cross-examined against original lecture recording and lecture slides. Zero contradictions or unmentioned slide leakages detected.'
+            : 'Cross-examined against original lecture recording. Zero contradictions detected.');
+          reconcContainer.classList.add('hidden');
+        }
+      } else {
+        verifCard.classList.add('hidden');
+      }
+
+      const guide = data.guide;
+      window.currentStudyGuide = guide;
+
+      // 1. Doctor's Exam Alerts
+      const alertsContainer = document.getElementById('alertsContainer');
+      alertsContainer.innerHTML = '';
+      let allAlerts = [];
+      guide.sections.forEach(s => {
+        if (s.doctor_alerts) allAlerts.push(...s.doctor_alerts);
+      });
+
+      allAlerts.forEach(a => {
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 border-l-4 border-l-amber-600 dark:border-l-amber-500 shadow-sm space-y-2';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide">⚠️ [!] DOCTOR'S EXAM ALERT: ${a.highlight_title}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-semibold border border-amber-300 dark:border-amber-800">${a.alert_type}</span>
+          </div>
+          <p class="text-xs font-mono text-amber-900 dark:text-amber-200 italic bg-amber-100/50 dark:bg-amber-900/30 p-2 rounded border border-amber-200 dark:border-amber-800/50">
+            <strong>Spoken Cue:</strong> &ldquo;${a.cue_detected}&rdquo;
+          </p>
+          <p class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
+            <strong>Core Concept:</strong> ${a.alert_content}
+          </p>
+          <p class="text-xs text-red-700 dark:text-red-400 font-medium">
+            <strong>Exam Warning / Pitfall:</strong> ${a.exam_impact}
+          </p>
+        `;
+        alertsContainer.appendChild(card);
+      });
+
+      // 2. Chapters & Diagrams
+      const chaptersContainer = document.getElementById('chaptersContainer');
+      chaptersContainer.innerHTML = '';
+      guide.sections.forEach(s => {
+        const secDiv = document.createElement('div');
+        secDiv.className = 'glass-card rounded-2xl p-6 space-y-4';
+        
+        let bulletsHtml = '';
+        if (s.key_bullet_points) {
+          bulletsHtml = `<ul class="list-disc list-inside space-y-1 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/70 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800">
+            ${s.key_bullet_points.map(b => `<li>${b}</li>`).join('')}
+          </ul>`;
+        }
+
+        // Render diagram images if present
+        let diagsHtml = '';
+        if (s.diagrams && s.diagrams.length > 0) {
+          diagsHtml = s.diagrams.map(d => `
+            <div class="p-4 bg-white dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-center">
+              <img src="/assets/diagram_${d.diagram_id}.png" alt="${d.title}" class="mx-auto rounded max-h-80 object-contain shadow-sm bg-white p-2">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 italic">Figure: ${d.title} — ${d.caption}</p>
+            </div>
+          `).join('');
+        }
+
+        // Render tables
+        let tablesHtml = '';
+        if (s.tables && s.tables.length > 0) {
+          tablesHtml = s.tables.map(t => `
+            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div class="bg-brand-900 dark:bg-slate-950 text-white text-xs font-bold px-4 py-2 border-b border-brand-800 dark:border-slate-800">${t.title}</div>
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-slate-700">
+                  <tr>${t.columns.map(c => `<th class="p-2.5">${c}</th>`).join('')}</tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  ${t.rows.map((r, i) => `
+                    <tr class="${i % 2 === 0 ? 'bg-white dark:bg-slate-900/60' : 'bg-slate-50 dark:bg-slate-800/40'}">
+                      ${r.map(cell => `<td class="p-2.5 text-slate-700 dark:text-slate-300">${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('');
+        }
+
+        // Render formulas
+        let formulasHtml = '';
+        if (s.formulas && s.formulas.length > 0) {
+          formulasHtml = s.formulas.map((f, fIdx) => `
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 border-l-4 border-l-brand-600 dark:border-l-brand-500 space-y-2">
+              <span class="text-xs font-bold text-brand-900 dark:text-brand-300">📐 Equation ${fIdx+1}: ${f.formula_name}</span>
+              <div class="p-3 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 text-center font-mono font-bold text-sm text-slate-800 dark:text-slate-100 shadow-sm">
+                ${f.plain_text_expression || f.latex_expression}
+              </div>
+              ${f.variables_explanation && f.variables_explanation.length > 0 ? `
+                <p class="text-[11px] text-slate-600 dark:text-slate-400"><strong>Where:</strong> ${f.variables_explanation.join(' • ')}</p>
+              ` : ''}
+              ${f.exam_application ? `
+                <p class="text-[11px] text-brand-700 dark:text-brand-400 italic"><strong>Exam Note:</strong> ${f.exam_application}</p>
+              ` : ''}
+            </div>
+          `).join('');
+        }
+
+        secDiv.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-base font-bold text-brand-800 dark:text-brand-300">Chapter ${s.section_number}: ${s.topic_title}</h3>${s.source_reference ? `<span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">⏱ ${s.source_reference}</span>` : ''}</div>
+          <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">${s.detailed_explanation}</p>
+          ${bulletsHtml}
+          ${formulasHtml}
+          ${diagsHtml}
+          ${tablesHtml}
+        `;
+        chaptersContainer.appendChild(secDiv);
+      });
+
+      // 3. Exam Prep
+      const examContainer = document.getElementById('examContainer');
+      examContainer.innerHTML = '';
+      guide.exam_readiness_section.forEach((q, idx) => {
+        const qCard = document.createElement('div');
+        qCard.className = 'glass-card rounded-2xl p-5 space-y-3';
+        
+        let optsHtml = '';
+        if (q.options && q.options.length > 0) {
+          optsHtml = `<div class="space-y-1.5 pl-2">
+            ${q.options.map(opt => `<div class="text-xs text-slate-700 dark:text-slate-300 font-medium">${opt}</div>`).join('')}
+          </div>`;
+        }
+
+        qCard.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-brand-700 dark:text-brand-400">Question ${q.question_number} (${q.question_type})</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 font-bold">${q.probability}</span>
+          </div>
+          <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">${q.question_prompt}</p>
+          ${optsHtml}
+          
+          <div class="pt-2">
+            <button onclick="toggleAnswer('ans_${idx}')" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 cursor-pointer">
+              ▶ Show/Hide Model Answer & Rubric
+            </button>
+            <div id="ans_${idx}" class="hidden mt-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs space-y-2">
+              <p class="font-bold text-emerald-900 dark:text-emerald-300">&check; Model Answer:</p>
+              <p class="text-emerald-800 dark:text-emerald-200 whitespace-pre-line font-medium">${q.correct_answer}</p>
+              <p class="text-slate-600 dark:text-slate-400"><strong>Rubric / Key Points:</strong> ${q.model_explanation}</p>
+              <p class="text-amber-800 dark:text-amber-300 italic"><strong>Doctor's Hint:</strong> &ldquo;${q.doctor_hint}&rdquo;</p>
+            </div>
+          </div>
+        `;
+        examContainer.appendChild(qCard);
+      });
+
+      // 4. Transcript
+      document.getElementById('transcriptContainer').innerText = guide.full_transcript_english;
+
+      // Switch to highlights tab by default
+      switchTab('tabHighlights');
+    }
+
+    function toggleAnswer(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('hidden');
+    }
+
+    function startRecallQuiz() {
+      const questions = (window.currentStudyGuide?.exam_readiness_section || []).filter(q => q.question_prompt && q.correct_answer);
+      if (!questions.length) return;
+      recallMissed = [];
+      document.getElementById('recallRetryMissedBtn').classList.add('hidden');
+      beginRecallQuiz(questions);
+    }
+
+    function startMissedRecallQuiz() {
+      if (!recallMissed.length) return;
+      const retryQuestions = [...recallMissed];
+      recallMissed = [];
+      document.getElementById('recallRetryMissedBtn').classList.add('hidden');
+      beginRecallQuiz(retryQuestions);
+    }
+
+    function beginRecallQuiz(questions) {
+      recallQuestions = questions;
+      recallIndex = 0;
+      recallScore = 0;
+      document.getElementById('recallComplete').classList.add('hidden');
+      document.getElementById('recallQuiz').classList.remove('hidden');
+      document.getElementById('recallStartBtn').textContent = 'Restart quiz';
+      renderRecallQuestion();
+    }
+
+    function renderRecallQuestion() {
+      const q = recallQuestions[recallIndex];
+      const total = recallQuestions.length;
+      document.getElementById('recallProgress').textContent = `Question ${recallIndex + 1} of ${total}`;
+      document.getElementById('recallScore').textContent = `${recallScore} got it`;
+      document.getElementById('recallProgressBar').style.width = `${(recallIndex / total) * 100}%`;
+      document.getElementById('recallPrompt').textContent = q.question_prompt;
+      const options = document.getElementById('recallOptions');
+      options.replaceChildren();
+      (q.options || []).forEach(option => {
+        const item = document.createElement('p'); item.textContent = option; options.appendChild(item);
+      });
+      const answer = document.getElementById('recallAnswer');
+      answer.replaceChildren();
+      [[`Model answer: ${q.correct_answer}`, 'font-semibold text-emerald-800 dark:text-emerald-200'],
+       [`Rubric: ${q.model_explanation || 'Review the key reasoning in the answer.'}`, 'text-slate-700 dark:text-slate-300'],
+       [`Lecture hint: ${q.doctor_hint || 'No specific lecturer hint was recorded.'}`, 'text-amber-800 dark:text-amber-300']].forEach(([text, cls]) => {
+        const p = document.createElement('p'); p.className = cls; p.textContent = text; answer.appendChild(p);
+      });
+      answer.classList.add('hidden');
+      document.getElementById('recallRevealBtn').classList.remove('hidden');
+      document.getElementById('recallRating').classList.add('hidden');
+      document.getElementById('recallRating').classList.remove('flex');
+    }
+
+    function revealRecallAnswer() {
+      document.getElementById('recallAnswer').classList.remove('hidden');
+      document.getElementById('recallRevealBtn').classList.add('hidden');
+      document.getElementById('recallRating').classList.remove('hidden');
+      document.getElementById('recallRating').classList.add('flex');
+    }
+
+    function rateRecallAnswer(gotIt) {
+      if (gotIt) recallScore++;
+      else recallMissed.push(recallQuestions[recallIndex]);
+      recallIndex++;
+      if (recallIndex < recallQuestions.length) return renderRecallQuestion();
+      document.getElementById('recallQuiz').classList.add('hidden');
+      document.getElementById('recallProgressBar').style.width = '100%';
+      const complete = document.getElementById('recallComplete');
+      complete.textContent = recallMissed.length
+        ? `Session complete: ${recallScore} of ${recallQuestions.length} marked “Got it”. Retry just the ${recallMissed.length} question${recallMissed.length === 1 ? '' : 's'} to review.`
+        : `Session complete: ${recallScore} of ${recallQuestions.length} marked “Got it”. Great recall.`;
+      complete.classList.remove('hidden');
+      document.getElementById('recallRetryMissedBtn').classList.toggle('hidden', recallMissed.length === 0);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-brand-600', 'dark:border-brand-500', 'text-brand-600', 'dark:text-brand-400');
+        b.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+      });
+
+      document.getElementById(tabId).classList.remove('hidden');
+
+      const btnMap = {
+        'tabHighlights': 'btnTabHighlights',
+        'tabChapters': 'btnTabChapters',
+        'tabExam': 'btnTabExam',
+        'tabTranscript': 'btnTabTranscript'
+      };
+      const activeBtn = document.getElementById(btnMap[tabId]);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+        activeBtn.classList.add('border-brand-600', 'dark:border-brand-500', 'text-brand-600', 'dark:text-brand-400');
+      }
+    }
+  </script>
+</body>
+</html>

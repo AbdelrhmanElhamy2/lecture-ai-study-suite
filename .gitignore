@@ -1,0 +1,58 @@
+# ==========================================
+# LectureAI Study Suite - Git Ignore Rules
+# ==========================================
+
+# 1. Environment variables & Secrets (CRITICAL: NEVER COMMIT API KEYS)
+.env
+*.env
+!.env.example
+*.pem
+*.key
+*.token
+
+# 2. Python Bytecode, Caches & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+ENV/
+
+# 3. User Runtime Storage & Uploads (User audio & slides)
+uploads/*
+!uploads/.gitkeep
+
+# 4. Generated Artifacts & Exported PDFs
+output_pdfs/*
+!output_pdfs/.gitkeep
+generated_assets/*
+!generated_assets/.gitkeep
+
+# 5. Local Session History & Working Caches
+lecture_history.json
+cached_last_guide.json
+
+# 6. Test Scratch Files & Render Outputs
+test_out/
+test_*.png
+test_*.txt
+test_*.ico
+test_*.pdf
+test_*.m4a
+test_*.mp3
+verify_render_pdf.py
+
+# 7. Operating System & IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.log
