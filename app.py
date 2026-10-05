@@ -8,7 +8,6 @@ from typing import Optional, List, Union, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from config import UPLOAD_DIR, OUTPUT_DIR, ASSETS_DIR, SUPPORTED_AUDIO_EXTS, SUPPORTED_NOTES_EXTS, get_gemini_api_key, set_gemini_api_key
 from pipeline import process_lecture
 import shutil
@@ -26,13 +25,24 @@ from link_downloader import (
 
 app = FastAPI(title="LectureAI Study Suite", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# The dashboard and API are served from the same local origin. Do not enable
+# cross-origin access; require browser mutations to come from that dashboard.
+ALLOWED_BROWSER_ORIGINS = {
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+}
+
+
+@app.middleware("http")
+async def protect_local_mutations(request, call_next):
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin = request.headers.get("origin")
+        if origin not in ALLOWED_BROWSER_ORIGINS:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Requests must come from the local LectureAI dashboard."},
+            )
+    return await call_next(request)
 
 # Mount generated assets for inline image viewing
 STATIC_DIR = Path(__file__).parent / "static"

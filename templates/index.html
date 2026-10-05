@@ -718,6 +718,67 @@
   </footer>
 
   <script>
+    // Render generated and filesystem-derived HTML through an inert template,
+    // then allow only the small set of elements/attributes used by this UI.
+    const SAFE_HTML_TAGS = new Set([
+      'A', 'B', 'BR', 'BUTTON', 'DIV', 'EM', 'H3', 'IMG', 'INPUT', 'LABEL',
+      'LI', 'P', 'SPAN', 'STRONG', 'TABLE', 'TBODY', 'TD', 'TH', 'THEAD', 'TR', 'UL'
+    ]);
+    const SAFE_NOARG_HANDLERS = new Set([
+      'addAudioLinkRow()', 'addNotesLinkRow()', 'addExtraNoteByLink()',
+      'toggleAddNoteDrawer()', 'setAllRecordsSelected(true)', 'setAllRecordsSelected(false)',
+      'setAllNotesSelected(true)', 'setAllNotesSelected(false)', 'startProcessing(false)',
+      'removeAudioLinkRow(this)', 'removeNotesLinkRow(this)',
+      "handleMultiLinkPaste(event, 'audio')", "handleMultiLinkPaste(event, 'notes')"
+    ]);
+
+    function isSafeInlineHandler(name, value) {
+      if (name === 'onclick' && SAFE_NOARG_HANDLERS.has(value)) return true;
+      if (name === 'onchange') {
+        return /^(?:toggleRecordItem|toggleNoteItem)\(\d+, this\.checked\)$/.test(value) ||
+          /^handleExtraLocalNoteFile\(event\)$/.test(value);
+      }
+      if (name === 'onclick') {
+        return /^removeAddedNoteItem\(\d+\)$/.test(value) ||
+          /^addNoteFromCourseFolder\('[A-Za-z0-9%._~-]*'\)$/.test(value) ||
+          /^toggleAnswer\('ans_\d+'\)$/.test(value);
+      }
+      if (name === 'onpaste') {
+        return value === "handleMultiLinkPaste(event, 'audio')" ||
+          value === "handleMultiLinkPaste(event, 'notes')";
+      }
+      return false;
+    }
+
+    function setSafeHtml(target, html) {
+      const template = document.createElement('template');
+      template.innerHTML = String(html ?? '');
+      const elements = [...template.content.querySelectorAll('*')];
+      for (const element of elements) {
+        if (!SAFE_HTML_TAGS.has(element.tagName)) {
+          element.replaceWith(document.createTextNode(element.textContent || ''));
+          continue;
+        }
+        for (const attribute of [...element.attributes]) {
+          const name = attribute.name.toLowerCase();
+          const value = attribute.value;
+          if (name.startsWith('on')) {
+            if (!isSafeInlineHandler(name, value)) element.removeAttribute(attribute.name);
+          } else if (!(
+            name === 'class' || name === 'title' || name === 'type' || name === 'placeholder' ||
+            name === 'value' || name === 'alt' || name === 'src' || name === 'id' || name === 'checked' ||
+            name === 'disabled' || name === 'aria-pressed' || name.startsWith('data-')
+          )) {
+            element.removeAttribute(attribute.name);
+          }
+          if (name === 'src' && !value.startsWith('/assets/') && !value.startsWith('/static/')) {
+            element.removeAttribute(attribute.name);
+          }
+        }
+      }
+      target.replaceChildren(template.content.cloneNode(true));
+    }
+
     let selectedFile = null;
     let selectedNotesFile = null;
     let activeJobId = null;
@@ -1127,14 +1188,14 @@
       if (!list) return;
       const row = document.createElement('div');
       row.className = 'audio-link-row flex items-center gap-2';
-      row.innerHTML = `
+      setSafeHtml(row, `
         <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] audio-part-label">Part 1:</span>
         <input type="url" class="audio-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
                placeholder="https://drive.google.com/file/d/1.../view?usp=sharing"
                value="${initialVal.replace(/"/g, '&quot;')}"
                onpaste="handleMultiLinkPaste(event, 'audio')">
         <button type="button" onclick="removeAudioLinkRow(this)" class="remove-audio-link-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove this audio part">✕</button>
-      `;
+      `);
       list.appendChild(row);
       updateAudioPartLabels();
     }
@@ -1166,14 +1227,14 @@
       if (!list) return;
       const row = document.createElement('div');
       row.className = 'notes-link-row flex items-center gap-2';
-      row.innerHTML = `
+      setSafeHtml(row, `
         <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] notes-deck-label">Deck 1:</span>
         <input type="url" class="notes-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                placeholder="https://drive.google.com/file/d/2.../view?usp=sharing"
                value="${initialVal.replace(/"/g, '&quot;')}"
                onpaste="handleMultiLinkPaste(event, 'notes')">
         <button type="button" onclick="removeNotesLinkRow(this)" class="remove-notes-link-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove this notes link">✕</button>
-      `;
+      `);
       list.appendChild(row);
       updateNotesDeckLabels();
     }
@@ -1222,7 +1283,12 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-2xs transition cursor-pointer flex items-center gap-1';
-            btn.innerHTML = `<span>🎓</span> <span class="truncate">${c.name}</span>`;
+            const icon = document.createElement('span');
+            icon.textContent = '🎓';
+            const label = document.createElement('span');
+            label.className = 'truncate';
+            label.textContent = c.name;
+            btn.append(icon, label);
             btn.onclick = () => selectCourseFolder(c.path, c.name);
             chips.appendChild(btn);
           });
@@ -1274,12 +1340,12 @@
 
       resultBox.classList.remove('hidden');
       resultBox.className = 'p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3';
-      resultBox.innerHTML = `
+      setSafeHtml(resultBox, `
         <div class="flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
           <span class="animate-spin">⏳</span>
           <span>Scanning course folder for '${sessionQuery}' recordings & slides...</span>
         </div>
-      `;
+      `);
 
       if (spinner) spinner.classList.remove('hidden');
       if (btnText) btnText.innerText = "Scanning...";
@@ -1303,12 +1369,12 @@
         renderFolderSearchResults(data);
       } catch (err) {
         resultBox.className = 'p-4 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-xs space-y-1.5';
-        resultBox.innerHTML = `
+        setSafeHtml(resultBox, `
           <div class="font-bold flex items-center gap-1.5">
             <span>❌</span> <span>Error scanning folder:</span>
           </div>
           <p class="leading-relaxed">${err.message}</p>
-        `;
+        `);
       } finally {
         if (spinner) spinner.classList.add('hidden');
         if (btnText) btnText.innerText = "🔍 Find Materials";
@@ -1584,7 +1650,7 @@
                                 <p class="truncate font-medium text-slate-800 dark:text-slate-200 text-xs" title="${an.name}">${an.name}</p>
                                 <span class="text-[9px] text-slate-400">${an.category === 'sheet' ? 'Sheet' : 'Slide Deck'}</span>
                               </div>
-                              <button type="button" onclick="addNoteFromCourseFolder('${encodeURIComponent(an.name)}')"
+                              <button type="button" onclick="addNoteFromCourseFolder('${encodeURIComponent(an.name).replace(/[!'()*]/g, char => '%' + char.charCodeAt(0).toString(16).toUpperCase())}')"
                                       class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shrink-0 transition cursor-pointer">
                                 + Add
                               </button>
@@ -1649,7 +1715,7 @@
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Other Sessions in this Course Folder:</span>
             <div class="flex flex-wrap gap-1">
               ${data.available_sessions.map(s => `
-                <button type="button" onclick="setSessionQueryAndSearch('${s}')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition">
+                <button type="button" data-session-query="${s}" class="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer transition">
                   ${s}
                 </button>
               `).join('')}
@@ -1658,7 +1724,10 @@
         `;
       }
 
-      resultBox.innerHTML = html;
+      setSafeHtml(resultBox, html);
+      resultBox.querySelectorAll('[data-session-query]').forEach(button => {
+        button.addEventListener('click', () => setSessionQueryAndSearch(button.dataset.sessionQuery));
+      });
     }
 
     function toggleRecordItem(index, isChecked) {
@@ -2268,14 +2337,14 @@
 
           if (report.contradictions && report.contradictions.length > 0) {
             reconcContainer.classList.remove('hidden');
-            reconcList.innerHTML = report.contradictions.map(c => `
+            setSafeHtml(reconcList, report.contradictions.map(c => `
               <div class="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/60 space-y-1">
                 <p class="font-bold text-slate-800 dark:text-slate-100 text-xs">${c.section_title}</p>
                 <p class="text-red-600 dark:text-red-400 text-[11px]"><span class="font-semibold">Initial Claim:</span> ${c.guide_statement}</p>
                 <p class="text-emerald-700 dark:text-emerald-400 text-[11px]"><span class="font-semibold">Audio Truth:</span> ${c.audio_truth}</p>
                 <p class="text-brand-700 dark:text-brand-300 text-[11px] font-medium"><span class="font-semibold">Reconciliation:</span> ${c.correction_applied}</p>
               </div>
-            `).join('');
+            `).join(''));
           } else {
             reconcContainer.classList.add('hidden');
           }
@@ -2308,7 +2377,7 @@
       allAlerts.forEach(a => {
         const card = document.createElement('div');
         card.className = 'p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 border-l-4 border-l-amber-600 dark:border-l-amber-500 shadow-sm space-y-2';
-        card.innerHTML = `
+        setSafeHtml(card, `
           <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide">⚠️ [!] DOCTOR'S EXAM ALERT: ${a.highlight_title}</span>
             <span class="text-[10px] px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-semibold border border-amber-300 dark:border-amber-800">${a.alert_type}</span>
@@ -2322,7 +2391,7 @@
           <p class="text-xs text-red-700 dark:text-red-400 font-medium">
             <strong>Exam Warning / Pitfall:</strong> ${a.exam_impact}
           </p>
-        `;
+        `);
         alertsContainer.appendChild(card);
       });
 
@@ -2392,14 +2461,14 @@
           `).join('');
         }
 
-        secDiv.innerHTML = `
+        setSafeHtml(secDiv, `
           <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-base font-bold text-brand-800 dark:text-brand-300">Chapter ${s.section_number}: ${s.topic_title}</h3>${s.source_reference ? `<span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">⏱ ${s.source_reference}</span>` : ''}</div>
           <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">${s.detailed_explanation}</p>
           ${bulletsHtml}
           ${formulasHtml}
           ${diagsHtml}
           ${tablesHtml}
-        `;
+        `);
         chaptersContainer.appendChild(secDiv);
       });
 
@@ -2417,7 +2486,7 @@
           </div>`;
         }
 
-        qCard.innerHTML = `
+        setSafeHtml(qCard, `
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-brand-700 dark:text-brand-400">Question ${q.question_number} (${q.question_type})</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 font-bold">${q.probability}</span>
@@ -2436,7 +2505,7 @@
               <p class="text-amber-800 dark:text-amber-300 italic"><strong>Doctor's Hint:</strong> &ldquo;${q.doctor_hint}&rdquo;</p>
             </div>
           </div>
-        `;
+        `);
         examContainer.appendChild(qCard);
       });
 

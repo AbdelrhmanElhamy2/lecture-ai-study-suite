@@ -20,7 +20,7 @@
 
 University lectures in Engineering, Medicine, Science, and STEM often move fast. Spoken explanations frequently deviate from slides, professors drop verbal hints about exams, and technical terminology is mixed across dialects (such as English and spoken Arabic code-switching).
 
-**LectureAI** is an intelligent, multimodal academic companion. Feed it raw lecture audio (or video) and optional slide decks:
+**LectureAI** is an intelligent, multimodal academic companion. Feed it lecture audio and optional slide decks:
 
 1. **Listens & Translates**: Transcribes spoken audio, handles multilingual dialect code-switching, and synthesizes 100% academic English notes.
 2. **Grounds in Slides**: Matches spoken topics to slide decks, extracts precise formulas, and excludes unmentioned slide material.
@@ -84,7 +84,7 @@ Generates high-resolution vector diagrams via Matplotlib with collision-free lay
 ```mermaid
 flowchart TD
     subgraph INPUT["1. Input Sources"]
-        A["Spoken Lecture Audio / Video<br/>(.m4a, .mp3, .wav, .mp4)"]
+        A["Spoken Lecture Audio<br/>(.m4a, .mp3, .wav, .aac, .ogg, .flac, .webm, .wma)"]
         B["Lecture Slides / Notes<br/>(PDF, Markdown, Text)"]
         C["Cloud / Google Drive Links"]
     end
