@@ -524,6 +524,160 @@ class TestLectureAISuite(unittest.TestCase):
         finally:
             corrupt_path.unlink(missing_ok=True)
 
+    def test_16_demo_cleanliness_and_audit_badge_regression(self):
+        """Regression test for Item 1: demo output has no tofu boxes, no Amdahl's Law, correct Banker's, and DEMO badge."""
+        import pypdf
+        from mock_generator import get_sample_bilingual_lecture_guide
+        from pdf_builder import PDFStudyGuideBuilder, ARABIC_REGEX
+
+        guide = get_sample_bilingual_lecture_guide()
+
+        # 1. Verify Amdahl's Law is absent
+        for s in guide.sections:
+            self.assertNotIn("amdahl", s.topic_title.lower())
+            self.assertNotIn("amdahl", s.detailed_explanation.lower())
+            for bp in s.key_bullet_points:
+                self.assertNotIn("amdahl", bp.lower())
+            for f in getattr(s, "formulas", []):
+                self.assertNotIn("amdahl", f.formula_name.lower())
+
+        # 2. Verify Banker's algorithm step 1 arithmetic
+        q3 = guide.exam_readiness_section[2]
+        self.assertIn("releases its 2 allocated units", q3.correct_answer)
+        self.assertIn("New Available = 3 + 2 = 5 units", q3.correct_answer)
+
+        # 3. Verify clean doctor hints without Arabic or garbled quotes
+        for q in guide.exam_readiness_section:
+            if q.doctor_hint:
+                self.assertFalse(bool(ARABIC_REGEX.search(q.doctor_hint)), f"Arabic found in hint: {q.doctor_hint}")
+                self.assertNotIn("The doctor warned: ' '", q.doctor_hint)
+                self.assertNotIn("Doctor stated: ' Banker's algorithm !", q.doctor_hint)
+
+        # 4. Build PDF and verify page text
+        builder = PDFStudyGuideBuilder(guide, output_filename="Verified_Demo_Cleanliness.pdf")
+        pdf_path = builder.build()
+        self.assertTrue(pdf_path.exists())
+
+        reader = pypdf.PdfReader(str(pdf_path))
+        self.assertGreaterEqual(len(reader.pages), 7, "Demo guide should have at least 7 pages")
+
+        for idx, page in enumerate(reader.pages):
+            txt = page.extract_text() or ""
+            # Zero tofu box glyphs across all pages
+            self.assertNotIn("□", txt, f"Tofu box '□' found on page {idx + 1}")
+            self.assertNotIn("\ufffd", txt, f"Replacement character found on page {idx + 1}")
+            self.assertNotIn("\x00", txt, f"Null glyph found on page {idx + 1}")
+
+        # Page 1 checks
+        page1_txt = reader.pages[0].extract_text() or ""
+        self.assertIn("DEMO MODE", page1_txt)
+        self.assertIn("SIMULATION", page1_txt)
+        self.assertIn("DEMO MODE: SIMULATED", page1_txt)
+        # Must not display unbadged audit
+        self.assertNotIn("AUDIO FIDELITY & CONTRADICTION AUDIT: 100% VERIFIED", page1_txt)
+
+        # Page 2 & 7 checks
+        page2_txt = reader.pages[1].extract_text() or ""
+        self.assertNotIn("amdahl", page2_txt.lower())
+
+        page7_txt = reader.pages[6].extract_text() or ""
+        self.assertIn("releases its 2 allocated units", page7_txt)
+        self.assertIn("3 + 2 = 5 units", page7_txt)
+
+        # Clean up temporary test PDF
+        try:
+            pdf_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    def test_17_config_model_and_api_key_privacy(self):
+        """Regression test for Item 2 & Item 3: model single source of truth and API key never leaked."""
+        import os
+        from fastapi.testclient import TestClient
+        from app import app
+        import config
+
+        client = TestClient(app)
+
+        # 1. Config endpoint reports exactly config.DEFAULT_MODEL
+        resp = client.get("/api/config")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get("model"), config.DEFAULT_MODEL)
+        self.assertEqual(config.DEFAULT_MODEL, "gemini-3.8-flash")
+
+        # 2. Response never contains 'masked_key'
+        self.assertNotIn("masked_key", data)
+
+        # 3. Even with a simulated API key set, no characters of the key leak into the response
+        test_key = "AIzA_SECRET_TEST_KEY_987654321_XYZZY"
+        old_key = os.environ.get("GEMINI_API_KEY")
+        try:
+            os.environ["GEMINI_API_KEY"] = test_key
+            resp_keyed = client.get("/api/config")
+            self.assertEqual(resp_keyed.status_code, 200)
+            data_keyed = resp_keyed.json()
+            self.assertTrue(data_keyed.get("has_key"))
+            self.assertNotIn("masked_key", data_keyed)
+            # Ensure not even a 4-char fragment of the key appears in any value or the response text
+            self.assertNotIn("AIzA", resp_keyed.text)
+            self.assertNotIn("XYZZY", resp_keyed.text)
+            self.assertNotIn("SECRET", resp_keyed.text)
+            self.assertNotIn("987654321", resp_keyed.text)
+        finally:
+            if old_key is not None:
+                os.environ["GEMINI_API_KEY"] = old_key
+            else:
+                os.environ.pop("GEMINI_API_KEY", None)
+
+    def test_18_delete_flow_removes_file_and_updates_history(self):
+        """Regression test for Item 5b: delete flow removes throwaway PDF from disk and updates history."""
+        from fastapi.testclient import TestClient
+        from app import app, HISTORY_FILE, load_history
+        from config import OUTPUT_DIR
+        import json
+        import uuid
+
+        client = TestClient(app)
+
+        # Create throwaway test file in OUTPUT_DIR
+        test_pdf_name = f"test_throwaway_delete_{uuid.uuid4().hex[:8]}.pdf"
+        test_pdf_path = OUTPUT_DIR / test_pdf_name
+        test_pdf_path.write_bytes(b"%PDF-1.4 throwaway test content")
+        self.assertTrue(test_pdf_path.exists())
+
+        test_entry_id = str(uuid.uuid4())
+        history = load_history()
+        history.insert(0, {
+            "id": test_entry_id,
+            "created_at": "2026-10-08T00:00:00+00:00",
+            "source_name": "Test Throwaway",
+            "study_mode": "detailed",
+            "result": {
+                "pdf_filename": test_pdf_name,
+                "lecture_title": "Test Throwaway Title"
+            }
+        })
+        HISTORY_FILE.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        try:
+            # Send DELETE request
+            del_resp = client.delete(f"/api/history/{test_entry_id}")
+            self.assertEqual(del_resp.status_code, 200)
+            del_data = del_resp.json()
+            self.assertTrue(del_data.get("success"))
+            self.assertTrue(del_data.get("pdf_deleted"))
+
+            # Verify PDF file unlinked from disk
+            self.assertFalse(test_pdf_path.exists(), "Throwaway PDF file should have been deleted from disk")
+
+            # Verify entry no longer in history
+            updated_hist = load_history()
+            self.assertNotIn(test_entry_id, [h.get("id") for h in updated_hist])
+        finally:
+            # Cleanup if anything failed
+            test_pdf_path.unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()

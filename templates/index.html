@@ -221,7 +221,7 @@
             <div id="detectedCoursesBox" class="hidden p-3 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <span>⚡ Detected Laptop Courses (Fall 2026):</span>
+                  <span id="detectedCoursesHeaderLabel">⚡ Detected Courses:</span>
                 </span>
                 <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">&bull; Instant Access</span>
               </div>
@@ -245,7 +245,7 @@
                 <span>🔗</span> <span>Course Folder Link or Local Path:</span>
               </label>
               <div class="relative">
-                <input type="text" id="folderUrlInput" placeholder="https://drive.google.com/drive/folders/1...?usp=sharing OR G:\My Drive\fall 2026\Power Electronics"
+                <input type="text" id="folderUrlInput" placeholder="Google Drive folder URL or local path (e.g. G:\My Drive\fall 2026\CourseName)"
                        class="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               </div>
               <p class="text-[10px] text-slate-400 dark:text-slate-500">Works with public Google Drive folder links or your laptop's synced Google Drive folder.</p>
@@ -295,7 +295,7 @@
               <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
                 <span>&bull;</span> Step 1: Upload Lecture Recording
               </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Supported formats: MP3, WAV, M4A, AAC, OGG, WebM (Long lectures up to hours)</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Supported formats: MP3, WAV, M4A, AAC, OGG, WebM (Long lectures supported, up to 2 GB)</p>
               
               <!-- Drag and Drop Dropzone -->
               <div id="dropzone" 
@@ -883,7 +883,7 @@
         hasApiKey = data.has_key;
         if (data.has_key) {
           indicator.className = 'w-2 h-2 rounded-full bg-emerald-500';
-          text.innerText = `API Key Configured (${data.masked_key})`;
+          text.innerText = 'API Key: Configured';
         } else {
           indicator.className = 'w-2 h-2 rounded-full bg-amber-500';
           text.innerText = 'No API Key Set (Click to Add)';
@@ -1407,6 +1407,10 @@
         if (!box || !chips) return;
 
         if (data.success && data.courses && data.courses.length > 0) {
+          const headerLbl = document.getElementById('detectedCoursesHeaderLabel');
+          if (headerLbl) {
+            headerLbl.innerText = data.semester_name ? `⚡ Detected Courses (${data.semester_name}):` : '⚡ Detected Courses:';
+          }
           chips.innerHTML = '';
           data.courses.forEach(c => {
             const btn = document.createElement('button');
@@ -2502,6 +2506,14 @@
           } else {
             reconcContainer.classList.add('hidden');
           }
+        } else if (Boolean(report.is_simulation || data.is_demo || (data.guide && data.guide.is_demo))) {
+          verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-amber-300 dark:border-amber-800/60 bg-amber-50/30 dark:bg-amber-950/30 space-y-2.5';
+          verifIcon.className = 'w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xs font-bold';
+          verifIcon.innerHTML = '✦';
+          verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-amber-800 dark:text-amber-300';
+          verifTitle.innerText = `DEMO MODE: SIMULATED AUDIT`;
+          verifSummary.innerText = report.overall_fidelity_summary || 'Verified in simulation: 0 contradictions detected. 100% faithful to lecture simulation.';
+          reconcContainer.classList.add('hidden');
         } else {
           verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/30 space-y-2.5';
           verifIcon.className = 'w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold';

@@ -298,10 +298,13 @@ def background_process(
 async def get_detected_courses():
     r"""Returns detected courses found locally in G:\My Drive\fall 2026 or PC storage."""
     try:
+        from link_downloader import get_drive_fall_root
         courses = detect_local_fall_courses()
-        return {"success": True, "courses": courses}
+        root = get_drive_fall_root()
+        sem_name = root.name if root else None
+        return {"success": True, "courses": courses, "semester_name": sem_name}
     except Exception as e:
-        return {"success": False, "courses": [], "error": str(e)}
+        return {"success": False, "courses": [], "semester_name": None, "error": str(e)}
 
 
 @app.post("/api/search_course_folder")
@@ -324,8 +327,7 @@ async def get_config():
     from config import DEFAULT_MODEL
     key = get_gemini_api_key()
     has_key = bool(key and len(key) > 5)
-    masked = f"{key[:4]}...{key[-4:]}" if has_key else ""
-    return {"has_key": has_key, "masked_key": masked, "model": DEFAULT_MODEL}
+    return {"has_key": has_key, "model": DEFAULT_MODEL}
 
 
 @app.post("/api/set_key")

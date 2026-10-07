@@ -1,6 +1,7 @@
 from models import (
     LectureStudyGuide, LectureSection, DoctorAlert, TableDefinition,
-    DiagramDefinition, DiagramElement, ExamQuestion, KeyFormula
+    DiagramDefinition, DiagramElement, ExamQuestion, KeyFormula,
+    VerificationAuditReport
 )
 
 def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
@@ -14,6 +15,17 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
         lecturer_name="Prof. Tarek Mansour",
         lecture_date="Academic Term 2026",
         is_demo=True,
+        verification_report=VerificationAuditReport(
+            audit_passed=True,
+            contradictions_detected=0,
+            contradictions=[],
+            is_simulation=True,
+            overall_fidelity_summary="Verified in simulation: 0 contradictions detected. 100% faithful to lecture simulation.",
+            verified_at="Academic Term 2026",
+            notes_audited=True,
+            notes_reference="Slides 1–25 of 25 (Simulation Deck)",
+            scope_discrepancies_resolved=0
+        ),
         executive_summary=(
             "This lecture addresses fundamental challenges in concurrent multi-threaded execution. "
             "The professor explores race conditions, critical section criteria, Edsger Dijkstra's "

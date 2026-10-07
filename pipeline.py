@@ -116,6 +116,7 @@ def process_lecture(
     
     return {
         "success": True,
+        "is_demo": use_sample_demo,
         "pdf_path": str(pdf_path),
         "pdf_filename": pdf_path.name,
         "course_name": guide.course_name,
