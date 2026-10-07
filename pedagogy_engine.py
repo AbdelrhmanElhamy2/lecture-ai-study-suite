@@ -32,9 +32,20 @@ def slice_pdf_pages(
 
     try:
         reader = pypdf.PdfReader(str(input_pdf))
+        if getattr(reader, "is_encrypted", False):
+            try:
+                decrypted = reader.decrypt("")
+                if decrypted == 0:
+                    raise ValueError(f"The PDF '{input_pdf.name}' is password-protected. Please remove the password before uploading.")
+            except Exception as dec_err:
+                if "password-protected" in str(dec_err):
+                    raise
+                raise ValueError(f"The PDF '{input_pdf.name}' is password-protected. Please remove the password before uploading.")
         total_pages = len(reader.pages)
-    except Exception:
-        return input_pdf, "Attached lecture notes document"
+    except ValueError:
+        raise
+    except Exception as pdf_err:
+        raise ValueError(f"The PDF file '{input_pdf.name}' appears to be corrupted or unreadable ({pdf_err}). Please check the file and try again.")
 
     if total_pages == 0:
         return input_pdf, "Attached lecture notes (empty)"
@@ -110,6 +121,9 @@ CRITICAL INSTRUCTIONS:
      * COMPARISON_BAR: Sensor benchmarks, material stiffness/modulus comparisons, imaging modality resolution vs penetration trade-offs.
      * TIMELINE: Disease progression stages, clinical trial protocols, device lifecycle phases.
      * CONCEPT_MAP: Sensor classifications, biomaterial taxonomies, imaging physics branches.
+   - STRICT DIAGRAM TITLE & NODE COUNT FIDELITY:
+     * When a diagram title specifies a count (e.g. 'The Three Pillars of Power Electronics', 'Four Necessary Conditions'), the elements list MUST contain EXACTLY that number of elements (e.g. exactly 3 pillars: 'Power', 'Electronics', and 'Control').
+     * In CONCEPT_MAP diagrams, NEVER include the central overarching topic (e.g. 'Power Electronics') as an outer element; only the surrounding sub-disciplines or pillars should be elements.
    - Provide clear, descriptive English labels and subtitles for all diagram elements.
 
 6. MATHEMATICAL FORMULAS & GOVERNING EQUATIONS:

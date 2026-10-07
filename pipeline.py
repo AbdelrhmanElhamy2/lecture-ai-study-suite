@@ -53,6 +53,7 @@ def process_lecture(
     if use_sample_demo or not audio_paths:
         callback("Loading comprehensive bilingual lecture simulation...", 20)
         guide = get_sample_bilingual_lecture_guide()
+        guide.is_demo = True
         notes_demo_label = None
         if notes_paths or start_slide or end_slide:
             s_num = start_slide or 1
@@ -66,6 +67,7 @@ def process_lecture(
                 audit_passed=True,
                 contradictions_detected=0,
                 contradictions=[],
+                is_simulation=True,
                 overall_fidelity_summary=(
                     "Verified in simulation: 0 contradictions detected. 100% faithful to lecture recording and slides."
                     if notes_demo_label else
@@ -76,6 +78,8 @@ def process_lecture(
                 notes_reference=notes_demo_label,
                 scope_discrepancies_resolved=0
             )
+        else:
+            guide.verification_report.is_simulation = True
     else:
         for ap in audio_paths:
             if not ap.exists():

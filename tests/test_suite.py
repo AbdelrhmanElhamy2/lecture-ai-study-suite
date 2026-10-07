@@ -343,6 +343,187 @@ class TestLectureAISuite(unittest.TestCase):
         self.assertTrue(p3.exists())
         self.assertGreater(p3.stat().st_size, 5000)
 
+    def test_10_no_tofu_glyphs_regression(self):
+        """Regression test for Item 1: ensure zero tofu boxes ('□', '\\x00', '\\ufffd') in compiled PDF."""
+        guide = get_sample_bilingual_lecture_guide()
+        builder = PDFStudyGuideBuilder(guide, output_filename="Tofu_Glyph_Regression_Guide.pdf")
+        pdf_path = builder.build()
+        self.assertTrue(pdf_path.exists())
+
+        reader = pypdf.PdfReader(str(pdf_path))
+        full_text = ""
+        for i, page in enumerate(reader.pages):
+            txt = page.extract_text() or ""
+            full_text += f"\n--- Page {i+1} ---\n" + txt
+            self.assertNotIn("□", txt, f"Tofu box '□' found on page {i+1}")
+            self.assertNotIn("\x00", txt, f"Null/.notdef glyph found on page {i+1}")
+            self.assertNotIn("\ufffd", txt, f"Replacement character found on page {i+1}")
+        
+        # Explicit check for headings and callouts
+        self.assertIn("Equation 1:", full_text)
+        self.assertNotIn("□ Equation 1:", full_text)
+        self.assertIn("Exam Readiness: How Questions Will Come in Exams", full_text)
+        self.assertIn("Model Answer / Solution:", full_text)
+
+    def test_11_no_component_n_labels_regression(self):
+        """Regression test for Item 6 & 7: ensure no 'Component N' labels and validate Three Pillars node count."""
+        import re
+        from visualizer import render_system_block_diagram, validate_and_normalize_diagram
+        import matplotlib.pyplot as plt
+
+        # 1. Test Block Diagram with only 5 elements (should NOT generate 'Component 6')
+        block_diag = DiagramDefinition(
+            diagram_id="test_regression_block_diag",
+            title="General Power Electronic System Architecture",
+            diagram_type="SYSTEM_BLOCK_DIAGRAM",
+            elements=[
+                DiagramElement(label="Power Source", description="AC Utility Grid"),
+                DiagramElement(label="Power Electronic Converter", description="Solid-State Switches"),
+                DiagramElement(label="Electrical Load", description="Motor / Battery"),
+                DiagramElement(label="Sensing & Feedback", description="Current & Voltage Transducers"),
+                DiagramElement(label="Controller / DSP", description="Microcontroller PWM Logic"),
+            ],
+            caption="Six-block closed-loop power conversion architecture."
+        )
+
+        out_path = ASSETS_DIR / "test_regression_block.png"
+        res_path = render_system_block_diagram(block_diag, out_path)
+        self.assertTrue(res_path.exists())
+        self.assertGreater(res_path.stat().st_size, 1000)
+
+        # Also test with explicit 'Component 6' label in elements - must be sanitized
+        block_diag_comp6 = DiagramDefinition(
+            diagram_id="test_regression_block_comp6",
+            title="General Power Electronic System Architecture",
+            diagram_type="SYSTEM_BLOCK_DIAGRAM",
+            elements=[
+                DiagramElement(label="Power Source", description="AC Utility Grid"),
+                DiagramElement(label="Power Electronic Converter", description="Solid-State Switches"),
+                DiagramElement(label="Electrical Load", description="Motor / Battery"),
+                DiagramElement(label="Sensing & Feedback", description="Current & Voltage Transducers"),
+                DiagramElement(label="Controller / DSP", description="Microcontroller PWM Logic"),
+                DiagramElement(label="Component 6", description="Actuator / Driver"),
+            ],
+            caption="Six-block architecture testing Component 6 sanitization."
+        )
+        res_comp6 = render_system_block_diagram(block_diag_comp6, ASSETS_DIR / "test_comp6.png")
+        self.assertTrue(res_comp6.exists())
+
+        # 2. Test Three Pillars normalization (Item 7)
+        pillars_diag = DiagramDefinition(
+            diagram_id="test_regression_pillars",
+            title="The Three Pillars of Power Electronics",
+            diagram_type="CONCEPT_MAP",
+            elements=[
+                DiagramElement(label="Power Systems", description="Generation, transmission, utilities"),
+                DiagramElement(label="Solid-State Electronics", description="Semiconductor switches, diodes"),
+                DiagramElement(label="Power Electronics", description="Duplicate center concept"),
+                DiagramElement(label="Control Theory", description="Feedback loops, stability, PWM")
+            ],
+            caption="The three interdisciplinary disciplines underpinning power electronics."
+        )
+        norm_diag = validate_and_normalize_diagram(pillars_diag)
+        self.assertEqual(len(norm_diag.elements), 3, "Three Pillars must normalize to exactly 3 outer nodes")
+        labels = [e.label for e in norm_diag.elements]
+        self.assertEqual(labels, ["Power", "Electronics", "Control"])
+
+    def test_12_delete_history_endpoint_success_and_failure(self):
+        """Regression test for Part 1B: Delete endpoint returns 200 on success and 404 on failure."""
+        import json
+        import uuid
+        from fastapi.testclient import TestClient
+        from app import app, HISTORY_FILE, load_history
+
+        client = TestClient(app)
+        test_id = f"test-delete-{uuid.uuid4()}"
+
+        # 1. Setup temporary entry in history
+        history = [x for x in load_history() if not str(x.get("id", "")).startswith("test-delete-")]
+        history.append({
+            "id": test_id,
+            "source_name": "Regression Test Delete Lecture",
+            "created_at": "2026-10-07T12:00:00",
+            "study_mode": "detailed",
+            "result": {"lecture_title": "Regression Test Delete Lecture", "pdf_filename": "non_existent_test.pdf"}
+        })
+        HISTORY_FILE.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        # 2. Test successful deletion (HTTP 200, success: True)
+        res_del = client.delete(f"/api/history/{test_id}")
+        self.assertEqual(res_del.status_code, 200)
+        data_del = res_del.json()
+        self.assertTrue(data_del.get("success"), "Expected success: True on successful deletion")
+        self.assertEqual(data_del.get("id"), test_id)
+
+        # Confirm removed from local file
+        updated_history = load_history()
+        self.assertNotIn(test_id, [x.get("id") for x in updated_history])
+
+        # 3. Test failure case (deleting again should return HTTP 404 with friendly detail)
+        res_del_again = client.delete(f"/api/history/{test_id}")
+        self.assertEqual(res_del_again.status_code, 404)
+        err_data = res_del_again.json()
+        self.assertIn("detail", err_data)
+        self.assertEqual(err_data["detail"], "History entry not found")
+
+    def test_13_demo_endpoint_and_job_lifecycle(self):
+        """Regression test for Part 1B: Demo generation returns consistent 200 response and job lifecycle."""
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+
+        # 1. Start demo generation
+        res = client.post("/api/process_audio", data={"demo_mode": "true", "study_mode": "detailed"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data.get("success"))
+        self.assertIn("job_id", data)
+        job_id = data["job_id"]
+
+        # 2. Status polling
+        stat_res = client.get(f"/api/status/{job_id}")
+        self.assertEqual(stat_res.status_code, 200)
+        stat_data = stat_res.json()
+        self.assertIn(stat_data.get("status"), ["pending", "running", "completed"])
+
+        # 3. Status 404 for invalid job
+        bad_stat = client.get("/api/status/non-existent-job-404")
+        self.assertEqual(bad_stat.status_code, 404)
+
+        # 4. Cancel 404 for invalid job
+        bad_cancel = client.post("/api/cancel/non-existent-job-404")
+        self.assertEqual(bad_cancel.status_code, 404)
+
+    def test_14_folder_mode_ignores_manual_uploads(self):
+        """Regression test for Part 1: Validation and ignoring manual uploads when folder mode is active."""
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+
+        # 1. Posting without any audio input and without demo mode returns clear 400
+        res_empty = client.post("/api/process_audio", data={})
+        self.assertEqual(res_empty.status_code, 400)
+        self.assertIn("No lecture recording provided", res_empty.json()["detail"])
+
+    def test_15_pdf_corrupt_and_encrypted_error_handling(self):
+        """Regression test for corrupt and encrypted PDFs raising user-friendly errors."""
+        import tempfile
+        from pedagogy_engine import slice_pdf_pages
+
+        # Test corrupt PDF raises descriptive ValueError
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            f.write(b"CORRUPTED BYTES - NOT A VALID PDF HEADER")
+            corrupt_path = Path(f.name)
+
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                slice_pdf_pages(corrupt_path, start_page=1, end_page=2)
+            self.assertIn("corrupt", str(ctx.exception).lower())
+        finally:
+            corrupt_path.unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()

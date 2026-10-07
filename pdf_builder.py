@@ -261,18 +261,23 @@ def sanitize_pdf_text(text: str) -> str:
     return text.strip()
 
 def clean_cue_text(cue: str, topic_title: str, content: str = "") -> str:
-    """Ensures the spoken cue displays in clean English without broken Arabic glyphs."""
+    """Ensures the spoken cue displays in clean English without broken Arabic glyphs, duplicated prefixes, or stray quotes."""
     if not cue:
-        return f"Doctor emphasized: '{topic_title}'"
+        return f"Focus on core principles of {topic_title}" if topic_title else "Pay close attention to this topic."
     if ARABIC_REGEX.search(cue):
-        cleaned = ARABIC_REGEX.sub('', cue).strip()
-        cleaned = re.sub(r'^(Doctor noted|Doctor emphasized|Doctor warned)\s*[:\-]?\s*', '', cleaned, flags=re.IGNORECASE)
-        cleaned = cleaned.strip(' "\'()[]:-,.')
-        if len(cleaned) > 8:
-            return f"Doctor emphasized: &ldquo;{cleaned}&rdquo;"
-        else:
-            return f"Doctor explicitly emphasized (in lecture): &ldquo;{topic_title}&rdquo;"
-    return cue
+        cue = ARABIC_REGEX.sub('', cue).strip()
+    
+    # Strip nested or repeated prefixes like 'The doctor warned:', 'Doctor stated:', 'Doctor emphasized:'
+    cleaned = re.sub(r'^(?:The\s+doctor|Doctor)\s+(?:noted|emphasized|warned|stated|stressed|mentioned)\s*[:\-]?\s*', '', cue, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r'^(?:The\s+doctor|Doctor)\s+(?:noted|emphasized|warned|stated|stressed|mentioned)\s*[:\-]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+    
+    # Strip stray outer quotes and symbols
+    cleaned = cleaned.strip(' "\'“”)(\'[]:-.,')
+    if len(cleaned) > 8:
+        return cleaned
+    elif topic_title:
+        return f"Pay close attention to: {topic_title}"
+    return cue.strip(' "\'“”)(\'[]:-.,')
 
 # --- Numbered Canvas with Header & Footer ---
 class NumberedCanvas(canvas.Canvas):
@@ -546,15 +551,29 @@ class PDFStudyGuideBuilder:
 
     def _build_cover(self) -> List:
         story = []
+        is_demo = (
+            getattr(self.guide, "is_demo", False)
+            or getattr(getattr(self.guide, "verification_report", None), "is_simulation", False)
+            or "simulation" in getattr(getattr(self.guide, "verification_report", None), "overall_fidelity_summary", "").lower()
+            or bool(self.options.get("is_demo", False))
+        )
         # Course badge
         course = self.guide.course_name or "ACADEMIC LECTURE"
-        story.append(Paragraph(f"ACADEMIC STUDY GUIDE &bull; {course.upper()}", self.styles["CoverBadge"]))
+        if is_demo:
+            story.append(Paragraph(
+                f"<font color='#B45309'><b>[DEMO MODE &bull; SIMULATION]</b></font> &nbsp;&nbsp; ACADEMIC STUDY GUIDE &bull; {course.upper()}",
+                self.styles["CoverBadge"]
+            ))
+        else:
+            story.append(Paragraph(f"ACADEMIC STUDY GUIDE &bull; {course.upper()}", self.styles["CoverBadge"]))
         
         # Title
         story.append(Paragraph(format_math_in_text(self.guide.lecture_title), self.styles["CoverTitle"]))
         
         # Meta table
         meta_items = []
+        if is_demo:
+            meta_items.append("<b>Mode:</b> <font color='#B45309'><b>DEMO / SIMULATION (No live audio processed)</b></font>")
         if self.guide.lecturer_name:
             meta_items.append(f"<b>Instructor:</b> {self.guide.lecturer_name}")
         if self.guide.lecture_date:
@@ -607,25 +626,43 @@ class PDFStudyGuideBuilder:
         if not report:
             return None
 
+        # A report is a simulation audit if explicitly marked as simulation or summary indicates simulation,
+        # or if the guide is demo and there are no real contradictions reported.
+        is_demo = (
+            getattr(report, "is_simulation", False)
+            or "simulation" in getattr(report, "overall_fidelity_summary", "").lower()
+            or bool(self.options.get("is_demo", False))
+            or (getattr(self.guide, "is_demo", False) and not (report.contradictions_detected > 0 and not getattr(report, "is_simulation", False)))
+        )
+
         has_fixes = report.contradictions_detected > 0
         has_notes = getattr(report, "notes_audited", False) or bool(getattr(self.guide, "notes_reference", None))
-        card_bg = colors.HexColor("#F0FDF4") if not has_fixes else colors.HexColor("#EFF6FF")
-        border_col = colors.HexColor("#059669") if not has_fixes else colors.HexColor("#2563EB")
-        title_col = "#047857" if not has_fixes else "#1D4ED8"
-
-        scope_tag = " &amp; SLIDES" if has_notes else ""
-        title_text = (
-            f"<font color='{title_col}'><b>&check; AUDIO{scope_tag} FIDELITY &amp; CONTRADICTION AUDIT: 100% VERIFIED</b></font>"
-            if not has_fixes else
-            f"<font color='{title_col}'><b>&check; AUDIO{scope_tag} FIDELITY AUDIT: {report.contradictions_detected} CONTRADICTION(S) RECONCILED WITH RECORDING</b></font>"
-        )
-
         notes_ref = getattr(report, "notes_reference", None) or getattr(self.guide, "notes_reference", None)
-        status_text = (
-            f"Audio &amp; lecture slides cross-check performed against original recording and slides ({notes_ref})."
-            if has_notes and notes_ref else
-            ("Audio &amp; lecture slides cross-check performed against recording and slides." if has_notes else "Audio cross-check performed against original lecture recording.")
-        )
+        scope_tag = " &amp; SLIDES" if has_notes else ""
+
+        if is_demo:
+            card_bg = colors.HexColor("#FFFBEB")
+            border_col = colors.HexColor("#F59E0B")
+            title_col = "#B45309"
+            if has_notes:
+                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED AUDIO{scope_tag} FIDELITY AUDIT (no real audio checked)</b></font>"
+            else:
+                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED AUDIT (no real audio checked)</b></font>"
+            status_text = "Verified in simulation against synthetic lecture model (no live audio recording uploaded)."
+        else:
+            card_bg = colors.HexColor("#F0FDF4") if not has_fixes else colors.HexColor("#EFF6FF")
+            border_col = colors.HexColor("#059669") if not has_fixes else colors.HexColor("#2563EB")
+            title_col = "#047857" if not has_fixes else "#1D4ED8"
+            title_text = (
+                f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY &amp; CONTRADICTION AUDIT: 100% VERIFIED</b></font>"
+                if not has_fixes else
+                f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY AUDIT: {report.contradictions_detected} CONTRADICTION(S) RECONCILED WITH RECORDING</b></font>"
+            )
+            status_text = (
+                f"Audio &amp; lecture slides cross-check performed against original recording and slides ({notes_ref})."
+                if has_notes and notes_ref else
+                ("Audio &amp; lecture slides cross-check performed against recording and slides." if has_notes else "Audio cross-check performed against original lecture recording.")
+            )
 
         body_lines = [
             f"<font size=8.5><b>Verification Status:</b> {status_text}</font>",
@@ -699,7 +736,7 @@ class PDFStudyGuideBuilder:
         """Renders a textbook-quality formula box with rendered LaTeX equation image and variable definitions."""
         items = []
         clean_name = format_math_in_text(formula.formula_name)
-        title_p = Paragraph(f"<b>📐 Equation {idx}: {clean_name}</b>", self.styles["FormulaTitle"])
+        title_p = Paragraph(f"<b>Equation {idx}: {clean_name}</b>", self.styles["FormulaTitle"])
         items.append(title_p)
         
         # Try rendering high-res equation image
@@ -845,7 +882,7 @@ class PDFStudyGuideBuilder:
         """Renders the Exam Prep & Predictions chapter."""
         story = []
         story.append(PageBreak())
-        story.append(Paragraph("🎯 Exam Readiness: How Questions Will Come in Exams", self.styles["SectionHeading"]))
+        story.append(Paragraph("Exam Readiness: How Questions Will Come in Exams", self.styles["SectionHeading"]))
         story.append(Paragraph(
             "The following practice questions are formulated directly from the professor's spoken cues, "
             "highlighted core concepts, and explicit exam warnings given during this lecture.",
@@ -877,7 +914,7 @@ class PDFStudyGuideBuilder:
             clean_rubric = format_math_in_text(q.model_explanation)
             clean_hint = format_math_in_text(clean_cue_text(q.doctor_hint, "Exam focus"))
             sol_items = [
-                Paragraph(f"<b>&check; Model Answer / Solution:</b><br/>{clean_ans}", self.styles["ExamAnswer"]),
+                Paragraph(f"<b>Model Answer / Solution:</b><br/>{clean_ans}", self.styles["ExamAnswer"]),
                 Paragraph(f"<b>Grading Rubric & Key Points:</b> {clean_rubric}", self.styles["ExamRubric"]),
                 Paragraph(f"<b>Doctor's Spoken Exam Tip:</b> <i>&ldquo;{clean_hint}&rdquo;</i>", self.styles["AlertCue"])
             ]

@@ -133,6 +133,7 @@ class VerificationAuditReport(BaseModel):
     notes_audited: bool = Field(default=False, description="True if lecture slides or notes were audited alongside audio")
     notes_reference: Optional[str] = Field(default=None, description="Details of lecture slides or notes audited (e.g. 'Slides 1–25')")
     scope_discrepancies_resolved: int = Field(default=0, description="Count of unmentioned slide topics stripped during audit")
+    is_simulation: bool = Field(default=False, description="True if audit was conducted in simulation/demo mode")
 
 class LectureStudyGuide(BaseModel):
     """Complete structured guide produced from the lecture recording."""
@@ -141,6 +142,7 @@ class LectureStudyGuide(BaseModel):
     lecturer_name: str = Field(default="Course Professor", description="Lecturer's name if identified")
     lecture_date: str = Field(default="", description="Date or academic term")
     notes_reference: Optional[str] = Field(default=None, description="Reference to lecture notes or slide range if provided (e.g. 'Slides 1–25')")
+    is_demo: bool = Field(default=False, description="True if guide was generated in simulation/demo mode")
     executive_summary: str = Field(
         ...,
         description="High-level overview of everything covered in this lecture and key themes"

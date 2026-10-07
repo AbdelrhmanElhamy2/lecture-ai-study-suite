@@ -13,6 +13,7 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
         lecture_title="Concurrency Control, Semaphores, and Deadlock Prevention",
         lecturer_name="Prof. Tarek Mansour",
         lecture_date="Academic Term 2026",
+        is_demo=True,
         executive_summary=(
             "This lecture addresses fundamental challenges in concurrent multi-threaded execution. "
             "The professor explores race conditions, critical section criteria, Edsger Dijkstra's "
@@ -69,15 +70,15 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
                 ],
                 formulas=[
                     KeyFormula(
-                        formula_name="Speedup Factor under Amdahl's Law",
-                        latex_expression=r"S(N) = \frac{1}{(1 - P) + \frac{P}{N}}",
-                        plain_text_expression="S(N) = 1 / ((1 - P) + (P / N))",
+                        formula_name="Atomic Update Decomposition (Race Condition)",
+                        latex_expression=r"\text{Load: } R_i \leftarrow \text{count}, \quad \text{Add: } R_i \leftarrow R_i + 1, \quad \text{Store: } \text{count} \leftarrow R_i",
+                        plain_text_expression="Load: R_i <- count; Add: R_i <- R_i + 1; Store: count <- R_i",
                         variables_explanation=[
-                            "S(N): Overall theoretical speedup",
-                            "P: Parallel portion of execution time (0 <= P <= 1)",
-                            "N: Number of processing cores"
+                            "count: Shared memory variable accessed concurrently by threads",
+                            "R_i: Local CPU register private to Thread i",
+                            "Load / Add / Store: Three non-atomic machine instructions vulnerable to thread interleaving"
                         ],
-                        exam_application="Expect numerical questions calculating speedup limits when scaling to many cores."
+                        exam_application="Expect trace questions illustrating how arbitrary context-switching between Load and Store produces incorrect final counts."
                     )
                 ],
                 diagrams=[
@@ -173,7 +174,7 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
                     "If each resource class possesses only 1 unit, a cycle is necessary and sufficient for deadlock. "
                     "However, if multiple instances exist, other non-deadlocked threads can release instances to break the cycle."
                 ),
-                doctor_hint="The doctor warned: 'الطلبة بتلخبط في الحتة دي' - students always pick A blindly!",
+                doctor_hint="Students frequently get confused here and blindly pick option A—verify carefully whether each resource type has single or multiple instances before declaring deadlock.",
                 probability="Definite (Doctor Stated)"
             ),
             ExamQuestion(
@@ -187,7 +188,7 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
                     "2) Security & Liveness: If a user thread disables interrupts and enters an infinite loop, the entire operating system hangs and loses CPU control."
                 ),
                 model_explanation="Exam graders look for two key points: Multi-core ineffectiveness and vulnerability to denial of service.",
-                doctor_hint="Doctor mentioned this while discussing why Peterson's algorithm or atomic instructions are needed instead of simple CLI instructions.",
+                doctor_hint="Remember this key trade-off: hardware interrupt disabling fails on multi-core architectures and leaves the kernel vulnerable to user-space lockups.",
                 probability="High Probability Exam Question"
             ),
             ExamQuestion(
@@ -198,15 +199,18 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
                     "P1 holds 2 (needs max 4), and P2 holds 2 (needs max 9). Is the current system state SAFE? Show step-by-step Bankers algorithm evaluation."
                 ),
                 correct_answer=(
-                    "Total tape drives = 12. Currently allocated = 5 + 2 + 2 = 9. Available = 12 - 9 = 3 units.\n"
-                    "Remaining Need: P0 needs 5, P1 needs 2, P2 needs 7.\n"
-                    "Step 1: Available (3) >= Need of P1 (2). P1 executes to completion and releases 2 + 2 = 4 units. New Available = 3 + 2 = 5.\n"
-                    "Step 2: Available (5) >= Need of P0 (5). P0 executes to completion and releases 5 units. New Available = 5 + 5 = 10.\n"
-                    "Step 3: Available (10) >= Need of P2 (7). P2 completes.\n"
-                    "Conclusion: SAFE state exists with execution sequence <P1, P0, P2>."
+                    "Total tape drives = 12. Currently allocated = 5 (P0) + 2 (P1) + 2 (P2) = 9 units. Available = 12 - 9 = 3 units.\n"
+                    "Remaining Need vector (Max - Allocation):\n"
+                    "- P0: Need = 10 - 5 = 5 units\n"
+                    "- P1: Need = 4 - 2 = 2 units\n"
+                    "- P2: Need = 9 - 2 = 7 units\n"
+                    "Step 1: Available (3) >= Need of P1 (2). P1 runs to completion and releases its 2 allocated units. New Available = 3 + 2 = 5 units.\n"
+                    "Step 2: Available (5) >= Need of P0 (5). P0 runs to completion and releases its 5 allocated units. New Available = 5 + 5 = 10 units.\n"
+                    "Step 3: Available (10) >= Need of P2 (7). P2 runs to completion and releases its 2 allocated units. New Available = 10 + 2 = 12 units.\n"
+                    "Conclusion: The system is in a SAFE state with safe execution sequence <P1, P0, P2>."
                 ),
                 model_explanation="Full marks require showing the Available vector after each step and explicitly writing the safe sequence <P1, P0, P2>.",
-                doctor_hint="Doctor stated: 'مسألة الـ Banker's algorithm جاية في الفاينال بنفس الأرقام دي تقريباً!'",
+                doctor_hint="Banker's algorithm evaluation is a staple exam problem—always show each process termination step and update the available vector explicitly.",
                 probability="Definite (Doctor Stated)"
             )
         ],

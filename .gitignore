@@ -26,6 +26,13 @@ ENV/
 # 3. User Runtime Storage & Uploads (User audio & slides)
 uploads/*
 !uploads/.gitkeep
+recordings/
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+*.webm
 
 # 4. Generated Artifacts & Exported PDFs
 output_pdfs/*

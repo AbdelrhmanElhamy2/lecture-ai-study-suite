@@ -2,6 +2,7 @@ import os
 import re
 import math
 import textwrap
+import logging
 from pathlib import Path
 from typing import List, Optional
 import numpy as np
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from models import DiagramDefinition, DiagramElement
 from config import ASSETS_DIR
+
+logger = logging.getLogger(__name__)
 
 # Universal Academic Color Palette
 PRIMARY_COLOR = "#1E40AF"     # Royal Blue
@@ -345,8 +348,76 @@ def render_process_cycle(diagram: DiagramDefinition, output_path: Path) -> Path:
     plt.close(fig)
     return output_path
 
+def validate_and_normalize_diagram(diagram: DiagramDefinition) -> DiagramDefinition:
+    """
+    Validates diagram element count against numeric references in its title.
+    If the title mentions a specific count (e.g., 'The Three Pillars of Power Electronics'),
+    verifies the element count matches. If mismatched, logs a warning and reconciles elements
+    (e.g., removing redundant self-referential central concepts like 'Power Electronics'
+    from the outer pillars, ensuring exactly 'Power', 'Electronics', 'Control').
+    """
+    title_lower = diagram.title.lower()
+    elements = list(diagram.elements)
+
+    # 1. Specific check for 'Three Pillars' / 'The Three Pillars of Power Electronics'
+    if "three pillars" in title_lower or "3 pillars" in title_lower:
+        expected = 3
+        if "power electronic" in title_lower:
+            filtered = [
+                e for e in elements
+                if e.label.strip().lower() not in ["power electronics", "the three pillars", "power electronic system"]
+            ]
+            if len(elements) != expected:
+                logger.warning(
+                    f"Diagram title '{diagram.title}' specifies {expected} pillars, but received {len(elements)} elements. "
+                    "Reconciling to exactly three pillars: Power, Electronics, Control."
+                )
+            if len(filtered) == 3:
+                for elem in filtered:
+                    lbl_lower = elem.label.lower()
+                    if "power" in lbl_lower:
+                        elem.label = "Power"
+                    elif "electronic" in lbl_lower:
+                        elem.label = "Electronics"
+                    elif "control" in lbl_lower:
+                        elem.label = "Control"
+                elements = filtered
+            elif len(elements) != 3:
+                elements = [
+                    DiagramElement(label="Power", description="Power Systems: Generation, transmission, and grid networks"),
+                    DiagramElement(label="Electronics", description="Solid-State Electronics: Semiconductor devices and circuits"),
+                    DiagramElement(label="Control", description="Control Theory: Feedback loops, stability, and PWM regulation")
+                ]
+            diagram.elements = elements
+            return diagram
+
+    # 2. General word/digit count validation
+    num_map = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
+    }
+    match = re.search(r'\b(one|two|three|four|five|six|seven|eight|nine|ten|[1-9]|10)\s+([a-z]+)', title_lower)
+    if match:
+        word = match.group(1)
+        expected = int(word) if word.isdigit() else num_map.get(word, 0)
+        noun = match.group(2)
+        if expected > 0 and noun in ["pillars", "stages", "steps", "conditions", "components", "principles", "phases", "rules", "layers"]:
+            if len(elements) != expected:
+                logger.warning(
+                    f"Diagram '{diagram.title}' count mismatch: title specifies {expected} {noun}, "
+                    f"but received {len(elements)} elements."
+                )
+                if len(elements) > expected:
+                    filtered = [e for e in elements if e.label.strip().lower() not in title_lower]
+                    if len(filtered) == expected:
+                        diagram.elements = filtered
+
+    return diagram
+
+
 def render_concept_map(diagram: DiagramDefinition, output_path: Path) -> Path:
     """Renders a central hub-and-spoke concept map or taxonomic classification tree with guaranteed zero text collisions."""
+    diagram = validate_and_normalize_diagram(diagram)
     elements = diagram.elements
     n = max(len(elements), 1)
     
@@ -495,16 +566,69 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
     Secondary / Feedback Tier: Component 6 <- Component 5 <- Component 4
     """
     elements = diagram.elements
-    labels = [wrap_text(e.label, 16) for e in elements]
-    descs = [wrap_text(e.description or "", 22) for e in elements]
-    
-    # Ensure at least 6 slots
-    while len(labels) < 6:
-        labels.append("")
-        descs.append("")
-        
     title_upper = diagram.title.upper()
-    is_power_domain = "POWER" in title_upper and ("CONVERTER" in title_upper or "RECTIFIER" in title_upper or "INVERTER" in title_upper)
+    is_power_domain = "POWER" in title_upper and ("CONVERTER" in title_upper or "RECTIFIER" in title_upper or "INVERTER" in title_upper or "ELECTRONIC" in title_upper or "SYSTEM" in title_upper)
+    
+    if is_power_domain:
+        default_labels = [
+            "Power Source",
+            "Power Converter",
+            "Electrical Load",
+            "Feedback Sensors",
+            "Controller Unit",
+            "Gate Driver",
+        ]
+        default_descs = [
+            "Primary Source / Utility",
+            "Core Processing Unit",
+            "Output / Destination",
+            "Monitoring / Transducers",
+            "Decision / Controller",
+            "Actuator / Driver",
+        ]
+    else:
+        default_labels = [
+            "Primary Source",
+            "Core Processing Unit",
+            "Output / Destination",
+            "Monitoring / Transducers",
+            "Decision / Controller",
+            "Actuator / Driver",
+        ]
+        default_descs = [
+            "Primary Source",
+            "Core Processing Unit",
+            "Output / Destination",
+            "Monitoring / Transducers",
+            "Decision / Controller",
+            "Actuator / Driver",
+        ]
+
+    # Process elements: fall back to node's description if label is empty, never emit generic Component N
+    labels = []
+    descs = []
+    for e in elements:
+        lbl = (e.label or "").strip()
+        dsc = (e.description or "").strip()
+        if not lbl and dsc:
+            lbl = dsc
+            dsc = ""
+        labels.append(lbl)
+        descs.append(dsc)
+        
+    while len(labels) < 6:
+        slot = len(labels)
+        labels.append(default_labels[slot])
+        descs.append(default_descs[slot])
+
+    for idx in range(6):
+        if not labels[idx] or re.match(r"^Component\s*\d+$", labels[idx], re.IGNORECASE):
+            labels[idx] = descs[idx] if descs[idx] else default_labels[idx]
+        if not descs[idx] and idx < len(default_descs):
+            descs[idx] = default_descs[idx]
+
+    labels = [wrap_text(lbl, 16) for lbl in labels]
+    descs = [wrap_text(dsc, 22) for dsc in descs]
     
     # Context-aware arrow labels
     if is_power_domain:
@@ -560,19 +684,19 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
     c1 = patches.FancyBboxPatch((bx1, by_top), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=2.0, edgecolor=COLOR1, facecolor=BG_CARD, zorder=2)
     ax.add_patch(c1)
-    draw_box_content(bx1, by_top, labels[0] or "Component 1", descs[0] or "Primary Source")
+    draw_box_content(bx1, by_top, labels[0], descs[0])
             
     # Box 2
     c2 = patches.FancyBboxPatch((bx2, by_top), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=2.4, edgecolor=COLOR2, facecolor="#F0FDFA", zorder=2)
     ax.add_patch(c2)
-    draw_box_content(bx2, by_top, labels[1] or "Component 2", descs[1] or "Core Processing Unit", lbl_color="#0F766E")
+    draw_box_content(bx2, by_top, labels[1], descs[1], lbl_color="#0F766E")
             
     # Box 3
     c3 = patches.FancyBboxPatch((bx3, by_top), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=2.0, edgecolor=COLOR3, facecolor=BG_CARD, zorder=2)
     ax.add_patch(c3)
-    draw_box_content(bx3, by_top, labels[2] or "Component 3", descs[2] or "Output / Destination")
+    draw_box_content(bx3, by_top, labels[2], descs[2])
             
     # Primary Forward Arrows with collision-free badges
     mid_fwd1 = (bx1 + bw + bx2) / 2
@@ -595,21 +719,21 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
     c4 = patches.FancyBboxPatch((bx4, by4), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=1.8, edgecolor=COLOR4, facecolor=BG_CARD, zorder=2)
     ax.add_patch(c4)
-    draw_box_content(bx4, by4, labels[3] or "Component 4", descs[3] or "Monitoring / Transducers")
+    draw_box_content(bx4, by4, labels[3], descs[3])
             
     # Box 5 (under Box 2)
     bx5, by5 = bx2, by_bot
     c5 = patches.FancyBboxPatch((bx5, by5), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=1.8, edgecolor=COLOR5, facecolor=BG_CARD, zorder=2)
     ax.add_patch(c5)
-    draw_box_content(bx5, by5, labels[4] or "Component 5", descs[4] or "Decision / Controller")
+    draw_box_content(bx5, by5, labels[4], descs[4])
             
     # Box 6 (under Box 1)
     bx6, by6 = bx1, by_bot
     c6 = patches.FancyBboxPatch((bx6, by6), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
                                 linewidth=1.8, edgecolor=COLOR6, facecolor=BG_CARD, zorder=2)
     ax.add_patch(c6)
-    draw_box_content(bx6, by6, labels[5] or "Component 6", descs[5] or "Actuator / Driver")
+    draw_box_content(bx6, by6, labels[5], descs[5])
             
     # Down arrow from Box 3 to Box 4
     ax.annotate("", xy=(bx3 + bw/2, by_bot + bh), xytext=(bx3 + bw/2, by_top),
@@ -1240,6 +1364,7 @@ def render_rectifier_waveforms(diagram: DiagramDefinition, output_path: Path) ->
 
 def generate_diagram(diagram: DiagramDefinition, output_dir: Optional[Path] = None) -> Path:
     """Universal academic diagram dispatcher supporting all disciplines."""
+    diagram = validate_and_normalize_diagram(diagram)
     target_dir = output_dir or ASSETS_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
     clean_id = "".join(c for c in diagram.diagram_id if c.isalnum() or c in ("_", "-"))

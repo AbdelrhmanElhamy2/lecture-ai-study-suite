@@ -35,7 +35,7 @@ def render_rectifier_waveforms(diagram: DiagramDefinition, output_path: Path) ->
     ax1.set_yticks([-1.0, 0, 1.0])
     ax1.set_yticklabels([r"$-V_m$", "0", r"$+V_m$"], fontsize=8.5)
     ax1.grid(True, ls=":", color=COLOR_GRID, alpha=0.8)
-    ax1.legend(loc="upper right", fontsize=8.5, framealpha=0.9)
+    ax1.legend(loc="lower left", fontsize=8.0, framealpha=0.92)
     ax1.set_title(f"Figure: {diagram.title}", fontsize=11, weight="bold", color="#0F172A", pad=10)
     
     # Interval highlights on Subplot 1
