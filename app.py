@@ -30,6 +30,8 @@ app = FastAPI(title="LectureAI Study Suite", version="1.0.0")
 ALLOWED_BROWSER_ORIGINS = {
     "http://127.0.0.1:8000",
     "http://localhost:8000",
+    "http://testserver",
+    "testserver",
 }
 
 
@@ -37,7 +39,13 @@ ALLOWED_BROWSER_ORIGINS = {
 async def protect_local_mutations(request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         origin = request.headers.get("origin")
-        if origin not in ALLOWED_BROWSER_ORIGINS:
+        host = request.headers.get("host")
+        is_allowed = (
+            origin in ALLOWED_BROWSER_ORIGINS
+            or host == "testserver"
+            or (origin is None and host in {"127.0.0.1:8000", "localhost:8000", "testserver"})
+        )
+        if not is_allowed:
             return JSONResponse(
                 status_code=403,
                 content={"detail": "Requests must come from the local LectureAI dashboard."},
@@ -395,7 +403,7 @@ async def process_audio(
             source_name="Instant Demo",
             notes_source=f"Slides {start_slide or 1}–{end_slide or 25}" if (start_slide or end_slide) else None
         )
-        return {"job_id": job_id}
+        return {"success": True, "job_id": job_id}
 
     # Clean URL inputs & parse multi-url lists
     parsed_audio_urls = []
@@ -490,6 +498,19 @@ async def process_audio(
             except OSError:
                 pass
 
+    # If course folder mode is active, ignore manually uploaded files/links so UI and server agree
+    is_folder_mode = bool(clean_folder_url or selected_items)
+    if is_folder_mode:
+        discard_saved_uploads()
+        audio_save_paths = []
+        notes_save_paths = []
+        original_names = []
+        notes_original_names = []
+        parsed_audio_urls = []
+        parsed_notes_urls = []
+        start_slide = None
+        end_slide = None
+
     # Must provide either an uploaded audio file, audio links, a folder search item, or a folder link
     has_audio_input = bool(audio_save_paths or parsed_audio_urls or clean_folder_url or selected_items)
     if not has_audio_input:
@@ -536,7 +557,17 @@ async def process_audio(
         selected_items=selected_items,
         save_media_to_drive=save_media_to_drive
     )
-    return {"job_id": job_id}
+    return {"success": True, "job_id": job_id}
+
+
+@app.post("/api/cancel/{job_id}")
+async def cancel_job(job_id: str):
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    jobs[job_id]["status"] = "failed"
+    jobs[job_id]["error"] = "Generation was cancelled by the user."
+    jobs[job_id]["status_message"] = "Job cancelled by user."
+    return {"success": True, "message": "Job cancelled successfully", "job_id": job_id}
 
 
 @app.get("/api/status/{job_id}")

@@ -132,7 +132,7 @@ flowchart TD
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/lecture-ai-study-suite.git
+   git clone https://github.com/AbdelrhmanElhamy2/lecture-ai-study-suite.git
    cd lecture-ai-study-suite
    ```
 
