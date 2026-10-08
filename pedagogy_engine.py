@@ -3,7 +3,7 @@ import time
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Callable, Tuple, Any
+from typing import Optional, Callable, Tuple, Any, List, Union
 from google import genai
 from google.genai import types
 import pypdf
@@ -178,6 +178,7 @@ def analyze_lecture_audio(
     notes_path: Optional[Union[Path, List[Path]]] = None,
     start_slide: Optional[int] = None,
     end_slide: Optional[int] = None,
+    slide_ranges: Optional[List[Tuple[Optional[int], Optional[int]]]] = None,
     api_key: Optional[str] = None,
     model: Optional[str] = None,
     course_hint: Optional[str] = None,
@@ -206,6 +207,7 @@ def analyze_lecture_audio(
             notes_path=notes_path,
             start_slide=start_slide,
             end_slide=end_slide,
+            slide_ranges=slide_ranges,
             model=model,
             course_hint=course_hint,
             lecturer_hint=lecturer_hint,
@@ -223,6 +225,7 @@ def _analyze_lecture_audio_impl(
     notes_path: Optional[Union[Path, List[Path]]] = None,
     start_slide: Optional[int] = None,
     end_slide: Optional[int] = None,
+    slide_ranges: Optional[List[Tuple[Optional[int], Optional[int]]]] = None,
     model: Optional[str] = None,
     course_hint: Optional[str] = None,
     lecturer_hint: Optional[str] = None,
@@ -257,9 +260,12 @@ def _analyze_lecture_audio_impl(
         if progress_callback:
             progress_callback(f"Processing and verifying lecture notes / slides ({idx+1}/{len(notes_paths)}: {np.name})...", 8)
         
-        # Apply slide range to primary deck if provided
-        s_slide = start_slide if idx == 0 else None
-        e_slide = end_slide if idx == 0 else None
+        # Apply slide range to deck (per-deck or primary deck fallback)
+        if slide_ranges and idx < len(slide_ranges):
+            s_slide, e_slide = slide_ranges[idx]
+        else:
+            s_slide = start_slide if idx == 0 else None
+            e_slide = end_slide if idx == 0 else None
         processed_notes_path, ref_label = slice_pdf_pages(
             np, start_page=s_slide, end_page=e_slide, output_dir=UPLOAD_DIR
         )

@@ -8,7 +8,7 @@ from pedagogy_engine import analyze_lecture_audio
 from pdf_builder import PDFStudyGuideBuilder
 from mock_generator import get_sample_bilingual_lecture_guide
 
-from typing import Optional, Callable, Dict, Any, List, Union
+from typing import Optional, Callable, Dict, Any, List, Union, Tuple
 
 
 def process_lecture(
@@ -16,6 +16,7 @@ def process_lecture(
     notes_path: Optional[Union[Path, List[Path]]] = None,
     start_slide: Optional[int] = None,
     end_slide: Optional[int] = None,
+    slide_ranges: Optional[List[Tuple[Optional[int], Optional[int]]]] = None,
     api_key: Optional[str] = None,
     model: Optional[str] = None,
     course_hint: Optional[str] = None,
@@ -55,10 +56,18 @@ def process_lecture(
         guide = get_sample_bilingual_lecture_guide()
         guide.is_demo = True
         notes_demo_label = None
-        if notes_paths or start_slide or end_slide:
-            s_num = start_slide or 1
-            e_num = end_slide or 25
-            notes_demo_label = f"Slides {s_num}–{e_num} of 25 (Simulation Deck)"
+        if notes_paths or start_slide or end_slide or slide_ranges:
+            if slide_ranges and any(sr[0] or sr[1] for sr in slide_ranges):
+                labels = []
+                for s_r in slide_ranges:
+                    s_n = s_r[0] or 1
+                    e_n = s_r[1] or 25
+                    labels.append(f"Slides {s_n}–{e_n} of 25")
+                notes_demo_label = f"{'; '.join(labels)} (Simulation Deck)"
+            else:
+                s_num = start_slide or 1
+                e_num = end_slide or 25
+                notes_demo_label = f"Slides {s_num}–{e_num} of 25 (Simulation Deck)"
             guide.notes_reference = notes_demo_label
 
         if not guide.verification_report:
@@ -98,6 +107,7 @@ def process_lecture(
             notes_path=notes_paths if notes_paths else None,
             start_slide=start_slide,
             end_slide=end_slide,
+            slide_ranges=slide_ranges,
             api_key=key,
             model=model,
             course_hint=course_hint,

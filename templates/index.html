@@ -185,261 +185,229 @@
             <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 tracking-wider uppercase">LOCKED</span>
           </div>
 
-          <!-- Intake Mode Segmented Switcher -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Choose Intake Source:</span>
-              <span class="text-[10px] text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-full border border-brand-200 dark:border-brand-900/60">
-                ✨ Direct Google Drive Links Supported
-              </span>
-            </div>
-            <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs font-semibold">
-              <button type="button" id="tabUploadBtn" onclick="switchIntakeMode('upload')" class="py-2 px-2 sm:px-3 rounded-lg bg-white dark:bg-slate-700 text-brand-700 dark:text-brand-300 shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
-                <span>📁</span> <span class="truncate">Upload File</span>
-              </button>
-              <button type="button" id="tabLinkBtn" onclick="switchIntakeMode('link')" class="py-2 px-2 sm:px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
-                <span>🔗</span> <span class="truncate">Drive Links</span>
-              </button>
-              <button type="button" id="tabFolderBtn" onclick="switchIntakeMode('folder')" class="py-2 px-2 sm:px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
-                <span>📂</span> <span class="truncate">Drive Folder</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Folder Mode Lock Banner (Shown while Drive Folder mode is active) -->
-          <div id="folderModeNotice" class="hidden flex items-center gap-2 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs transition-all">
-            <span class="text-base leading-none">🔒</span>
-            <div class="flex-1">
-              <span>Using files from your course folder. Switch off folder mode to upload manually.</span>
-            </div>
-          </div>
-
-          <!-- Section 3: Google Drive Course Folder & Intelligent Session Search -->
-          <div id="folderModeSection" class="hidden space-y-4">
-            
-            <!-- Quick Local Detected Courses (Fall 2026) -->
-            <div id="detectedCoursesBox" class="hidden p-3 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <span id="detectedCoursesHeaderLabel">⚡ Detected Courses:</span>
+          <!-- Unified Lecture Sources Experience -->
+          <div class="space-y-4">
+            <!-- Header & Summary Badges -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📚</span> <span>Lecture Sources</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  Combine audio and notes from your computer, Google Drive links, and course folders. Stitched chronologically.
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="totalSizeBadge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                  Total Size: 0 MB
                 </span>
-                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">&bull; Instant Access</span>
-              </div>
-              <div id="detectedCoursesChips" class="flex flex-wrap items-center gap-1.5">
-                <!-- Dynamically populated from /api/detected_courses -->
               </div>
             </div>
 
-            <div class="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200 space-y-1.5">
-              <div class="flex items-center gap-2 font-bold text-indigo-800 dark:text-indigo-300">
-                <span>📂</span> <span>Course Folder Session Search:</span>
+            <!-- Duplicate Warning Notice Banner -->
+            <div id="duplicateWarningBanner" class="hidden flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs transition-all">
+              <div class="flex items-center gap-2">
+                <span class="text-base leading-none">⚠️</span>
+                <span id="duplicateWarningText">Duplicate files detected. Check if this was intentional.</span>
               </div>
-              <p class="leading-relaxed">
-                Paste your course folder link from Google Drive or select a course above. Type the target session (e.g. <strong>Lecture 1</strong> or <strong>Section 1</strong>) and LectureAI will scan the folder to find all recordings (including multi-part) and slides, asking you how you wish to proceed.
-              </p>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 tracking-wider uppercase">DUPLICATE</span>
             </div>
 
-            <!-- Folder Link or Local Path Input -->
-            <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <span>🔗</span> <span>Course Folder Link or Local Path:</span>
-              </label>
-              <div class="relative">
+            <!-- Add from Course Folder Panel (Drawer that feeds the lists without locking manual uploads) -->
+            <div id="courseFolderPanel" class="hidden p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3.5 transition-all">
+              <div class="flex items-center justify-between pb-2 border-b border-indigo-200/60 dark:border-indigo-900/40">
+                <div class="flex items-center gap-2 text-xs font-bold text-indigo-900 dark:text-indigo-200">
+                  <span>📂</span> <span>Add from Course Folder</span>
+                </div>
+                <button type="button" onclick="closeCourseFolderPanel()" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 text-sm font-bold cursor-pointer" title="Close course folder panel">✕</button>
+              </div>
+
+              <!-- Quick Local Detected Courses (Fall 2026) -->
+              <div id="detectedCoursesBox" class="hidden p-3 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-indigo-100 dark:border-indigo-950 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <span id="detectedCoursesHeaderLabel">⚡ Detected Courses:</span>
+                  </span>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">&bull; Instant Access</span>
+                </div>
+                <div id="detectedCoursesChips" class="flex flex-wrap items-center gap-1.5"></div>
+              </div>
+
+              <!-- Folder Link or Local Path Input -->
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>🔗</span> <span>Course Folder Link or Local Path:</span>
+                </label>
                 <input type="text" id="folderUrlInput" placeholder="Google Drive folder URL or local path (e.g. G:\My Drive\fall 2026\CourseName)"
                        class="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              </div>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500">Works with public Google Drive folder links or your laptop's synced Google Drive folder.</p>
-            </div>
-
-            <!-- Session Search Query Input & Action -->
-            <div class="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-              <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                <span class="flex items-center gap-1.5">
-                  <span>🎯</span> <span>Target Lecture or Section:</span>
-                </span>
-                <span class="text-[10px] text-slate-400">e.g. Lecture 1, Section 1, Lecture 2</span>
-              </label>
-              
-              <div class="flex items-center gap-2">
-                <input type="text" id="folderSessionQueryInput" placeholder="e.g. Lecture 1 (or Section 1)" 
-                       class="flex-1 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                       onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchCourseFolder(); }">
-                <button type="button" id="searchFolderBtn" onclick="searchCourseFolder()" 
-                        class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
-                  <span id="searchFolderBtnSpinner" class="hidden animate-spin">⏳</span>
-                  <span id="searchFolderBtnText">🔍 Find Materials</span>
-                </button>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500">Works with public Google Drive folder links or your laptop's synced Google Drive folder.</p>
               </div>
 
-              <!-- Quick Query Suggestions -->
-              <div class="flex items-center gap-1.5 text-[11px]">
-                <span class="text-slate-400 dark:text-slate-500 text-[10px]">Quick Search:</span>
-                <button type="button" onclick="setSessionQueryAndSearch('Lecture 1')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 1</button>
-                <button type="button" onclick="setSessionQueryAndSearch('Lecture 2')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 2</button>
-                <button type="button" onclick="setSessionQueryAndSearch('Section 1')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Section 1</button>
-              </div>
-            </div>
-
-            <!-- Dynamic Search Result & Selection Box -->
-            <div id="folderSearchResultsBox" class="hidden p-4 rounded-xl border space-y-3 transition-all">
-              <!-- Content rendered dynamically by renderFolderSearchResults() -->
-            </div>
-
-          </div>
-
-          <!-- Manual Upload Container (Upload & Link modes, locked when in folder mode) -->
-          <div id="manualUploadContainer" class="space-y-4 transition-all duration-200">
-            <!-- Section 1: Upload Files (Local) -->
-            <div id="uploadModeSection" class="space-y-4">
-            <div>
-              <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-                <span>&bull;</span> Step 1: Upload Lecture Recording
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Supported formats: MP3, WAV, M4A, AAC, OGG, WebM (Long lectures supported, up to 2 GB)</p>
-              
-              <!-- Drag and Drop Dropzone -->
-              <div id="dropzone" 
-                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 hover:bg-brand-50/20 dark:hover:bg-brand-950/20"
-                   onclick="triggerAudioPick()">
-                <input type="file" id="audioInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" class="hidden" onchange="handleFileSelected(event)">
-                
-                <div id="uploadPrompt" class="space-y-2">
-                  <div class="w-10 h-10 mx-auto rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xl">
-                    &uarr;
-                  </div>
-                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Click to browse or drag and drop lecture audio
-                  </p>
-                  <p class="text-xs text-slate-400 dark:text-slate-500">Recorded from phone, laptop, or classroom mic</p>
-                </div>
-
-                <!-- Selected File Info -->
-                <div id="fileInfo" class="hidden text-left space-y-1 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" id="fileName">lecture.mp3</span>
-                    <span class="text-xs text-slate-400 dark:text-slate-400" id="fileSize">0 MB</span>
-                  </div>
-                  <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">&check; Audio file selected and ready</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Optional Step: Upload Lecture Notes / Slides -->
-            <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <span>📑 Lecture Notes / Slides (Optional PDF):</span>
+              <!-- Session Search Query Input & Action -->
+              <div class="space-y-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/40">
+                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span>🎯</span> <span>Target Lecture or Section:</span>
+                  </span>
+                  <span class="text-[10px] text-slate-400">e.g. Lecture 1, Section 1, Lecture 2</span>
                 </label>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Leave empty for audio-only</span>
-              </div>
-              
-              <div id="notesDropzone" 
-                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-4 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20"
-                   onclick="triggerNotesPick()">
-                <input type="file" id="notesInput" accept=".pdf,.txt,.md" class="hidden" onchange="handleNotesSelected(event)">
                 
-                <div id="notesUploadPrompt" class="space-y-1.5">
-                  <div class="w-8 h-8 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
+                <div class="flex items-center gap-2">
+                  <input type="text" id="folderSessionQueryInput" placeholder="e.g. Lecture 1 (or Section 1)" 
+                         class="flex-1 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                         onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchCourseFolder(); }">
+                  <button type="button" id="searchFolderBtn" onclick="searchCourseFolder()" 
+                          class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                    <span id="searchFolderBtnSpinner" class="hidden animate-spin">⏳</span>
+                    <span id="searchFolderBtnText">🔍 Find Materials</span>
+                  </button>
+                </div>
+
+                <!-- Quick Query Suggestions -->
+                <div class="flex items-center gap-1.5 text-[11px]">
+                  <span class="text-slate-400 dark:text-slate-500 text-[10px]">Quick Search:</span>
+                  <button type="button" onclick="setSessionQueryAndSearch('Lecture 1')" class="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 1</button>
+                  <button type="button" onclick="setSessionQueryAndSearch('Lecture 2')" class="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Lecture 2</button>
+                  <button type="button" onclick="setSessionQueryAndSearch('Section 1')" class="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 text-[10px] font-semibold transition border border-slate-200 dark:border-slate-700 cursor-pointer">Section 1</button>
+                </div>
+              </div>
+
+              <!-- Dynamic Search Result & Selection Box -->
+              <div id="folderSearchResultsBox" class="hidden p-4 rounded-xl border space-y-3 transition-all"></div>
+            </div>
+
+            <!-- List 1: Recordings (Audio) -->
+            <div class="space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>🎙️</span> <span>Recordings (Audio)</span>
+                    <span class="text-rose-500 font-extrabold">*</span>
+                    <span id="recordingsCountBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">0 items</span>
+                  </label>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                    Add recording files or links in chronological order. Multi-part audio is stitched sequentially.
+                  </p>
+                </div>
+                
+                <!-- Add Audio Options -->
+                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" multiple class="hidden" onchange="handleComputerFileInput(event, 'audio')">
+                  <button type="button" onclick="triggerAudioFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>💻</span> <span>Choose from computer</span>
+                  </button>
+                  <button type="button" onclick="toggleLinkInputDrawer('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>🔗</span> <span>Paste link</span>
+                  </button>
+                  <button type="button" onclick="openCourseFolderPanel('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>📂</span> <span>Choose from course folder</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Audio Link Input Drawer -->
+              <div id="audioLinkDrawer" class="hidden p-3 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50/40 dark:bg-brand-950/20 space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span>Paste Audio Recording Link(s):</span>
+                  <button type="button" onclick="toggleLinkInputDrawer('audio')" class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">&times;</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="url" id="audioLinkInput" placeholder="Google Drive or direct audio URL (e.g. https://drive.google.com/file/d/...)" 
+                         class="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                         onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addLinkItem('audio'); }">
+                  <button type="button" onclick="addLinkItem('audio')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition cursor-pointer">
+                    + Add Link
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500">Public Google Drive links or direct URLs. Separate multiple links by lines or commas.</p>
+              </div>
+
+              <!-- Recordings Dropzone & List Container -->
+              <div id="recordingsDropzone" 
+                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 rounded-xl p-3 transition-all bg-slate-50/50 dark:bg-slate-900/40 min-h-[75px]"
+                   ondragover="handleDragOver(event, 'audio')"
+                   ondragleave="handleDragLeave(event, 'audio')"
+                   ondrop="handleDrop(event, 'audio')">
+                <div id="recordingsList" class="space-y-2"></div>
+                <div id="recordingsEmptyPrompt" class="py-4 text-center cursor-pointer" onclick="triggerAudioFilePick()">
+                  <div class="w-8 h-8 mx-auto rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm mb-1.5">
+                    🎙️
+                  </div>
+                  <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Click to choose audio or drag and drop recordings here
+                  </p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">
+                    Supported formats: MP3, WAV, M4A, AAC, OGG, WebM &bull; At least one recording required
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- List 2: Notes / Slides (Optional) -->
+            <div class="space-y-2 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>📑</span> <span>Notes / Slides (Optional)</span>
+                    <span id="notesCountBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">0 items</span>
+                  </label>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                    Add slide decks or lecture notes in sequence. Audio remains ground truth; leave empty for audio-only.
+                  </p>
+                </div>
+                
+                <!-- Add Notes Options -->
+                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <input type="file" id="notesFileInput" accept=".pdf,.txt,.md" multiple class="hidden" onchange="handleComputerFileInput(event, 'notes')">
+                  <button type="button" onclick="triggerNotesFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>💻</span> <span>Choose from computer</span>
+                  </button>
+                  <button type="button" onclick="toggleLinkInputDrawer('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>🔗</span> <span>Paste link</span>
+                  </button>
+                  <button type="button" onclick="openCourseFolderPanel('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                    <span>📂</span> <span>Choose from course folder</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Notes Link Input Drawer -->
+              <div id="notesLinkDrawer" class="hidden p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span>Paste Notes / Slide Deck Link(s):</span>
+                  <button type="button" onclick="toggleLinkInputDrawer('notes')" class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">&times;</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="url" id="notesLinkInput" placeholder="Google Drive or direct PDF URL (e.g. https://drive.google.com/file/d/...)" 
+                         class="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                         onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addLinkItem('notes'); }">
+                  <button type="button" onclick="addLinkItem('notes')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer">
+                    + Add Link
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500">Public Google Drive links or direct URLs. Separate multiple links by lines or commas.</p>
+              </div>
+
+              <!-- Notes Dropzone & List Container -->
+              <div id="notesDropzone" 
+                   class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-3 transition-all bg-slate-50/50 dark:bg-slate-900/40 min-h-[75px]"
+                   ondragover="handleDragOver(event, 'notes')"
+                   ondragleave="handleDragLeave(event, 'notes')"
+                   ondrop="handleDrop(event, 'notes')">
+                <div id="notesList" class="space-y-2"></div>
+                <div id="notesEmptyPrompt" class="py-4 text-center cursor-pointer" onclick="triggerNotesFilePick()">
+                  <div class="w-8 h-8 mx-auto rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm mb-1.5">
                     📄
                   </div>
-                  <p class="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    Click or drag and drop lecture slides / notes (PDF)
+                  <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Click to choose notes or drag and drop slides / PDF here
                   </p>
-                  <p class="text-[11px] text-slate-400 dark:text-slate-500">Audio remains ground truth: AI only incorporates slides doctor discussed</p>
-                </div>
-
-                <!-- Selected Notes Info -->
-                <div id="notesFileInfo" class="hidden text-left space-y-1.5 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 truncate">
-                      <span class="text-indigo-600 dark:text-indigo-400 text-sm">📑</span>
-                      <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" id="notesFileName">slides.pdf</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-[11px] text-slate-400 dark:text-slate-400" id="notesFileSize">0 MB</span>
-                      <button type="button" id="clearNotesBtn" onclick="clearNotesFile(event)" class="text-[11px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold px-1.5 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer" title="Remove slides and run audio only">✕ Remove</button>
-                    </div>
-                  </div>
-                  <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">&check; Slides attached &bull; Audio strictly defines scope of what was taught</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">
+                    Supported formats: PDF, TXT, MD &bull; Optional (leave empty for audio-only)
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Section 2: Google Drive Individual Links (Multi-part & Multi-deck Supported) -->
-          <div id="linkModeSection" class="hidden space-y-4">
-            <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
-              <div class="flex items-center gap-2 font-bold text-blue-800 dark:text-blue-300">
-                <span>💡</span> <span>Multi-Part Recordings & Multi-Deck Slides Supported:</span>
-              </div>
-              <p class="leading-relaxed">
-                If the lecture was recorded in multiple audio parts, add each link below. If you finished one slide deck and moved into the next, add both slide decks. LectureAI will synthesize all parts into one cohesive study guide.
-              </p>
-            </div>
-
-            <!-- Audio Links Container (Multi-part) -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <span>🎙️</span> <span>Lecture Audio Recording Links (Required):</span>
-                </label>
-                <button type="button" onclick="addAudioLinkRow()" class="text-[11px] text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer">
-                  <span>+ Add Another Audio Part</span>
-                </button>
-              </div>
-              <div id="audioLinksList" class="space-y-2">
-                <div class="audio-link-row flex items-center gap-2">
-                  <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] audio-part-label">Part 1:</span>
-                  <input type="url" class="audio-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                         placeholder="https://drive.google.com/file/d/1.../view?usp=sharing"
-                         onpaste="handleMultiLinkPaste(event, 'audio')">
-                </div>
-              </div>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500">Paste Google Drive link ("Anyone with the link"). You can paste multiple links on separate lines to auto-add parts.</p>
-            </div>
-
-            <!-- Notes Links Container (Multi-deck) -->
-            <div class="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <span>📑</span> <span>Lecture Notes / Slides PDF Links (Optional):</span>
-                </label>
-                <button type="button" onclick="addNotesLinkRow()" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer">
-                  <span>+ Add Another Slide Deck</span>
-                </button>
-              </div>
-              <div id="notesLinksList" class="space-y-2">
-                <div class="notes-link-row flex items-center gap-2">
-                  <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[50px] notes-deck-label">Deck 1:</span>
-                  <input type="url" class="notes-link-input flex-1 text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                         placeholder="https://drive.google.com/file/d/2.../view?usp=sharing"
-                         onpaste="handleMultiLinkPaste(event, 'notes')">
-                </div>
-              </div>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500">Add slide decks for this lecture and next lecture slides. Audio remains supreme ground truth.</p>
-            </div>
-          </div>
-        </div>
-
-          <!-- Slide Range Filter (Applies to all modes) -->
-          <div id="slideRangeSection" class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2 transition-all duration-200">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Covered Slide Range (Optional):</span>
-              <span class="text-[10px] text-slate-400 dark:text-slate-500">Leave blank if unsure</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg">
-                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">Start:</span>
-                <input type="number" id="startSlideInput" min="1" placeholder="e.g. 1" 
-                       class="w-full text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none bg-transparent">
-              </div>
-              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg">
-                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">End:</span>
-                <input type="number" id="endSlideInput" min="1" placeholder="e.g. 25" 
-                       class="w-full text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none bg-transparent">
-              </div>
-            </div>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">If you don't know which slide the professor reached, leave blank. The AI will inspect all slides and strictly only include topics explained in the recording.</p>
           </div>
 
 
@@ -761,7 +729,9 @@
       'toggleAddNoteDrawer()', 'setAllRecordsSelected(true)', 'setAllRecordsSelected(false)',
       'setAllNotesSelected(true)', 'setAllNotesSelected(false)', 'startProcessing(false)',
       'removeAudioLinkRow(this)', 'removeNotesLinkRow(this)',
-      "handleMultiLinkPaste(event, 'audio')", "handleMultiLinkPaste(event, 'notes')"
+      "handleMultiLinkPaste(event, 'audio')", "handleMultiLinkPaste(event, 'notes')",
+      'triggerAudioFilePick()', 'triggerNotesFilePick()',
+      'closeCourseFolderPanel()', 'addSelectedFolderItemsToSources()'
     ]);
 
     function isSafeInlineHandler(name, value) {
@@ -773,7 +743,10 @@
       if (name === 'onclick') {
         return /^removeAddedNoteItem\(\d+\)$/.test(value) ||
           /^addNoteFromCourseFolder\('[A-Za-z0-9%._~-]*'\)$/.test(value) ||
-          /^toggleAnswer\('ans_\d+'\)$/.test(value);
+          /^toggleAnswer\('ans_\d+'\)$/.test(value) ||
+          /^openCourseFolderPanel\('(?:audio|notes)'\)$/.test(value) ||
+          /^toggleLinkInputDrawer\('(?:audio|notes)'\)$/.test(value) ||
+          /^addLinkItem\('(?:audio|notes)'\)$/.test(value);
       }
       if (name === 'onpaste') {
         return value === "handleMultiLinkPaste(event, 'audio')" ||
@@ -984,101 +957,426 @@
 
     let isGenerating = false;
 
-    function triggerAudioPick() {
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      const input = document.getElementById('audioInput');
-      if (input) input.click();
+    // --- Unified Lecture Sources State ---
+    let recordingsSources = []; // [{ id, kind: 'upload'|'link'|'folder', role: 'audio', name, size, status, file, link, local_path }]
+    let notesSources = [];      // [{ id, kind: 'upload'|'link'|'folder', role: 'notes', name, size, status, file, link, local_path, start_slide, end_slide }]
+    const SUPPORTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.webm'];
+    const SUPPORTED_NOTES_EXTENSIONS = ['.pdf', '.txt', '.md'];
+
+    function triggerAudioFilePick() {
+      if (isGenerating) return;
+      document.getElementById('audioFileInput')?.click();
     }
 
-    function triggerNotesPick() {
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      const input = document.getElementById('notesInput');
-      if (input) input.click();
+    function triggerNotesFilePick() {
+      if (isGenerating) return;
+      document.getElementById('notesFileInput')?.click();
     }
 
-    function handleFileSelected(e) {
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      if (e.target.files && e.target.files[0]) {
-        selectedFile = e.target.files[0];
-        document.getElementById('uploadPrompt').classList.add('hidden');
-        document.getElementById('fileInfo').classList.remove('hidden');
-        document.getElementById('fileName').innerText = selectedFile.name;
-        document.getElementById('fileSize').innerText = (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+    function handleComputerFileInput(event, role) {
+      if (isGenerating) return;
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        addComputerFiles(Array.from(files), role);
+      }
+      event.target.value = '';
+    }
+
+    function handleDragOver(event, role) {
+      if (isGenerating) return;
+      event.preventDefault();
+      const dz = role === 'audio' ? document.getElementById('recordingsDropzone') : document.getElementById('notesDropzone');
+      if (dz) {
+        dz.classList.add(role === 'audio' ? 'border-brand-500' : 'border-indigo-500', 'bg-brand-50/20');
       }
     }
 
-    function handleNotesSelected(e) {
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      if (e.target.files && e.target.files[0]) {
-        selectedNotesFile = e.target.files[0];
-        document.getElementById('notesUploadPrompt').classList.add('hidden');
-        document.getElementById('notesFileInfo').classList.remove('hidden');
-        document.getElementById('notesFileName').innerText = selectedNotesFile.name;
-        document.getElementById('notesFileSize').innerText = (selectedNotesFile.size / (1024 * 1024)).toFixed(2) + " MB";
+    function handleDragLeave(event, role) {
+      const dz = role === 'audio' ? document.getElementById('recordingsDropzone') : document.getElementById('notesDropzone');
+      if (dz) {
+        dz.classList.remove(role === 'audio' ? 'border-brand-500' : 'border-indigo-500', 'bg-brand-50/20');
       }
     }
 
-    function clearNotesFile(e) {
-      if (e) e.stopPropagation();
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      selectedNotesFile = null;
-      const input = document.getElementById('notesInput');
-      if (input) input.value = '';
-      document.getElementById('notesUploadPrompt').classList.remove('hidden');
-      document.getElementById('notesFileInfo').classList.add('hidden');
-      const startInp = document.getElementById('startSlideInput');
-      const endInp = document.getElementById('endSlideInput');
-      if (startInp) startInp.value = '';
-      if (endInp) endInp.value = '';
+    function handleDrop(event, role) {
+      if (isGenerating) return;
+      event.preventDefault();
+      handleDragLeave(event, role);
+      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        addComputerFiles(Array.from(event.dataTransfer.files), role);
+      }
     }
 
-    function initNotesDropzone() {
-      const ndz = document.getElementById('notesDropzone');
-      if (!ndz) return;
-      ndz.addEventListener('dragover', (e) => { 
-        if (isGenerating || currentIntakeMode === 'folder') return;
-        e.preventDefault(); 
-        ndz.classList.add('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30'); 
-      });
-      ndz.addEventListener('dragleave', () => { 
-        ndz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30'); 
-      });
-      ndz.addEventListener('drop', (e) => { 
-        if (isGenerating || currentIntakeMode === 'folder') return;
-        e.preventDefault(); 
-        ndz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30'); 
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-          selectedNotesFile = e.dataTransfer.files[0];
-          document.getElementById('notesUploadPrompt').classList.add('hidden');
-          document.getElementById('notesFileInfo').classList.remove('hidden');
-          document.getElementById('notesFileName').innerText = selectedNotesFile.name;
-          document.getElementById('notesFileSize').innerText = (selectedNotesFile.size / (1024 * 1024)).toFixed(2) + " MB";
+    // Shared handler for choosing files from computer via picker and drag-and-drop
+    function addComputerFiles(files, role) {
+      if (isGenerating || !files || files.length === 0) return;
+      const validExts = role === 'audio' ? SUPPORTED_AUDIO_EXTENSIONS : SUPPORTED_NOTES_EXTENSIONS;
+      let added = 0;
+
+      for (const file of files) {
+        // Lightweight metadata only - nothing heavy on main thread
+        const name = file.name || 'unnamed';
+        const size = file.size || 0;
+        const dotIdx = name.lastIndexOf('.');
+        const ext = dotIdx >= 0 ? name.slice(dotIdx).toLowerCase() : '';
+
+        if (!validExts.includes(ext)) {
+          showError(
+            `Unsupported ${role === 'audio' ? 'audio' : 'lecture notes'} file format '${ext || 'unknown'}' in "${name}". ` +
+            `Supported formats: ${validExts.join(', ')}.`
+          );
+          continue;
         }
+
+        const item = {
+          id: 'u_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          kind: 'upload',
+          role: role,
+          name: name,
+          size: size,
+          status: 'ready',
+          file: file,
+          link: null,
+          local_path: null,
+          start_slide: '',
+          end_slide: ''
+        };
+
+        if (role === 'audio') {
+          recordingsSources.push(item);
+        } else {
+          notesSources.push(item);
+        }
+        added++;
+      }
+
+      if (added > 0) {
+        renderSourcesUI();
+      }
+    }
+
+    function toggleLinkInputDrawer(role) {
+      if (isGenerating) return;
+      const drawer = role === 'audio' ? document.getElementById('audioLinkDrawer') : document.getElementById('notesLinkDrawer');
+      if (!drawer) return;
+      drawer.classList.toggle('hidden');
+      if (!drawer.classList.contains('hidden')) {
+        const inp = role === 'audio' ? document.getElementById('audioLinkInput') : document.getElementById('notesLinkInput');
+        inp?.focus();
+      }
+    }
+
+    function addLinkItem(role) {
+      if (isGenerating) return;
+      const inp = role === 'audio' ? document.getElementById('audioLinkInput') : document.getElementById('notesLinkInput');
+      if (!inp) return;
+      const val = inp.value.trim();
+      if (!val) return;
+
+      const rawUrls = val.split(/[\r\n,]+/).map(s => s.trim()).filter(s => s.startsWith('http://') || s.startsWith('https://'));
+      if (rawUrls.length === 0) {
+        showError("Please enter a valid link starting with http:// or https://");
+        return;
+      }
+
+      const validExts = role === 'audio' ? SUPPORTED_AUDIO_EXTENSIONS : SUPPORTED_NOTES_EXTENSIONS;
+      let added = 0;
+
+      for (const url of rawUrls) {
+        let inferredName = role === 'audio' ? `Audio Link ${recordingsSources.length + 1}` : `Notes Link ${notesSources.length + 1}`;
+        try {
+          const p = new URL(url).pathname;
+          const fn = p.split('/').filter(Boolean).pop();
+          if (fn && fn.includes('.')) {
+            const ext = '.' + fn.split('.').pop().toLowerCase();
+            if (['.exe', '.bat', '.sh', '.bin', '.dmg', '.apk'].includes(ext)) {
+              showError(`Unsupported file format '${ext}' in link.`);
+              continue;
+            }
+            if (role === 'audio' && ['.png', '.jpg', '.pdf', '.docx'].includes(ext)) {
+              showError(`Unsupported audio extension '${ext}' in link. Use: ${validExts.join(', ')}.`);
+              continue;
+            }
+            if (role === 'notes' && ['.mp3', '.wav', '.m4a', '.mp4'].includes(ext)) {
+              showError(`Unsupported notes extension '${ext}' in link. Use: ${validExts.join(', ')}.`);
+              continue;
+            }
+            inferredName = fn;
+          }
+        } catch (e) {}
+
+        const item = {
+          id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          kind: 'link',
+          role: role,
+          name: inferredName,
+          size: 0,
+          status: 'ready',
+          file: null,
+          link: url,
+          local_path: null,
+          start_slide: '',
+          end_slide: ''
+        };
+
+        if (role === 'audio') {
+          recordingsSources.push(item);
+        } else {
+          notesSources.push(item);
+        }
+        added++;
+      }
+
+      inp.value = '';
+      toggleLinkInputDrawer(role);
+      if (added > 0) {
+        renderSourcesUI();
+      }
+    }
+
+    function openCourseFolderPanel(targetRole) {
+      if (isGenerating) return;
+      const panel = document.getElementById('courseFolderPanel');
+      if (panel) {
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        document.getElementById('folderSessionQueryInput')?.focus();
+      }
+    }
+
+    function closeCourseFolderPanel() {
+      const panel = document.getElementById('courseFolderPanel');
+      if (panel) panel.classList.add('hidden');
+    }
+
+    function moveSourceItem(role, index, direction) {
+      if (isGenerating) return;
+      const list = role === 'audio' ? recordingsSources : notesSources;
+      const targetIdx = index + direction;
+      if (targetIdx < 0 || targetIdx >= list.length) return;
+      const temp = list[index];
+      list[index] = list[targetIdx];
+      list[targetIdx] = temp;
+      renderSourcesUI();
+    }
+
+    function removeSourceItem(role, index) {
+      if (isGenerating) return;
+      const list = role === 'audio' ? recordingsSources : notesSources;
+      if (index >= 0 && index < list.length) {
+        list.splice(index, 1);
+        renderSourcesUI();
+      }
+    }
+
+    function updateNotesSlideRange(index, field, val) {
+      if (notesSources[index]) {
+        notesSources[index][field === 'start' ? 'start_slide' : 'end_slide'] = val;
+      }
+    }
+
+    function renderSourcesUI() {
+      renderRecordingsList();
+      renderNotesList();
+      updateTotalSize();
+      checkDuplicates();
+    }
+
+    function updateTotalSize() {
+      let totalBytes = 0;
+      recordingsSources.forEach(s => { if (s.size) totalBytes += s.size; });
+      notesSources.forEach(s => { if (s.size) totalBytes += s.size; });
+      const badge = document.getElementById('totalSizeBadge');
+      if (badge) {
+        badge.innerText = totalBytes > 0 ? `Total Size: ${formatFileSize(totalBytes)}` : 'Total Size: 0 MB';
+      }
+    }
+
+    function checkDuplicates() {
+      const banner = document.getElementById('duplicateWarningBanner');
+      const textEl = document.getElementById('duplicateWarningText');
+      if (!banner) return;
+
+      const allItems = [...recordingsSources, ...notesSources];
+      const seen = new Map();
+      const duplicates = new Set();
+
+      for (const item of allItems) {
+        const key = `${item.name.toLowerCase()}::${item.size || 0}`;
+        if (seen.has(key)) {
+          duplicates.add(item.name);
+        } else {
+          seen.set(key, true);
+        }
+      }
+
+      if (duplicates.size > 0) {
+        const names = Array.from(duplicates).join(', ');
+        if (textEl) textEl.innerText = `Warning: Duplicate files detected (${names}). Sequential order is preserved.`;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function renderRecordingsList() {
+      const container = document.getElementById('recordingsList');
+      const emptyPrompt = document.getElementById('recordingsEmptyPrompt');
+      const countBadge = document.getElementById('recordingsCountBadge');
+      if (countBadge) countBadge.innerText = `${recordingsSources.length} item${recordingsSources.length === 1 ? '' : 's'}`;
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (recordingsSources.length === 0) {
+        emptyPrompt?.classList.remove('hidden');
+        return;
+      }
+      emptyPrompt?.classList.add('hidden');
+
+      recordingsSources.forEach((item, idx) => {
+        container.appendChild(createSourceItemCard(item, idx, recordingsSources.length, 'audio'));
       });
     }
 
-    // Drag and drop listeners
-    const dropzone = document.getElementById('dropzone');
-    dropzone.addEventListener('dragover', (e) => { 
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      e.preventDefault(); 
-      dropzone.classList.add('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30'); 
-    });
-    dropzone.addEventListener('dragleave', () => { 
-      dropzone.classList.remove('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30'); 
-    });
-    dropzone.addEventListener('drop', (e) => { 
-      if (isGenerating || currentIntakeMode === 'folder') return;
-      e.preventDefault(); 
-      dropzone.classList.remove('border-brand-500', 'bg-brand-50/40', 'dark:bg-brand-950/30'); 
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        selectedFile = e.dataTransfer.files[0];
-        document.getElementById('uploadPrompt').classList.add('hidden');
-        document.getElementById('fileInfo').classList.remove('hidden');
-        document.getElementById('fileName').innerText = selectedFile.name;
-        document.getElementById('fileSize').innerText = (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+    function renderNotesList() {
+      const container = document.getElementById('notesList');
+      const emptyPrompt = document.getElementById('notesEmptyPrompt');
+      const countBadge = document.getElementById('notesCountBadge');
+      if (countBadge) countBadge.innerText = `${notesSources.length} item${notesSources.length === 1 ? '' : 's'}`;
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (notesSources.length === 0) {
+        emptyPrompt?.classList.remove('hidden');
+        return;
       }
-    });
+      emptyPrompt?.classList.add('hidden');
+
+      notesSources.forEach((item, idx) => {
+        container.appendChild(createSourceItemCard(item, idx, notesSources.length, 'notes'));
+      });
+    }
+
+    function createSourceItemCard(item, index, total, role) {
+      const card = document.createElement('div');
+      card.className = 'flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs gap-2 transition hover:border-slate-300 dark:hover:border-slate-600';
+
+      const left = document.createElement('div');
+      left.className = 'flex items-center gap-2 min-w-0 flex-1';
+
+      const orderControls = document.createElement('div');
+      orderControls.className = 'flex flex-col items-center gap-0.5 shrink-0';
+
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.innerHTML = '▲';
+      upBtn.title = 'Move up';
+      upBtn.disabled = isGenerating || index === 0;
+      upBtn.className = `text-[9px] px-1 py-0.5 rounded leading-none ${index === 0 ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'}`;
+      upBtn.onclick = (e) => { e.stopPropagation(); moveSourceItem(role, index, -1); };
+
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.innerHTML = '▼';
+      downBtn.title = 'Move down';
+      downBtn.disabled = isGenerating || index === total - 1;
+      downBtn.className = `text-[9px] px-1 py-0.5 rounded leading-none ${index === total - 1 ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'}`;
+      downBtn.onclick = (e) => { e.stopPropagation(); moveSourceItem(role, index, 1); };
+
+      orderControls.appendChild(upBtn);
+      orderControls.appendChild(downBtn);
+
+      const orderPill = document.createElement('span');
+      orderPill.className = 'text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[20px] text-center';
+      orderPill.innerText = `#${index + 1}`;
+
+      const sourceBadge = document.createElement('span');
+      if (item.kind === 'upload') {
+        sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0';
+        sourceBadge.innerText = '💻 Computer';
+      } else if (item.kind === 'link') {
+        sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0';
+        sourceBadge.innerText = '🔗 Link';
+      } else {
+        sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shrink-0';
+        sourceBadge.innerText = '📂 Course folder';
+      }
+
+      const nameBox = document.createElement('div');
+      nameBox.className = 'min-w-0 flex-1';
+
+      const nameEl = document.createElement('p');
+      nameEl.className = 'text-xs font-semibold text-slate-800 dark:text-slate-100 truncate';
+      nameEl.innerText = item.name;
+      nameEl.title = item.name;
+
+      nameBox.appendChild(nameEl);
+
+      left.appendChild(orderControls);
+      left.appendChild(orderPill);
+      left.appendChild(sourceBadge);
+      left.appendChild(nameBox);
+
+      const right = document.createElement('div');
+      right.className = 'flex items-center gap-2 shrink-0 self-end sm:self-center';
+
+      if (role === 'notes') {
+        const rangeBox = document.createElement('div');
+        rangeBox.className = 'flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400';
+        rangeBox.innerHTML = `
+          <span class="font-semibold">Slides:</span>
+          <input type="number" min="1" placeholder="Start" value="${item.start_slide || ''}" 
+                 class="w-12 px-1 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] text-slate-800 dark:text-slate-200 text-center focus:outline-none"
+                 onchange="updateNotesSlideRange(${index}, 'start', this.value)">
+          <span>-</span>
+          <input type="number" min="1" placeholder="End" value="${item.end_slide || ''}" 
+                 class="w-12 px-1 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] text-slate-800 dark:text-slate-200 text-center focus:outline-none"
+                 onchange="updateNotesSlideRange(${index}, 'end', this.value)">
+        `;
+        right.appendChild(rangeBox);
+      }
+
+      if (item.size > 0) {
+        const sizeEl = document.createElement('span');
+        sizeEl.className = 'text-[10px] text-slate-400 dark:text-slate-500 font-medium';
+        sizeEl.innerText = formatFileSize(item.size);
+        right.appendChild(sizeEl);
+      }
+
+      const statusEl = document.createElement('span');
+      if (item.status === 'ready') {
+        statusEl.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+        statusEl.innerText = 'Ready';
+      } else if (item.status === 'checking') {
+        statusEl.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+        statusEl.innerText = 'Checking';
+      } else {
+        statusEl.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+        statusEl.innerText = 'Error';
+      }
+      right.appendChild(statusEl);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.innerHTML = '✕';
+      delBtn.title = 'Remove';
+      delBtn.disabled = isGenerating;
+      delBtn.className = 'text-xs text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 font-bold px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition';
+      delBtn.onclick = (e) => { e.stopPropagation(); removeSourceItem(role, index); };
+      right.appendChild(delBtn);
+
+      card.appendChild(left);
+      card.appendChild(right);
+      return card;
+    }
+
+    // Shims for backward compatibility
+    function triggerAudioPick() { triggerAudioFilePick(); }
+    function triggerNotesPick() { triggerNotesFilePick(); }
+    function clearNotesFile() {}
+    function initNotesDropzone() {}
+    function setFolderModeLock(isFolder) {}
+    function switchIntakeMode(mode) {}
 
     const DEFAULT_BME_SUBJECTS = [
       "Bioinstrumentation & Biosensors",
@@ -1819,24 +2117,24 @@
         html += `</div>`;
       }
 
-      // Summary & Action Confirmation Box
+      // Summary & Add to Sources Confirmation Box
       html += `
         <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 text-xs">
-            <span class="text-lg">${selectedRecsCount > 0 ? '✅' : '⚠️'}</span>
+            <span class="text-lg">${(selectedRecsCount + selectedNotesCount) > 0 ? '✅' : '⚠️'}</span>
             <div>
               <p class="font-bold text-slate-800 dark:text-slate-200">
-                ${selectedRecsCount > 0 ? (selectedNotesCount > 0 ? 'Full Lecture Selected (Notes + Audio)' : 'Audio-Only Selected') : 'No Audio Recording Selected'}
+                ${(selectedRecsCount + selectedNotesCount) > 0 ? 'Selected Materials Ready to Add' : 'No Materials Checked'}
               </p>
               <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                ${selectedRecsCount} recording(s), ${selectedNotesCount} lecture note(s) will be included in the study guide.
+                ${selectedRecsCount} recording(s), ${selectedNotesCount} lecture note(s) selected from this course folder.
               </p>
             </div>
           </div>
-          <button type="button" onclick="startProcessing(false)"
-                  ${selectedRecsCount === 0 ? 'disabled' : ''}
-                  class="w-full sm:w-auto px-4 py-2 rounded-lg ${selectedRecsCount > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs' : 'bg-slate-300 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} text-xs font-bold transition flex items-center justify-center gap-1.5">
-            <span>✨ Generate Study Guide PDF</span>
+          <button type="button" onclick="addSelectedFolderItemsToSources()"
+                  ${(selectedRecsCount + selectedNotesCount) === 0 ? 'disabled' : ''}
+                  class="w-full sm:w-auto px-4 py-2 rounded-lg ${(selectedRecsCount + selectedNotesCount) > 0 ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-xs' : 'bg-slate-300 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <span>➕ Add Selected to Lecture Sources</span>
           </button>
         </div>
       `;
@@ -1902,20 +2200,80 @@
       }
     }
 
+    function addSelectedFolderItemsToSources() {
+      if (isGenerating || !currentFolderSearchData) return;
+      const recs = (currentFolderSearchData.records || []).filter(r => r.selected !== false);
+      const notes = (currentFolderSearchData.notes || []).filter(n => n.selected !== false);
+
+      if (recs.length === 0 && notes.length === 0) {
+        showError("No materials were checked to add. Please check at least one recording or note.");
+        return;
+      }
+
+      let addedRecs = 0;
+      let addedNotes = 0;
+
+      recs.forEach((r, idx) => {
+        recordingsSources.push({
+          id: 'f_a_' + Date.now() + '_' + idx,
+          kind: 'folder',
+          role: 'audio',
+          name: r.name,
+          size: r.size || 0,
+          status: 'ready',
+          file: null,
+          link: r.url || null,
+          local_path: r.local_path || null,
+          start_slide: '',
+          end_slide: ''
+        });
+        addedRecs++;
+      });
+
+      notes.forEach((n, idx) => {
+        notesSources.push({
+          id: 'f_n_' + Date.now() + '_' + idx,
+          kind: 'folder',
+          role: 'notes',
+          name: n.name,
+          size: n.size || 0,
+          status: 'ready',
+          file: null,
+          link: n.url || null,
+          local_path: n.local_path || null,
+          start_slide: '',
+          end_slide: ''
+        });
+        addedNotes++;
+      });
+
+      closeCourseFolderPanel();
+      renderSourcesUI();
+      showSuccessToast(`Added ${addedRecs} recording(s) and ${addedNotes} note(s) to Lecture Sources!`);
+    }
+
     function addNoteFromCourseFolder(encodedName) {
       const name = decodeURIComponent(encodedName);
       if (!currentFolderSearchData || !currentFolderSearchData.all_course_notes) return;
       const found = currentFolderSearchData.all_course_notes.find(n => n.name === name);
       if (found) {
-        const newNote = Object.assign({}, found, {
-          selected: true,
-          is_added: true,
-          is_continued: true
+        notesSources.push({
+          id: 'f_extra_' + Date.now(),
+          kind: 'folder',
+          role: 'notes',
+          name: found.name,
+          size: found.size || 0,
+          status: 'ready',
+          file: null,
+          link: found.url || null,
+          local_path: found.local_path || null,
+          start_slide: '',
+          end_slide: ''
         });
-        if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
-        currentFolderSearchData.notes.push(newNote);
         isAddNoteDrawerOpen = false;
-        renderFolderMaterialsUI();
+        closeCourseFolderPanel();
+        renderSourcesUI();
+        showSuccessToast(`Added "${found.name}" to Lecture Sources!`);
       }
     }
 
@@ -1929,33 +2287,16 @@
     function handleExtraLocalNoteFile(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
-      if (!window.extraLocalFiles) window.extraLocalFiles = [];
-      window.extraLocalFiles.push(file);
-
-      if (!currentFolderSearchData) currentFolderSearchData = { records: [], notes: [] };
-      if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
-
-      currentFolderSearchData.notes.push({
-        name: file.name,
-        size: file.size,
-        is_notes: true,
-        is_local: true,
-        is_added: true,
-        is_continued: true,
-        category: 'lecture_slide',
-        selected: true
-      });
+      addComputerFiles([file], 'notes');
       isAddNoteDrawerOpen = false;
-      renderFolderMaterialsUI();
+      closeCourseFolderPanel();
     }
 
     function addExtraNoteByLink() {
       const inp = document.getElementById('extraNoteLinkInput');
       const link = (inp ? inp.value : '').trim();
       if (!link) return;
-      if (!currentFolderSearchData) currentFolderSearchData = { records: [], notes: [] };
-      if (!currentFolderSearchData.notes) currentFolderSearchData.notes = [];
-
+      addComputerFiles([], 'notes'); // triggers nothing, use link logic:
       let inferredName = "Continued_Lecture_Notes.pdf";
       try {
         const p = new URL(link).pathname;
@@ -1963,77 +2304,41 @@
         if (fn && fn.includes('.')) inferredName = fn;
       } catch (e) {}
 
-      currentFolderSearchData.notes.push({
+      notesSources.push({
+        id: 'l_extra_' + Date.now(),
+        kind: 'link',
+        role: 'notes',
         name: inferredName,
-        url: link,
-        is_notes: true,
-        is_local: false,
-        is_added: true,
-        is_continued: true,
-        category: 'lecture_slide',
-        selected: true
+        size: 0,
+        status: 'ready',
+        file: null,
+        link: link,
+        local_path: null,
+        start_slide: '',
+        end_slide: ''
       });
       if (inp) inp.value = '';
       isAddNoteDrawerOpen = false;
-      renderFolderMaterialsUI();
+      closeCourseFolderPanel();
+      renderSourcesUI();
     }
 
     function setFormLocked(locked) {
       isGenerating = locked;
 
       // File inputs
-      const audioInput = document.getElementById('audioInput');
-      const notesInput = document.getElementById('notesInput');
+      const audioInput = document.getElementById('audioFileInput');
+      const notesInput = document.getElementById('notesFileInput');
       if (audioInput) audioInput.disabled = locked;
       if (notesInput) notesInput.disabled = locked;
-
-      // Dynamic link inputs
-      document.querySelectorAll('.audio-link-input, .notes-link-input, .remove-audio-link-btn, .remove-notes-link-btn').forEach(el => {
-        el.disabled = locked;
-      });
 
       // Folder search buttons
       const searchFolderBtn = document.getElementById('searchFolderBtn');
       if (searchFolderBtn) searchFolderBtn.disabled = locked;
 
-      // Dropzone visual cues
-      const dropzone = document.getElementById('dropzone');
-      const notesDropzone = document.getElementById('notesDropzone');
-      if (dropzone) {
-        if (locked) {
-          dropzone.classList.add('opacity-75', 'cursor-not-allowed');
-          dropzone.setAttribute('aria-disabled', 'true');
-        } else {
-          dropzone.classList.remove('opacity-75', 'cursor-not-allowed');
-          dropzone.removeAttribute('aria-disabled');
-        }
-      }
-      if (notesDropzone) {
-        if (locked) {
-          notesDropzone.classList.add('opacity-75', 'cursor-not-allowed');
-          notesDropzone.setAttribute('aria-disabled', 'true');
-        } else {
-          notesDropzone.classList.remove('opacity-75', 'cursor-not-allowed');
-          notesDropzone.removeAttribute('aria-disabled');
-        }
-      }
-
-      // Remove notes button
-      const clearNotesBtn = document.getElementById('clearNotesBtn');
-      if (clearNotesBtn) {
-        clearNotesBtn.disabled = locked;
-        if (locked) {
-          clearNotesBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-        } else {
-          clearNotesBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-        }
-      }
-
       // Text inputs, selects, ranges & buttons
       const elementIds = [
-        'startSlideInput', 'endSlideInput',
         'folderUrlInput', 'folderSessionQueryInput',
-        'tabUploadBtn', 'tabLinkBtn', 'tabFolderBtn',
         'courseInput', 'lecturerInput',
         'newSubjectInput', 'studyMode', 'modelSelect',
         'includeDiagrams', 'includeExam', 'includeTranscript', 'saveMediaToDrive',
@@ -2051,16 +2356,6 @@
         }
       });
 
-      // Subject presets badges
-      const subjectBadges = document.getElementById('subjectBadgesContainer');
-      if (subjectBadges) {
-        if (locked) {
-          subjectBadges.classList.add('pointer-events-none', 'opacity-60');
-        } else {
-          subjectBadges.classList.remove('pointer-events-none', 'opacity-60');
-        }
-      }
-
       // Selection Lock Banner
       const lockBanner = document.getElementById('selectionLockBanner');
       if (lockBanner) {
@@ -2069,10 +2364,6 @@
         } else {
           lockBanner.classList.add('hidden');
         }
-      }
-
-      if (!locked) {
-        setFolderModeLock(currentIntakeMode === 'folder');
       }
     }
 
@@ -2085,6 +2376,11 @@
       if (!isDemo && !hasApiKey) {
         openKeyModal();
         showError("A Gemini API Key is required to transcribe live audio files. Please enter your API key in the popup, or use 'Instant Demo' to test without a key.");
+        return;
+      }
+
+      if (!isDemo && recordingsSources.length === 0) {
+        showError("At least one audio recording is required. Please add a recording from your computer, a link, or a course folder.");
         return;
       }
 
@@ -2102,80 +2398,50 @@
       if (courseHint) formData.append('course_hint', courseHint);
       if (lecturerHint) formData.append('lecturer_hint', lecturerHint);
 
-      if (currentIntakeMode !== 'folder') {
-        const startSlideVal = document.getElementById('startSlideInput') ? document.getElementById('startSlideInput').value.trim() : '';
-        const endSlideVal = document.getElementById('endSlideInput') ? document.getElementById('endSlideInput').value.trim() : '';
-        if (startSlideVal) formData.append('start_slide', startSlideVal);
-        if (endSlideVal) formData.append('end_slide', endSlideVal);
-      }
-
       if (isDemo) {
         formData.append('demo_mode', 'true');
-      } else {
-        if (currentIntakeMode === 'upload') {
-          if (!selectedFile) {
-            showError("Please select a lecture audio file to upload, or switch to 'Drive Links' tab.");
-            return;
-          }
-          formData.append('audio', selectedFile);
-          if (selectedNotesFile) {
-            formData.append('notes', selectedNotesFile);
-          }
-        } else if (currentIntakeMode === 'link') {
-          const audioInputs = document.querySelectorAll('.audio-link-input');
-          const audioUrls = Array.from(audioInputs).map(inp => inp.value.trim()).filter(v => v.length > 0);
-          
-          const notesInputs = document.querySelectorAll('.notes-link-input');
-          const notesUrls = Array.from(notesInputs).map(inp => inp.value.trim()).filter(v => v.length > 0);
+      }
 
-          if (audioUrls.length === 0) {
-            showError("Please enter at least one Google Drive link for your lecture audio recording.");
-            return;
-          }
-          formData.append('audio_urls', JSON.stringify(audioUrls));
-          if (notesUrls.length > 0) {
-            formData.append('notes_urls', JSON.stringify(notesUrls));
-          }
-        } else if (currentIntakeMode === 'folder') {
-          const folderUrl = document.getElementById('folderUrlInput') ? document.getElementById('folderUrlInput').value.trim() : '';
-          const sessionQuery = document.getElementById('folderSessionQueryInput') ? document.getElementById('folderSessionQueryInput').value.trim() : '';
-          if (!folderUrl) {
-            showError("Please enter a Google Drive course folder link or select a course above.");
-            return;
-          }
-          formData.append('folder_url', folderUrl);
-          if (sessionQuery) {
-            formData.append('session_query', sessionQuery);
-          }
-          if (currentFolderSearchData) {
-            const selectedRecords = (currentFolderSearchData.records || []).filter(r => r.selected !== false);
-            const selectedNotes = (currentFolderSearchData.notes || []).filter(n => n.selected !== false);
-
-            if (!isDemo && selectedRecords.length === 0) {
-              showError("Please check at least one audio recording to process.");
-              return;
-            }
-
-            formData.append('folder_selection_mode', selectedNotes.length > 0 ? 'both' : 'record_only');
-            formData.append('selected_items', JSON.stringify({
-              records: selectedRecords,
-              notes: selectedNotes
-            }));
-
-            // Handle any extra local uploaded note files
-            if (window.extraLocalFiles && window.extraLocalFiles.length > 0) {
-              window.extraLocalFiles.forEach(f => {
-                formData.append('notes', f);
-              });
-            }
-
-            // Handle any extra notes URLs
-            const noteUrlsFromItems = selectedNotes.filter(n => n.url).map(n => n.url);
-            if (noteUrlsFromItems.length > 0) {
-              formData.append('notes_urls', JSON.stringify(noteUrlsFromItems));
-            }
-          }
+      // Build structured sources list
+      const sourcesList = [];
+      recordingsSources.forEach((item, idx) => {
+        sourcesList.push({
+          id: item.id,
+          kind: item.kind,
+          role: 'audio',
+          order: idx,
+          display_name: item.name,
+          size: item.size || 0,
+          link: item.link || null,
+          local_path: item.local_path || null
+        });
+        if (item.kind === 'upload' && item.file) {
+          formData.append(`file_${item.id}`, item.file);
         }
+      });
+
+      notesSources.forEach((item, idx) => {
+        const sVal = item.start_slide ? parseInt(item.start_slide) : null;
+        const eVal = item.end_slide ? parseInt(item.end_slide) : null;
+        sourcesList.push({
+          id: item.id,
+          kind: item.kind,
+          role: 'notes',
+          order: idx,
+          display_name: item.name,
+          size: item.size || 0,
+          link: item.link || null,
+          local_path: item.local_path || null,
+          start_slide: isNaN(sVal) ? null : sVal,
+          end_slide: isNaN(eVal) ? null : eVal
+        });
+        if (item.kind === 'upload' && item.file) {
+          formData.append(`file_${item.id}`, item.file);
+        }
+      });
+
+      if (sourcesList.length > 0) {
+        formData.append('sources', JSON.stringify(sourcesList));
       }
 
       setFormLocked(true);

@@ -4,7 +4,7 @@ import uuid
 import shutil
 import urllib.parse
 from pathlib import Path
-from typing import Optional, Tuple, Callable, List, Dict, Any
+from typing import Optional, Tuple, Callable, List, Dict, Any, Union
 import requests
 import gdown
 from config import SUPPORTED_AUDIO_EXTS, SUPPORTED_NOTES_EXTS, UPLOAD_DIR
@@ -25,7 +25,7 @@ GDRIVE_FOLDER_PATTERNS = [
 # Optional override: set LECTUREAI_COURSES_DIR in .env to point at your own semester/courses folder.
 _CUSTOM_COURSES_DIR = os.environ.get("LECTUREAI_COURSES_DIR", "").strip()
 
-FALL_DRIVE_CANDIDATE_ROOTS = ([Path(_CUSTOM_COURSES_DIR)] if _CUSTOM_COURSES_DIR else []) + [
+FALL_DRIVE_CANDIDATE_ROOTS = [
     Path(r"G:\My Drive\fall 2026"),
     Path(r"G:\My Drive\Fall 2026"),
     Path.home() / "Google Drive" / "fall 2026",
@@ -34,9 +34,40 @@ FALL_DRIVE_CANDIDATE_ROOTS = ([Path(_CUSTOM_COURSES_DIR)] if _CUSTOM_COURSES_DIR
 ]
 
 
+def get_configured_courses_roots() -> List[Path]:
+    """Returns candidate roots for the courses directory, including dynamic LECTUREAI_COURSES_DIR."""
+    roots: List[Path] = []
+    custom = os.environ.get("LECTUREAI_COURSES_DIR", "").strip()
+    if custom:
+        roots.append(Path(custom))
+    roots.extend(FALL_DRIVE_CANDIDATE_ROOTS)
+    return roots
+
+
+def validate_course_folder_path(candidate_path: Union[str, Path]) -> Path:
+    """
+    Validates that a course-folder path exists and is strictly contained
+    within one of the configured courses directory roots.
+    Raises FileNotFoundError or ValueError if invalid.
+    """
+    p = Path(candidate_path).resolve()
+    roots = [r.resolve() for r in get_configured_courses_roots() if r.exists() and r.is_dir()]
+    if not roots:
+        raise ValueError(f"Access denied: no valid courses directory configured for '{p.name}'.")
+
+    is_contained = any((root == p or root in p.parents) for root in roots)
+    if not is_contained:
+        raise ValueError(f"Access denied: course folder item '{p.name}' is outside the configured courses directory.")
+
+    if not p.exists():
+        raise FileNotFoundError(f"Course folder item not found: {p.name}")
+
+    return p
+
+
 def get_drive_fall_root() -> Optional[Path]:
     """Returns the detected fall 2026 directory in Google Drive or local storage."""
-    for root in FALL_DRIVE_CANDIDATE_ROOTS:
+    for root in get_configured_courses_roots():
         if root.exists() and root.is_dir():
             return root
     return None

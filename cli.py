@@ -241,30 +241,28 @@ def main():
     # 2. Direct audio inputs
     raw_audio = split_items(args.audio)
     if raw_audio:
-        web_audios = [a for a in raw_audio if a.startswith("http://") or a.startswith("https://")]
-        local_audios = [Path(a) for a in raw_audio if not (a.startswith("http://") or a.startswith("https://"))]
-
-        if web_audios:
-            drive_label = f" into Drive ({drive_audio_dir.parent.name})" if is_drive_target(drive_audio_dir) else ""
-            print(f"[*] Downloading {len(web_audios)} audio recording link(s){drive_label}...")
-            downloaded = download_multiple_links(web_audios, drive_audio_dir, "audio", cli_progress)
-            for p, _ in downloaded:
-                audio_paths.append(p)
-        audio_paths.extend(local_audios)
+        for idx, item in enumerate(raw_audio):
+            if item.startswith("http://") or item.startswith("https://"):
+                drive_label = f" into Drive ({drive_audio_dir.parent.name})" if is_drive_target(drive_audio_dir) else ""
+                print(f"[*] Downloading audio recording link ({idx+1}/{len(raw_audio)}){drive_label}...")
+                downloaded = download_multiple_links([item], drive_audio_dir, "audio", cli_progress)
+                for p, _ in downloaded:
+                    audio_paths.append(p)
+            else:
+                audio_paths.append(Path(item))
 
     # 3. Direct notes inputs
     raw_notes = split_items(args.notes)
     if raw_notes:
-        web_notes = [n for n in raw_notes if n.startswith("http://") or n.startswith("https://")]
-        local_notes = [Path(n) for n in raw_notes if not (n.startswith("http://") or n.startswith("https://"))]
-
-        if web_notes:
-            drive_label = f" into Drive ({drive_notes_dir.parent.name})" if is_drive_target(drive_notes_dir) else ""
-            print(f"[*] Downloading {len(web_notes)} slide deck link(s){drive_label}...")
-            downloaded = download_multiple_links(web_notes, drive_notes_dir, "notes", cli_progress)
-            for p, _ in downloaded:
-                notes_paths.append(p)
-        notes_paths.extend(local_notes)
+        for idx, item in enumerate(raw_notes):
+            if item.startswith("http://") or item.startswith("https://"):
+                drive_label = f" into Drive ({drive_notes_dir.parent.name})" if is_drive_target(drive_notes_dir) else ""
+                print(f"[*] Downloading slide deck link ({idx+1}/{len(raw_notes)}){drive_label}...")
+                downloaded = download_multiple_links([item], drive_notes_dir, "notes", cli_progress)
+                for p, _ in downloaded:
+                    notes_paths.append(p)
+            else:
+                notes_paths.append(Path(item))
 
     if not args.demo and not audio_paths:
         print("Error: Please provide audio recording(s) with --audio <path/url...>, or a course folder with --folder <path/url> --session <query>, or use --demo to test.")
