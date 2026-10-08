@@ -233,7 +233,7 @@ Run the full automated unit test suite to verify models, diagram rendering, slid
 python -m unittest tests/test_suite.py -v
 ```
 
-All 9 comprehensive tests run locally and verify:
+The comprehensive automated test suite runs locally and verifies:
 - ✅ Pydantic schema validation & serialization
 - ✅ Visualizer diagram generation (Flowcharts, Cycles, Bar charts)
 - ✅ ReportLab PDF compilation and page numbering
@@ -243,6 +243,13 @@ All 9 comprehensive tests run locally and verify:
 - ✅ Math defect auto-healing & history deletion API
 - ✅ Selective course material discovery
 - ✅ Physics waveform plotting and collision-free layout
+- ✅ Tofu box glyph prevention & clean unicode rendering
+- ✅ System block diagram integrity & node label preservation
+- ✅ History deletion lifecycle & file unlinking
+- ✅ Demo endpoint lifecycle & simulated audit badging
+- ✅ Course folder mode upload isolation
+- ✅ Corrupt and encrypted PDF error handling
+- ✅ Single source of truth configuration & API key privacy
 
 ---
 

@@ -643,10 +643,10 @@ def verify_and_reconcile_study_guide(
 
     # Graceful fallback if verification API call fails: preserve original guide
     fallback_report = VerificationAuditReport(
-        audit_passed=True,
+        audit_passed=False,
         contradictions_detected=0,
         contradictions=[],
-        overall_fidelity_summary="Synthesis completed with primary lecture fidelity checks.",
+        overall_fidelity_summary="Verification audit unavailable: cross-check could not be completed.",
         verified_at=datetime.now().astimezone().isoformat(timespec="seconds"),
         notes_audited=has_notes,
         notes_reference=notes_reference,
@@ -656,6 +656,6 @@ def verify_and_reconcile_study_guide(
     if notes_reference and not guide.notes_reference:
         guide.notes_reference = notes_reference
     if progress_callback:
-        progress_callback("Fidelity check completed.", 82)
+        progress_callback("Fidelity check unavailable (verification API call failed).", 82)
     return guide, fallback_report
 

@@ -104,70 +104,80 @@ def main():
     print(f"Loaded: \"{draft_guide.lecture_title}\" ({len(draft_guide.sections)} sections)")
 
     client = genai.Client(api_key=key)
+    uploaded_files = []
 
-    # 2. Upload audio (and optional notes) to Gemini
-    print("\n[2/4] Uploading media files to Gemini API for cross-examination...")
-    audio_file = client.files.upload(file=str(audio_path))
-    print(f"• Audio uploaded successfully (URI: {audio_file.uri})")
+    try:
+        # 2. Upload audio (and optional notes) to Gemini
+        print("\n[2/4] Uploading media files to Gemini API for cross-examination...")
+        audio_file = client.files.upload(file=str(audio_path))
+        uploaded_files.append(audio_file)
+        print(f"• Audio uploaded successfully (URI: {getattr(audio_file, 'uri', 'uploaded')})")
 
-    notes_file = None
-    notes_ref_label = None
-    if notes_path:
-        processed_notes, notes_ref_label = slice_pdf_pages(
-            notes_path, start_page=args.start_slide, end_page=args.end_slide, output_dir=UPLOAD_DIR
+        notes_file = None
+        notes_ref_label = None
+        if notes_path:
+            processed_notes, notes_ref_label = slice_pdf_pages(
+                notes_path, start_page=args.start_slide, end_page=args.end_slide, output_dir=UPLOAD_DIR
+            )
+            notes_file = client.files.upload(file=str(processed_notes))
+            uploaded_files.append(notes_file)
+            print(f"• Lecture slides uploaded successfully ({notes_ref_label})")
+
+        # 3. Cross-examine & reconcile
+        print("\n[3/4] Cross-examining draft guide against spoken audio recording & slides...")
+        reconciled_guide, report = verify_and_reconcile_study_guide(
+            client=client,
+            audio_file=audio_file,
+            notes_file=notes_file,
+            notes_reference=notes_ref_label,
+            guide=draft_guide,
+            model=args.model,
+            progress_callback=lambda msg, pct: print(f"  [{pct}%] {msg}")
         )
-        notes_file = client.files.upload(file=str(processed_notes))
-        print(f"• Lecture slides uploaded successfully ({notes_ref_label})")
 
-    # 3. Cross-examine & reconcile
-    print("\n[3/4] Cross-examining draft guide against spoken audio recording & slides...")
-    reconciled_guide, report = verify_and_reconcile_study_guide(
-        client=client,
-        audio_file=audio_file,
-        notes_file=notes_file,
-        notes_reference=notes_ref_label,
-        guide=draft_guide,
-        model=args.model,
-        progress_callback=lambda msg, pct: print(f"  [{pct}%] {msg}")
-    )
+        print("\n" + "-" * 70)
+        print("📊 VERIFICATION & FIDELITY AUDIT REPORT:")
+        print("-" * 70)
+        print(f"• Contradictions / Scope Issues Detected: {report.contradictions_detected}")
+        if report.notes_audited:
+            print(f"• Lecture Notes Audited:                 {report.notes_reference}")
+            print(f"• Scope Leakages Pruned:                 {report.scope_discrepancies_resolved}")
+        print(f"• Summary: {report.overall_fidelity_summary}")
 
-    print("\n" + "-" * 70)
-    print("📊 VERIFICATION & FIDELITY AUDIT REPORT:")
-    print("-" * 70)
-    print(f"• Contradictions / Scope Issues Detected: {report.contradictions_detected}")
-    if report.notes_audited:
-        print(f"• Lecture Notes Audited:                 {report.notes_reference}")
-        print(f"• Scope Leakages Pruned:                 {report.scope_discrepancies_resolved}")
-    print(f"• Summary: {report.overall_fidelity_summary}")
+        if report.contradictions_detected > 0 and report.contradictions:
+            print("\n📝 RESOLUTION LOG:")
+            for i, c in enumerate(report.contradictions, 1):
+                print(f"\n  Discrepancy #{i}:")
+                print(f"  - Section:       {c.section_title}")
+                print(f"  - Initial Claim: {c.guide_statement}")
+                print(f"  - Audio Truth:   {c.audio_truth}")
+                print(f"  - Correction:    {c.correction_applied}")
+        else:
+            print("\n✓ ZERO CONTRADICTIONS: The study guide is 100% faithful to the recording.")
 
-    if report.contradictions_detected > 0 and report.contradictions:
-        print("\n📝 RESOLUTION LOG:")
-        for i, c in enumerate(report.contradictions, 1):
-            print(f"\n  Discrepancy #{i}:")
-            print(f"  - Section:       {c.section_title}")
-            print(f"  - Initial Claim: {c.guide_statement}")
-            print(f"  - Audio Truth:   {c.audio_truth}")
-            print(f"  - Correction:    {c.correction_applied}")
-    else:
-        print("\n✓ ZERO CONTRADICTIONS: The study guide is 100% faithful to the recording.")
+        # 4. Compile Reconciled PDF
+        print("\n[4/4] Compiling finalized, verified PDF with Audio Fidelity Certificate...")
+        builder = PDFStudyGuideBuilder(reconciled_guide, output_filename=args.output)
+        pdf_path = builder.build()
 
-    # 4. Compile Reconciled PDF
-    print("\n[4/4] Compiling finalized, verified PDF with Audio Fidelity Certificate...")
-    builder = PDFStudyGuideBuilder(reconciled_guide, output_filename=args.output)
-    pdf_path = builder.build()
+        # Save reconciled JSON
+        reconciled_json_path = guide_path.parent / f"reconciled_{guide_path.name}"
+        reconciled_json_path.write_text(
+            reconciled_guide.model_dump_json(indent=2),
+            encoding="utf-8"
+        )
 
-    # Save reconciled JSON
-    reconciled_json_path = guide_path.parent / f"reconciled_{guide_path.name}"
-    reconciled_json_path.write_text(
-        reconciled_guide.model_dump_json(indent=2),
-        encoding="utf-8"
-    )
-
-    print("\n" + "=" * 70)
-    print("🎉 RECONCILIATION COMPLETE!")
-    print(f"• Reconciled PDF Saved:  {pdf_path}")
-    print(f"• Reconciled JSON Saved: {reconciled_json_path}")
-    print("=" * 70)
+        print("\n" + "=" * 70)
+        print("🎉 RECONCILIATION COMPLETE!")
+        print(f"• Reconciled PDF Saved:  {pdf_path}")
+        print(f"• Reconciled JSON Saved: {reconciled_json_path}")
+        print("=" * 70)
+    finally:
+        for f in uploaded_files:
+            try:
+                client.files.delete(name=f.name)
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

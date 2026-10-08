@@ -604,10 +604,13 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
             "Actuator / Driver",
         ]
 
+    if len(elements) < 5:
+        return render_flowchart(diagram, output_path)
+
     # Process elements: fall back to node's description if label is empty, never emit generic Component N
     labels = []
     descs = []
-    for e in elements:
+    for e in elements[:6]:
         lbl = (e.label or "").strip()
         dsc = (e.description or "").strip()
         if not lbl and dsc:
@@ -615,15 +618,10 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
             dsc = ""
         labels.append(lbl)
         descs.append(dsc)
-        
-    while len(labels) < 6:
-        slot = len(labels)
-        labels.append(default_labels[slot])
-        descs.append(default_descs[slot])
 
-    for idx in range(6):
+    for idx in range(len(labels)):
         if not labels[idx] or re.match(r"^Component\s*\d+$", labels[idx], re.IGNORECASE):
-            labels[idx] = descs[idx] if descs[idx] else default_labels[idx]
+            labels[idx] = descs[idx] if descs[idx] else (default_labels[idx] if idx < len(default_labels) else f"Unit {idx+1}")
         if not descs[idx] and idx < len(default_descs):
             descs[idx] = default_descs[idx]
 
@@ -728,20 +726,13 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
     ax.add_patch(c5)
     draw_box_content(bx5, by5, labels[4], descs[4])
             
-    # Box 6 (under Box 1)
-    bx6, by6 = bx1, by_bot
-    c6 = patches.FancyBboxPatch((bx6, by6), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
-                                linewidth=1.8, edgecolor=COLOR6, facecolor=BG_CARD, zorder=2)
-    ax.add_patch(c6)
-    draw_box_content(bx6, by6, labels[5], descs[5])
-            
     # Down arrow from Box 3 to Box 4
     ax.annotate("", xy=(bx3 + bw/2, by_bot + bh), xytext=(bx3 + bw/2, by_top),
                 arrowprops=dict(arrowstyle="-|>", color=COLOR4, lw=2.2, ls="--", mutation_scale=15), zorder=3)
     ax.text(bx3 + bw/2 + 0.22, (by_top + by_bot + bh)/2, down_lbl, ha="left", va="center",
             fontsize=7.5, color=COLOR4, weight="bold", zorder=4,
             bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#FDBA74", lw=0.8, alpha=0.95))
-    
+
     # Left arrow from Box 4 to Box 5
     mid_feed1 = (bx4 + bx5 + bw) / 2
     ax.annotate("", xy=(bx5 + bw, by_bot + bh/2), xytext=(bx4, by_bot + bh/2),
@@ -749,33 +740,55 @@ def render_system_block_diagram(diagram: DiagramDefinition, output_path: Path) -
     ax.text(mid_feed1, by_bot + bh/2 + 0.25, feed1_lbl, ha="center", va="bottom",
             fontsize=7.5, color=COLOR5, weight="bold", zorder=4,
             bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#93C5FD", lw=0.8, alpha=0.95))
-    
-    # Left arrow from Box 5 to Box 6
-    mid_feed2 = (bx5 + bx6 + bw) / 2
-    ax.annotate("", xy=(bx6 + bw, by_bot + bh/2), xytext=(bx5, by_bot + bh/2),
-                arrowprops=dict(arrowstyle="-|>", color=COLOR6, lw=2.2, ls="--", mutation_scale=15), zorder=3)
-    ax.text(mid_feed2, by_bot + bh/2 + 0.25, feed2_lbl, ha="center", va="bottom",
-            fontsize=7.5, color=COLOR6, weight="bold", zorder=4,
-            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#FCA5A5", lw=0.8, alpha=0.95))
-    
-    # Up arrow from Box 6 to Box 2
-    ax.annotate("", xy=(bx2, by_top + bh*0.25), xytext=(bx6 + bw * 0.75, by_bot + bh),
-                arrowprops=dict(arrowstyle="-|>", color=COLOR6, lw=2.4,
-                                connectionstyle="arc3,rad=-0.12", mutation_scale=16), zorder=3)
-    
-    # Feedback loop label badge positioned cleanly above Box 6
-    arc_label_x = bx6 + bw/2
-    arc_label_y = by_bot + bh + 0.38
-    ax.text(arc_label_x, arc_label_y, up_lbl, ha="center", va="center",
-            fontsize=7.6, color="#B91C1C", weight="bold", zorder=5,
-            bbox=dict(boxstyle="round,pad=0.25", facecolor="#FEF2F2", edgecolor="#FCA5A5", lw=1.2, alpha=0.98))
-            
-    # Reference input into Box 5
-    ax.annotate("", xy=(bx5 + bw/2, by_bot), xytext=(bx5 + bw/2, 0.08),
-                arrowprops=dict(arrowstyle="-|>", color="#059669", lw=2.0, mutation_scale=15), zorder=3)
-    ax.text(bx5 + bw/2, -0.06, ref_lbl, ha="center", va="top",
-            fontsize=8.0, color="#059669", weight="bold", zorder=4,
-            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#6EE7B7", lw=0.8, alpha=0.95))
+
+    if len(labels) >= 6:
+        # Box 6 (under Box 1)
+        bx6, by6 = bx1, by_bot
+        c6 = patches.FancyBboxPatch((bx6, by6), bw, bh, boxstyle="round,pad=0.08,rounding_size=0.18",
+                                    linewidth=1.8, edgecolor=COLOR6, facecolor=BG_CARD, zorder=2)
+        ax.add_patch(c6)
+        draw_box_content(bx6, by6, labels[5], descs[5])
+
+        # Left arrow from Box 5 to Box 6
+        mid_feed2 = (bx5 + bx6 + bw) / 2
+        ax.annotate("", xy=(bx6 + bw, by_bot + bh/2), xytext=(bx5, by_bot + bh/2),
+                    arrowprops=dict(arrowstyle="-|>", color=COLOR6, lw=2.2, ls="--", mutation_scale=15), zorder=3)
+        ax.text(mid_feed2, by_bot + bh/2 + 0.25, feed2_lbl, ha="center", va="bottom",
+                fontsize=7.5, color=COLOR6, weight="bold", zorder=4,
+                bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#FCA5A5", lw=0.8, alpha=0.95))
+
+        # Up arrow from Box 6 to Box 2
+        ax.annotate("", xy=(bx2, by_top + bh*0.25), xytext=(bx6 + bw * 0.75, by_bot + bh),
+                    arrowprops=dict(arrowstyle="-|>", color=COLOR6, lw=2.4,
+                                    connectionstyle="arc3,rad=-0.12", mutation_scale=16), zorder=3)
+
+        # Feedback loop label badge positioned cleanly above Box 6
+        arc_label_x = bx6 + bw/2
+        arc_label_y = by_bot + bh + 0.38
+        ax.text(arc_label_x, arc_label_y, up_lbl, ha="center", va="center",
+                fontsize=7.6, color="#B91C1C", weight="bold", zorder=5,
+                bbox=dict(boxstyle="round,pad=0.25", facecolor="#FEF2F2", edgecolor="#FCA5A5", lw=1.2, alpha=0.98))
+
+        # Reference input into Box 5
+        ax.annotate("", xy=(bx5 + bw/2, by_bot), xytext=(bx5 + bw/2, 0.08),
+                    arrowprops=dict(arrowstyle="-|>", color="#059669", lw=2.0, mutation_scale=15), zorder=3)
+        ax.text(bx5 + bw/2, -0.06, ref_lbl, ha="center", va="top",
+                fontsize=8.0, color="#059669", weight="bold", zorder=4,
+                bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#6EE7B7", lw=0.8, alpha=0.95))
+    else:
+        # Exactly 5 elements: direct upward control feedback from Box 5 to Box 2, no invented Box 6
+        ax.annotate("", xy=(bx2 + bw/2, by_top), xytext=(bx5 + bw/2, by_bot + bh),
+                    arrowprops=dict(arrowstyle="-|>", color=COLOR5, lw=2.4, mutation_scale=16), zorder=3)
+        ax.text(bx2 + bw/2 + 0.30, (by_top + by_bot + bh)/2, up_lbl, ha="left", va="center",
+                fontsize=7.6, color="#1D4ED8", weight="bold", zorder=5,
+                bbox=dict(boxstyle="round,pad=0.25", facecolor="#EFF6FF", edgecolor="#93C5FD", lw=1.2, alpha=0.98))
+
+        # Reference input into Box 5 from the left (clean open space where Box 6 would have been)
+        ax.annotate("", xy=(bx5, by_bot + bh/2), xytext=(bx1 + bw*0.5, by_bot + bh/2),
+                    arrowprops=dict(arrowstyle="-|>", color="#059669", lw=2.0, mutation_scale=15), zorder=3)
+        ax.text((bx1 + bw*0.5 + bx5)/2, by_bot + bh/2 + 0.28, ref_lbl, ha="center", va="bottom",
+                fontsize=7.8, color="#059669", weight="bold", zorder=4,
+                bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#6EE7B7", lw=0.8, alpha=0.95))
     
     ax.set_title(diagram.title, fontsize=12.5, weight="bold", color=TEXT_DARK, pad=14)
     plt.tight_layout()
@@ -1177,6 +1190,24 @@ def render_function_plot(diagram: DiagramDefinition, output_path: Path) -> Path:
     # -------------------------------------------------------------
     # Numbered Badges on Curve (Linked to cards below)
     # -------------------------------------------------------------
+    while len(markers) < n_elem:
+        idx = len(markers)
+        color = BOX_PALETTE[idx % len(BOX_PALETTE)]
+        if len(markers) >= 2:
+            x_prev = markers[-1][0]
+            x_step = markers[-1][0] - markers[-2][0]
+            if abs(x_step) < 1e-3:
+                x_step = 1.0
+            new_x = x_prev + x_step * 0.5
+            new_y = markers[-1][1]
+        elif len(markers) == 1:
+            new_x = markers[0][0] + 1.0
+            new_y = markers[0][1]
+        else:
+            new_x = 1.0
+            new_y = 0.5
+        markers.append((new_x, new_y, str(idx + 1), color, 8, 12))
+
     for idx, m in enumerate(markers[:n_elem]):
         mx, my, badge_num, mcolor, ox, oy = m
         ax.plot(mx, my, "o", color=mcolor, markersize=7, zorder=6)
@@ -1198,11 +1229,11 @@ def render_function_plot(diagram: DiagramDefinition, output_path: Path) -> Path:
         ax_cards.set_xlim(0, 9.4)
         ax_cards.set_ylim(-0.10, 2.05)
         
-        display_count = min(n_elem, 4)
-        left_margin = 0.35
-        right_margin = 0.35
+        display_count = n_elem
+        left_margin = 0.25 if display_count > 4 else 0.35
+        right_margin = 0.25 if display_count > 4 else 0.35
         total_w = 9.4 - left_margin - right_margin
-        gap = 0.22 if display_count > 1 else 0.0
+        gap = 0.14 if display_count > 4 else (0.22 if display_count > 1 else 0.0)
         card_w = (total_w - (display_count - 1) * gap) / display_count
         card_h = 1.82
         card_y = 0.04
@@ -1222,7 +1253,7 @@ def render_function_plot(diagram: DiagramDefinition, output_path: Path) -> Path:
             
             # Header Badge (#1, #2, etc.)
             badge_h = 0.24
-            badge_w = 0.65
+            badge_w = 0.55 if display_count > 4 else 0.65
             badge_x = card_x + (card_w - badge_w) / 2
             badge_y = card_y + card_h - badge_h - 0.06
             badge = patches.FancyBboxPatch(
@@ -1233,29 +1264,31 @@ def render_function_plot(diagram: DiagramDefinition, output_path: Path) -> Path:
             ax_cards.add_patch(badge)
             ax_cards.text(card_x + card_w / 2, badge_y + badge_h / 2,
                           f"#{i+1}", color="white", weight="bold",
-                          fontsize=7.8, ha="center", va="center")
+                          fontsize=7.4 if display_count > 4 else 7.8, ha="center", va="center")
             
             # Label (Card Title)
-            title_width = max(14, int(card_w * 8.5))
+            title_fs = 7.0 if display_count > 4 else 7.8
+            title_width = max(11, int(card_w * 7.5)) if display_count > 4 else max(14, int(card_w * 8.5))
             wrapped_title = wrap_text(elem.label, title_width)
             title_lines = len(wrapped_title.split("\n"))
             title_top_y = badge_y - 0.07
             ax_cards.text(card_x + card_w / 2, title_top_y,
                           wrapped_title, color=TEXT_DARK, weight="bold",
-                          fontsize=7.8, ha="center", va="top")
+                          fontsize=title_fs, ha="center", va="top")
             
             # Separator line
-            sep_y = title_top_y - (title_lines * 0.15) - 0.04
-            ax_cards.plot([card_x + 0.15, card_x + card_w - 0.15], [sep_y, sep_y],
+            sep_y = title_top_y - (title_lines * (0.13 if display_count > 4 else 0.15)) - 0.04
+            ax_cards.plot([card_x + 0.12, card_x + card_w - 0.12], [sep_y, sep_y],
                           color="#E2E8F0", lw=0.7)
             
             # Description text (safely bounded with generous font sizing)
             if elem.description:
-                desc_width = max(16, int(card_w * 12.0))
+                desc_fs = 6.2 if display_count > 4 else 6.8
+                desc_width = max(13, int(card_w * 9.5)) if display_count > 4 else max(16, int(card_w * 12.0))
                 wrapped_desc = wrap_text(elem.description, desc_width)
-                ax_cards.text(card_x + card_w / 2, sep_y - 0.06,
+                ax_cards.text(card_x + card_w / 2, sep_y - 0.05,
                               wrapped_desc, color=TEXT_MUTED,
-                              fontsize=6.8, ha="center", va="top", linespacing=1.15)
+                              fontsize=desc_fs, ha="center", va="top", linespacing=1.12)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, bbox_inches="tight", dpi=150)

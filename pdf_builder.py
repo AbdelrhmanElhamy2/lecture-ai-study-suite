@@ -654,6 +654,7 @@ class PDFStudyGuideBuilder:
         has_notes = getattr(report, "notes_audited", False) or bool(getattr(self.guide, "notes_reference", None))
         notes_ref = getattr(report, "notes_reference", None) or getattr(self.guide, "notes_reference", None)
         scope_tag = " &amp; SLIDES" if has_notes else ""
+        is_failed = not getattr(report, "audit_passed", True)
 
         if is_demo:
             card_bg = colors.HexColor("#FFFBEB")
@@ -664,6 +665,12 @@ class PDFStudyGuideBuilder:
             else:
                 title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED AUDIT (no real audio checked)</b></font>"
             status_text = "Verified in simulation against synthetic lecture model (no live audio recording uploaded)."
+        elif is_failed:
+            card_bg = colors.HexColor("#FEF2F2")
+            border_col = colors.HexColor("#DC2626")
+            title_col = "#B91C1C"
+            title_text = f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY AUDIT: UNAVAILABLE / COULD NOT BE COMPLETED</b></font>"
+            status_text = "Verification audit could not be completed (cross-check service unavailable)."
         else:
             card_bg = colors.HexColor("#F0FDF4") if not has_fixes else colors.HexColor("#EFF6FF")
             border_col = colors.HexColor("#059669") if not has_fixes else colors.HexColor("#2563EB")
@@ -684,7 +691,7 @@ class PDFStudyGuideBuilder:
             f"<font size=8.5><b>Fidelity Summary:</b> {format_math_in_text(report.overall_fidelity_summary)}</font>"
         ]
 
-        if has_notes:
+        if has_notes and not is_failed:
             body_lines.append(
                 "<font size=8.5 color='#047857'><b>Scope &amp; Fidelity Audit:</b> Strictly grounded in spoken lecture. Slide terminology and formulas integrated; unmentioned slide topics excluded.</font>"
             )

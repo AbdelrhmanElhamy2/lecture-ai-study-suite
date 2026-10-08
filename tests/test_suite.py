@@ -1,3 +1,6 @@
+import os
+os.environ["LECTUREAI_TESTING"] = "1"
+
 import unittest
 import sys
 from pathlib import Path
@@ -677,6 +680,418 @@ class TestLectureAISuite(unittest.TestCase):
         finally:
             # Cleanup if anything failed
             test_pdf_path.unlink(missing_ok=True)
+
+    def test_19_download_filename_directory_escape(self):
+        """Regression test for Issue 1: Malicious Content-Disposition filename cannot write outside target directory."""
+        from link_downloader import download_from_link
+        import tempfile
+        import uuid
+        from unittest.mock import patch, MagicMock
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            target_dir = Path(tmp_dir_str)
+
+            # Simulated responses with malicious directory traversal filenames
+            malicious_headers = [
+                'attachment; filename="../../escape_test.mp3"',
+                'attachment; filename="..\\..\\windows_escape.mp3"',
+                'attachment; filename="/tmp/absolute_escape.mp3"',
+                'attachment; filename="....//....//deep_escape.mp3"',
+                'attachment; filename="../../../etc/passwd"',
+            ]
+
+            for header_val in malicious_headers:
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.headers = {"content-disposition": header_val}
+                mock_resp.iter_content.return_value = [b"dummy audio binary data"]
+                mock_resp.__enter__.return_value = mock_resp
+                mock_resp.__exit__.return_value = None
+
+                with patch("requests.Session.get", return_value=mock_resp):
+                    final_path, orig_name = download_from_link(
+                        url="https://example.com/audio/sample.mp3",
+                        target_dir=target_dir,
+                        expected_type="audio"
+                    )
+                    # The saved file must reside strictly inside target_dir
+                    self.assertTrue(final_path.exists())
+                    self.assertEqual(final_path.resolve().parent, target_dir.resolve())
+                    self.assertTrue(target_dir.resolve() in final_path.resolve().parents)
+                    # Must not contain path separators in orig_name
+                    self.assertNotIn("/", orig_name)
+                    self.assertNotIn("\\", orig_name)
+
+            # Normal filename must still download cleanly
+            normal_resp = MagicMock()
+            normal_resp.status_code = 200
+            normal_resp.headers = {"content-disposition": 'attachment; filename="legit_lecture.mp3"'}
+            normal_resp.iter_content.return_value = [b"legit data"]
+            normal_resp.__enter__.return_value = normal_resp
+            normal_resp.__exit__.return_value = None
+
+            with patch("requests.Session.get", return_value=normal_resp):
+                final_path, orig_name = download_from_link(
+                    url="https://example.com/audio/legit.mp3",
+                    target_dir=target_dir,
+                    expected_type="audio"
+                )
+                self.assertTrue(final_path.exists())
+                self.assertEqual(final_path.resolve().parent, target_dir.resolve())
+                self.assertEqual(orig_name, "legit_lecture.mp3")
+
+    def test_20_cancellation_stops_job_and_prevents_history_writes(self):
+        """Regression test for Issue 2: Cancelling a running job stops subsequent processing and prevents history writes."""
+        from fastapi.testclient import TestClient
+        from app import (
+            app, jobs, cancel_events, is_job_cancelled,
+            background_process, load_history
+        )
+        import uuid
+        import threading
+        from unittest.mock import patch
+
+        client = TestClient(app)
+
+        # 1. Test cancel endpoint and cancel signal
+        job_id = f"test_cancel_{uuid.uuid4().hex[:8]}"
+        jobs[job_id] = {
+            "job_id": job_id,
+            "status": "processing",
+            "progress": 10,
+            "status_message": "Starting processing",
+            "result": None,
+            "error": None,
+            "cancelled": False
+        }
+        cancel_events[job_id] = threading.Event()
+
+        self.assertFalse(is_job_cancelled(job_id))
+        resp = client.post(f"/api/cancel/{job_id}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(is_job_cancelled(job_id))
+        self.assertEqual(jobs[job_id]["status"], "cancelled")
+        self.assertTrue(cancel_events[job_id].is_set())
+
+        # 2. Test blocking fake process_lecture: cancel while blocked, release, assert stopped cleanly
+        bg_job_id = f"test_bg_cancel_{uuid.uuid4().hex[:8]}"
+        jobs[bg_job_id] = {
+            "job_id": bg_job_id,
+            "status": "queued",
+            "progress": 5,
+            "status_message": "Queued",
+            "result": None,
+            "error": None,
+            "cancelled": False
+        }
+        cancel_events[bg_job_id] = threading.Event()
+
+        blocked_event = threading.Event()
+        release_event = threading.Event()
+
+        def fake_blocking_process_lecture(*args, **kwargs):
+            blocked_event.set()
+            release_event.wait(timeout=5.0)
+            return {
+                "study_guide": get_sample_bilingual_lecture_guide(),
+                "pdf_path": str(ASSETS_DIR / "sample.pdf"),
+                "audit_report": None
+            }
+
+        initial_history_count = len(load_history())
+
+        worker_thread = threading.Thread(
+            target=background_process,
+            kwargs={
+                "job_id": bg_job_id,
+                "audio_paths": [Path("dummy.mp3")],
+                "notes_paths": None,
+                "source_name": "Cancelled Test Lecture",
+                "study_mode": "detailed",
+                "is_demo": True
+            }
+        )
+
+        with patch("app.process_lecture", side_effect=fake_blocking_process_lecture):
+            worker_thread.start()
+            self.assertTrue(blocked_event.wait(timeout=3.0), "Worker did not reach blocking point")
+            cancel_resp = client.post(f"/api/cancel/{bg_job_id}")
+            self.assertEqual(cancel_resp.status_code, 200)
+            release_event.set()
+            worker_thread.join(timeout=5.0)
+
+        # Assert job remains cancelled, not overwritten with 'completed'
+        self.assertEqual(jobs[bg_job_id]["status"], "cancelled")
+        # Assert no history entry was written
+        current_history = load_history()
+        self.assertEqual(len(current_history), initial_history_count)
+        self.assertNotIn(bg_job_id, [h.get("id") for h in current_history])
+
+    def test_21_verification_api_failure_represented_as_unavailable(self):
+        """Regression test for Issue 3: Verification API failure sets audit_passed=False and PDF does not say 100% Verified."""
+        from pedagogy_engine import verify_and_reconcile_study_guide
+        from mock_generator import get_sample_bilingual_lecture_guide
+        from pdf_builder import PDFStudyGuideBuilder
+        from unittest.mock import MagicMock
+        import pypdf
+
+        draft_guide = get_sample_bilingual_lecture_guide()
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = RuntimeError("503 Service Unavailable")
+
+        # 1. verify_and_reconcile_study_guide returns fallback with audit_passed=False
+        reconciled_guide, report = verify_and_reconcile_study_guide(
+            client=mock_client,
+            audio_file=MagicMock(),
+            notes_file=None,
+            notes_reference=None,
+            guide=draft_guide,
+            model="gemini-3.8-flash"
+        )
+        self.assertFalse(report.audit_passed)
+        self.assertIn("unavailable", report.overall_fidelity_summary.lower())
+
+        # 2. PDF generation must reflect unavailable audit and NOT claim 100% VERIFIED
+        reconciled_guide.is_demo = False
+        reconciled_guide.verification_report = report
+        test_out_pdf = "Test_Audit_Failed_Regression.pdf"
+        builder = PDFStudyGuideBuilder(reconciled_guide, output_filename=test_out_pdf)
+        pdf_path = builder.build()
+        try:
+            self.assertTrue(pdf_path.exists())
+            reader = pypdf.PdfReader(str(pdf_path))
+            full_text = ""
+            for page in reader.pages:
+                full_text += page.extract_text() or ""
+
+            self.assertIn("UNAVAILABLE", full_text.upper())
+            self.assertNotIn("100% VERIFIED", full_text)
+        finally:
+            pdf_path.unlink(missing_ok=True)
+
+    def test_22_standalone_auditor_cleans_up_uploaded_media(self):
+        """Regression test for Issue 4: verify_audio_fidelity deletes uploaded files on both success and exception."""
+        from unittest.mock import patch, MagicMock
+        import verify_audio_fidelity
+        import tempfile
+        import io
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            fake_audio = tmp_path / "fake_audio.mp3"
+            fake_audio.write_bytes(b"dummy audio")
+            fake_guide = tmp_path / "fake_guide.json"
+            sample_guide = get_sample_bilingual_lecture_guide()
+            fake_guide.write_text(sample_guide.model_dump_json(), encoding="utf-8")
+
+            # Case A: Normal completion -> uploaded file is deleted
+            mock_client = MagicMock()
+            mock_audio_file = MagicMock()
+            mock_audio_file.name = "files/test_audio_success"
+            mock_client.files.upload.return_value = mock_audio_file
+
+            test_args = [
+                "verify_audio_fidelity.py",
+                "--audio", str(fake_audio),
+                "--guide", str(fake_guide),
+                "--api-key", "dummy_key"
+            ]
+
+            with patch("sys.argv", test_args), \
+                 patch("verify_audio_fidelity.genai.Client", return_value=mock_client), \
+                 patch("verify_audio_fidelity.verify_and_reconcile_study_guide", return_value=(sample_guide, MagicMock(contradictions_detected=0, contradictions=[], notes_audited=False, overall_fidelity_summary="Passed", audit_passed=True))), \
+                 patch("verify_audio_fidelity.PDFStudyGuideBuilder.build", return_value=tmp_path / "out.pdf"), \
+                 patch("sys.stdout", new_callable=io.StringIO):
+                verify_audio_fidelity.main()
+
+            mock_client.files.delete.assert_called_with(name="files/test_audio_success")
+
+            # Case B: Exception occurs during verification -> uploaded file is still deleted in finally block
+            mock_client.reset_mock()
+            mock_audio_file_fail = MagicMock()
+            mock_audio_file_fail.name = "files/test_audio_failure"
+            mock_client.files.upload.return_value = mock_audio_file_fail
+
+            with patch("sys.argv", test_args), \
+                 patch("verify_audio_fidelity.genai.Client", return_value=mock_client), \
+                 patch("verify_audio_fidelity.verify_and_reconcile_study_guide", side_effect=RuntimeError("Simulated Gemini error")), \
+                 patch("sys.stdout", new_callable=io.StringIO):
+                with self.assertRaises(RuntimeError):
+                    verify_audio_fidelity.main()
+
+            mock_client.files.delete.assert_called_with(name="files/test_audio_failure")
+
+    def test_23_staged_upload_cleanup_on_later_rejected_file(self):
+        """Regression test for Issue 5: Rejected multi-file upload cleans up every file staged earlier in the same request."""
+        from fastapi.testclient import TestClient
+        from app import app
+        from config import UPLOAD_DIR
+        import io
+
+        client = TestClient(app)
+
+        # 1. Test rejection on audio: valid audio + invalid audio format (.exe)
+        initial_files = set(p.name for p in UPLOAD_DIR.iterdir()) if UPLOAD_DIR.exists() else set()
+        response_audio = client.post(
+            "/api/process_audio",
+            data={"study_mode": "detailed"},
+            files=[
+                ("audio", ("good_audio.mp3", io.BytesIO(b"dummy mp3 data"), "audio/mpeg")),
+                ("audio", ("bad_audio.exe", io.BytesIO(b"executable data"), "application/octet-stream"))
+            ]
+        )
+        self.assertEqual(response_audio.status_code, 400)
+        self.assertIn("Unsupported audio format", response_audio.text)
+        current_files = set(p.name for p in UPLOAD_DIR.iterdir()) if UPLOAD_DIR.exists() else set()
+        self.assertEqual(current_files - initial_files, set(), "Audio staging left orphan files after rejection")
+
+        # 2. Test rejection on notes: valid audio + valid notes + invalid notes format (.bat)
+        initial_files_2 = set(p.name for p in UPLOAD_DIR.iterdir()) if UPLOAD_DIR.exists() else set()
+        response_notes = client.post(
+            "/api/process_audio",
+            data={"study_mode": "detailed"},
+            files=[
+                ("audio", ("good_audio.mp3", io.BytesIO(b"dummy mp3 data"), "audio/mpeg")),
+                ("notes", ("valid_notes.pdf", io.BytesIO(b"%PDF-1.4 dummy pdf"), "application/pdf")),
+                ("notes", ("bad_notes.bat", io.BytesIO(b"@echo off"), "text/plain"))
+            ]
+        )
+        self.assertEqual(response_notes.status_code, 400)
+        self.assertIn("Unsupported lecture notes format", response_notes.text)
+        current_files_2 = set(p.name for p in UPLOAD_DIR.iterdir()) if UPLOAD_DIR.exists() else set()
+        self.assertEqual(current_files_2 - initial_files_2, set(), "Notes staging left orphan files after rejection")
+
+    def test_24_system_block_diagram_preserves_five_elements(self):
+        """Regression test for Issue 6: System block diagram preserves five-element input without adding nodes."""
+        from visualizer import render_system_block_diagram
+        import tempfile
+
+        # 1. 5-element diagram
+        block_diag_5 = DiagramDefinition(
+            diagram_id="test_diag_5_nodes",
+            title="Five-Block Closed Loop Architecture",
+            diagram_type="SYSTEM_BLOCK_DIAGRAM",
+            elements=[
+                DiagramElement(label="AC Utility Grid", description="Power Source"),
+                DiagramElement(label="Power Converter", description="Switching Stage"),
+                DiagramElement(label="DC Motor", description="Load"),
+                DiagramElement(label="Current Transducer", description="Sensor"),
+                DiagramElement(label="Microcontroller", description="Controller")
+            ],
+            caption="Five block control diagram without invented dummy components."
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_file = Path(tmp_dir) / "five_block.png"
+            rendered = render_system_block_diagram(block_diag_5, out_file)
+            self.assertTrue(rendered.exists())
+            self.assertGreater(rendered.stat().st_size, 1000)
+
+            # Element count must be strictly 5
+            self.assertEqual(len(block_diag_5.elements), 5)
+            labels = [e.label for e in block_diag_5.elements]
+            self.assertNotIn("Component 6", labels)
+            self.assertEqual(labels, [
+                "AC Utility Grid", "Power Converter", "DC Motor", "Current Transducer", "Microcontroller"
+            ])
+
+        # 2. 6-element diagram
+        block_diag_6 = DiagramDefinition(
+            diagram_id="test_diag_6_nodes",
+            title="Six-Block System Architecture",
+            diagram_type="SYSTEM_BLOCK_DIAGRAM",
+            elements=[
+                DiagramElement(label=f"Block {i}", description=f"Desc {i}") for i in range(1, 7)
+            ],
+            caption="Six block diagram."
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_file_6 = Path(tmp_dir) / "six_block.png"
+            rendered_6 = render_system_block_diagram(block_diag_6, out_file_6)
+            self.assertTrue(rendered_6.exists())
+            self.assertEqual(len(block_diag_6.elements), 6)
+
+        # 3. 4-element diagram (routes to flowchart)
+        block_diag_4 = DiagramDefinition(
+            diagram_id="test_diag_4_nodes",
+            title="Four-Block Architecture",
+            diagram_type="SYSTEM_BLOCK_DIAGRAM",
+            elements=[
+                DiagramElement(label=f"Step {i}", description=f"Desc {i}") for i in range(1, 5)
+            ],
+            caption="Four block diagram routed to flowchart."
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_file_4 = Path(tmp_dir) / "four_block.png"
+            rendered_4 = render_system_block_diagram(block_diag_4, out_file_4)
+            self.assertTrue(rendered_4.exists())
+            self.assertEqual(len(block_diag_4.elements), 4)
+
+    def test_25_function_plot_preserves_five_elements(self):
+        """Regression test for Issue 7: Function-plot renderer does not omit an element when given five elements."""
+        from visualizer import render_function_plot
+        import tempfile
+
+        five_elem_plot = DiagramDefinition(
+            diagram_id="test_plot_5_elements",
+            title="Multi-stage Frequency Response",
+            diagram_type="FUNCTION_PLOT",
+            elements=[
+                DiagramElement(label="Stage 1: Input Filter", value=10.5, description="Low-pass filter stage"),
+                DiagramElement(label="Stage 2: Pre-Amplifier", value=25.0, description="Low-noise pre-amp"),
+                DiagramElement(label="Stage 3: Main Gain", value=50.2, description="Variable gain amplifier"),
+                DiagramElement(label="Stage 4: Post-Filter", value=75.8, description="Bandpass shaping"),
+                DiagramElement(label="Stage 5: Buffer Output", value=99.1, description="High-current line driver"),
+            ],
+            caption="Five-stage scientific frequency curve and description badges."
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_file = Path(tmp_dir) / "function_plot_5.png"
+            rendered = render_function_plot(five_elem_plot, out_file)
+            self.assertTrue(rendered.exists())
+            self.assertGreater(rendered.stat().st_size, 1000)
+
+            # Verify all 5 elements are intact in diagram definition
+            self.assertEqual(len(five_elem_plot.elements), 5)
+    def test_26_protect_local_mutations_testserver_restriction(self):
+        """Regression test for Point 4: protect_local_mutations restricts testserver so production path rejects it."""
+        from fastapi.testclient import TestClient
+        from app import app
+        from unittest.mock import patch
+
+        client = TestClient(app)
+
+        # 1. Under test environment, testclient is allowed
+        resp_test = client.get("/api/config")
+        self.assertEqual(resp_test.status_code, 200)
+
+        # 2. In simulated production (is_test_environment returns False):
+        with patch("app.is_test_environment", return_value=False):
+            # Testserver host/origin must be REJECTED with 403 Forbidden
+            resp_prod_testserver = client.post(
+                "/api/set_key",
+                data={"key": "test_key"},
+                headers={"host": "testserver", "origin": "http://testserver"}
+            )
+            self.assertEqual(resp_prod_testserver.status_code, 403)
+            self.assertIn("Requests must come from the local LectureAI dashboard", resp_prod_testserver.text)
+
+            # External attacker origin must be REJECTED with 403
+            resp_attacker = client.post(
+                "/api/set_key",
+                data={"key": "test_key"},
+                headers={"origin": "http://attacker.com"}
+            )
+            self.assertEqual(resp_attacker.status_code, 403)
+
+            # Legitimate local origin in production must SUCCEED (200)
+            resp_prod_local = client.post(
+                "/api/set_key",
+                data={"key": "valid_key"},
+                headers={"host": "127.0.0.1:8000", "origin": "http://127.0.0.1:8000"}
+            )
+            self.assertEqual(resp_prod_local.status_code, 200)
 
 
 if __name__ == "__main__":

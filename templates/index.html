@@ -2256,12 +2256,14 @@
             } catch (histErr) {
               console.warn("Could not reload history:", histErr);
             }
-          } else if (job.status === 'failed') {
+          } else if (job.status === 'failed' || job.status === 'cancelled') {
             clearInterval(pollInterval);
             document.getElementById('progressSection').classList.add('hidden');
             setFormLocked(false);
-            showError(job.error || "Generation encountered a failure");
-            document.getElementById('retryBtn')?.classList.remove('hidden');
+            showError(job.error || (job.status === 'cancelled' ? "Generation was cancelled by the user." : "Generation encountered a failure"), job.status === 'cancelled' ? "Cancelled" : "Generation Failed");
+            if (job.status !== 'cancelled') {
+              document.getElementById('retryBtn')?.classList.remove('hidden');
+            }
           }
         } catch (e) {
           console.error("Polling error", e);
@@ -2477,7 +2479,9 @@
 
       if (report) {
         verifCard.classList.remove('hidden');
-        if (report.verified_at) {
+        if (report.audit_passed === false) {
+          verifTimestamp.innerText = 'Audit could not be completed';
+        } else if (report.verified_at) {
           try {
             verifTimestamp.innerText = `Verified: ${new Date(report.verified_at).toLocaleTimeString()}`;
           } catch (_) {
@@ -2485,7 +2489,15 @@
           }
         }
         const auditScopeTitle = notesAudited ? 'Audio & Slides Fidelity' : 'Audio Fidelity';
-        if (report.contradictions_detected > 0) {
+        if (report.audit_passed === false) {
+          verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-rose-300 dark:border-rose-800/60 bg-rose-50/30 dark:bg-rose-950/30 space-y-2.5';
+          verifIcon.className = 'w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-xs font-bold';
+          verifIcon.innerHTML = '!';
+          verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-rose-800 dark:text-rose-300';
+          verifTitle.innerText = `${auditScopeTitle} Audit: Unavailable / Could Not Be Completed`;
+          verifSummary.innerText = report.overall_fidelity_summary || 'Verification cross-check could not be completed.';
+          reconcContainer.classList.add('hidden');
+        } else if (report.contradictions_detected > 0) {
           verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-blue-200 dark:border-blue-800/60 bg-blue-50/30 dark:bg-blue-950/30 space-y-2.5';
           verifIcon.className = 'w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold';
           verifIcon.innerHTML = '&check;';

@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 import threading
 import json
@@ -30,9 +31,12 @@ app = FastAPI(title="LectureAI Study Suite", version="1.0.0")
 ALLOWED_BROWSER_ORIGINS = {
     "http://127.0.0.1:8000",
     "http://localhost:8000",
-    "http://testserver",
-    "testserver",
 }
+
+
+def is_test_environment() -> bool:
+    """Returns True only when explicitly running under an automated test runner."""
+    return os.environ.get("LECTUREAI_TESTING", "").lower() in ("1", "true")
 
 
 @app.middleware("http")
@@ -40,10 +44,12 @@ async def protect_local_mutations(request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         origin = request.headers.get("origin")
         host = request.headers.get("host")
+        allow_testserver = is_test_environment()
         is_allowed = (
             origin in ALLOWED_BROWSER_ORIGINS
-            or host == "testserver"
-            or (origin is None and host in {"127.0.0.1:8000", "localhost:8000", "testserver"})
+            or (allow_testserver and (origin in {"http://testserver", "testserver"} or host == "testserver"))
+            or (origin is None and host in {"127.0.0.1:8000", "localhost:8000"})
+            or (allow_testserver and origin is None and host == "testserver")
         )
         if not is_allowed:
             return JSONResponse(
@@ -58,10 +64,28 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-# In-memory job tracker
-jobs = {}
+# In-memory job tracker and cancellation signals
+jobs: Dict[str, Any] = {}
+cancel_events: Dict[str, threading.Event] = {}
 HISTORY_FILE = Path(__file__).parent / "lecture_history.json"
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB, suitable for long personal lectures.
+
+
+class JobCancelledException(Exception):
+    """Raised when a running background job has been cancelled."""
+    pass
+
+
+def is_job_cancelled(job_id: str) -> bool:
+    job = jobs.get(job_id)
+    if not job:
+        return True
+    if job.get("cancelled", False) or job.get("status") == "cancelled":
+        return True
+    ev = cancel_events.get(job_id)
+    if ev and ev.is_set():
+        return True
+    return False
 
 
 def load_history():
@@ -109,11 +133,23 @@ def background_process(
     selected_items: Optional[str] = None,
     save_media_to_drive: bool = False,
 ):
+    if job_id not in cancel_events:
+        cancel_events[job_id] = threading.Event()
+    if is_job_cancelled(job_id):
+        return
+
     def update_progress(message: str, percent: int):
+        if is_job_cancelled(job_id):
+            raise JobCancelledException(f"Job {job_id} was cancelled.")
         jobs[job_id]["progress"] = percent
         jobs[job_id]["status_message"] = message
 
+    def check_cancellation():
+        if is_job_cancelled(job_id):
+            raise JobCancelledException(f"Job {job_id} was cancelled.")
+
     try:
+        check_cancellation()
         jobs[job_id]["status"] = "processing"
         final_audio_paths = list(audio_paths or [])
         final_notes_paths = list(notes_paths or [])
@@ -255,6 +291,7 @@ def background_process(
                             f"Use: {', '.join(sorted(SUPPORTED_NOTES_EXTS))}."
                         )
 
+        check_cancellation()
         result = process_lecture(
             audio_path=final_audio_paths if final_audio_paths else None,
             notes_path=final_notes_paths if final_notes_paths else None,
@@ -269,6 +306,7 @@ def background_process(
             use_sample_demo=is_demo,
             progress_callback=update_progress
         )
+        check_cancellation()
 
         # 4. Save generated PDF study guide directly to Google Drive summaries folder
         drive_pdf = save_summary_to_drive(Path(result["pdf_path"]), effective_course)
@@ -276,6 +314,8 @@ def background_process(
             result["drive_pdf_path"] = str(drive_pdf)
             result["drive_pdf_filename"] = drive_pdf.name
             result["drive_folder_path"] = str(drive_pdf.parent)
+
+        check_cancellation()
 
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["result"] = result
@@ -288,7 +328,18 @@ def background_process(
             jobs[job_id]["status_message"] = f"Complete! Saved directly to Google Drive: {drive_pdf.name}"
         else:
             jobs[job_id]["status_message"] = "Processing complete! Your study guide is ready."
+    except JobCancelledException:
+        jobs[job_id]["status"] = "cancelled"
+        jobs[job_id]["cancelled"] = True
+        jobs[job_id]["error"] = "Generation was cancelled by the user."
+        jobs[job_id]["status_message"] = "Job cancelled by user."
     except Exception as e:
+        if is_job_cancelled(job_id):
+            jobs[job_id]["status"] = "cancelled"
+            jobs[job_id]["cancelled"] = True
+            jobs[job_id]["error"] = "Generation was cancelled by the user."
+            jobs[job_id]["status_message"] = "Job cancelled by user."
+            return
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
         jobs[job_id]["status_message"] = f"Error: {e}"
@@ -371,13 +422,15 @@ async def process_audio(
 
     def register_job() -> None:
         # Only register once the request is fully validated so rejected requests leave no orphan jobs.
+        cancel_events[job_id] = threading.Event()
         jobs[job_id] = {
             "job_id": job_id,
             "status": "queued",
             "progress": 5,
             "status_message": "Initializing task...",
             "result": None,
-            "error": None
+            "error": None,
+            "cancelled": False
         }
 
     pdf_options = {
@@ -437,61 +490,10 @@ async def process_audio(
     clean_folder_url = folder_url.strip() if folder_url and folder_url.strip() else None
     clean_session_query = session_query.strip() if session_query and session_query.strip() else None
 
-    # Save audio files if uploaded directly (supports single or multi-part audio)
     audio_save_paths = []
     original_names = []
-    raw_audio_list = audio if isinstance(audio, list) else ([audio] if audio else [])
-    for a_file in raw_audio_list:
-        if not a_file or not a_file.filename or not a_file.filename.strip():
-            continue
-        orig_name = Path(a_file.filename).name
-        suffix = Path(orig_name).suffix.lower()
-        if suffix not in SUPPORTED_AUDIO_EXTS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported audio format '{suffix or 'unknown'}' in {orig_name}. Use: {', '.join(sorted(SUPPORTED_AUDIO_EXTS))}."
-            )
-        clean_audio_name = f"{str(uuid.uuid4())[:8]}_{orig_name}"
-        save_p = UPLOAD_DIR / clean_audio_name
-        with open(save_p, "wb") as f_out:
-            written = 0
-            while chunk := await a_file.read(1024 * 1024):
-                written += len(chunk)
-                if written > MAX_UPLOAD_BYTES:
-                    f_out.close()
-                    save_p.unlink(missing_ok=True)
-                    raise HTTPException(status_code=413, detail=f"Audio file '{orig_name}' exceeds 2 GB local limit.")
-                f_out.write(chunk)
-        audio_save_paths.append(save_p)
-        original_names.append(orig_name)
-
-    # Save optional lecture notes files if uploaded directly (supports multiple decks)
     notes_save_paths = []
     notes_original_names = []
-    raw_notes_list = notes if isinstance(notes, list) else ([notes] if notes else [])
-    for n_file in raw_notes_list:
-        if not n_file or not n_file.filename or not n_file.filename.strip():
-            continue
-        notes_orig_name = Path(n_file.filename).name
-        notes_suffix = Path(notes_orig_name).suffix.lower()
-        if notes_suffix not in SUPPORTED_NOTES_EXTS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported lecture notes format '{notes_suffix or 'unknown'}' in {notes_orig_name}. Use: {', '.join(sorted(SUPPORTED_NOTES_EXTS))}."
-            )
-        clean_notes_name = f"{str(uuid.uuid4())[:8]}_{notes_orig_name}"
-        notes_save_p = UPLOAD_DIR / clean_notes_name
-        with open(notes_save_p, "wb") as fn:
-            written_notes = 0
-            while chunk := await n_file.read(1024 * 1024):
-                written_notes += len(chunk)
-                if written_notes > MAX_UPLOAD_BYTES:
-                    fn.close()
-                    notes_save_p.unlink(missing_ok=True)
-                    raise HTTPException(status_code=413, detail=f"Lecture notes file '{notes_orig_name}' exceeds local limit.")
-                fn.write(chunk)
-        notes_save_paths.append(notes_save_p)
-        notes_original_names.append(notes_orig_name)
 
     def discard_saved_uploads() -> None:
         for saved in [*audio_save_paths, *notes_save_paths]:
@@ -499,6 +501,62 @@ async def process_audio(
                 saved.unlink(missing_ok=True)
             except OSError:
                 pass
+
+    # Validate all file extensions first before saving any files to disk
+    raw_audio_list = audio if isinstance(audio, list) else ([audio] if audio else [])
+    valid_audio_files = [a for a in raw_audio_list if a and a.filename and a.filename.strip()]
+    for a_file in valid_audio_files:
+        orig_name = Path(a_file.filename).name
+        suffix = Path(orig_name).suffix.lower()
+        if suffix not in SUPPORTED_AUDIO_EXTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported audio format '{suffix or 'unknown'}' in {orig_name}. Use: {', '.join(sorted(SUPPORTED_AUDIO_EXTS))}."
+            )
+
+    raw_notes_list = notes if isinstance(notes, list) else ([notes] if notes else [])
+    valid_notes_files = [n for n in raw_notes_list if n and n.filename and n.filename.strip()]
+    for n_file in valid_notes_files:
+        notes_orig_name = Path(n_file.filename).name
+        notes_suffix = Path(notes_orig_name).suffix.lower()
+        if notes_suffix not in SUPPORTED_NOTES_EXTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported lecture notes format '{notes_suffix or 'unknown'}' in {notes_orig_name}. Use: {', '.join(sorted(SUPPORTED_NOTES_EXTS))}."
+            )
+
+    # Save audio and lecture notes files to disk with error rollback
+    try:
+        for a_file in valid_audio_files:
+            orig_name = Path(a_file.filename).name
+            clean_audio_name = f"{str(uuid.uuid4())[:8]}_{orig_name}"
+            save_p = UPLOAD_DIR / clean_audio_name
+            audio_save_paths.append(save_p)
+            original_names.append(orig_name)
+            with open(save_p, "wb") as f_out:
+                written = 0
+                while chunk := await a_file.read(1024 * 1024):
+                    written += len(chunk)
+                    if written > MAX_UPLOAD_BYTES:
+                        raise HTTPException(status_code=413, detail=f"Audio file '{orig_name}' exceeds 2 GB local limit.")
+                    f_out.write(chunk)
+
+        for n_file in valid_notes_files:
+            notes_orig_name = Path(n_file.filename).name
+            clean_notes_name = f"{str(uuid.uuid4())[:8]}_{notes_orig_name}"
+            notes_save_p = UPLOAD_DIR / clean_notes_name
+            notes_save_paths.append(notes_save_p)
+            notes_original_names.append(notes_orig_name)
+            with open(notes_save_p, "wb") as fn:
+                written_notes = 0
+                while chunk := await n_file.read(1024 * 1024):
+                    written_notes += len(chunk)
+                    if written_notes > MAX_UPLOAD_BYTES:
+                        raise HTTPException(status_code=413, detail=f"Lecture notes file '{notes_orig_name}' exceeds local limit.")
+                    fn.write(chunk)
+    except Exception:
+        discard_saved_uploads()
+        raise
 
     # If course folder mode is active, ignore manually uploaded files/links so UI and server agree
     is_folder_mode = bool(clean_folder_url or selected_items)
@@ -566,9 +624,13 @@ async def process_audio(
 async def cancel_job(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
-    jobs[job_id]["status"] = "failed"
+    jobs[job_id]["status"] = "cancelled"
+    jobs[job_id]["cancelled"] = True
     jobs[job_id]["error"] = "Generation was cancelled by the user."
     jobs[job_id]["status_message"] = "Job cancelled by user."
+    if job_id not in cancel_events:
+        cancel_events[job_id] = threading.Event()
+    cancel_events[job_id].set()
     return {"success": True, "message": "Job cancelled successfully", "job_id": job_id}
 
 

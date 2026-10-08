@@ -320,20 +320,40 @@ def download_from_link(
                 if match:
                     orig_filename = urllib.parse.unquote(match.group(1).strip())
             
+            default_ext = ".mp3" if expected_type == "audio" else ".pdf"
+            default_name = f"downloaded_{expected_type}{default_ext}"
+
+            if orig_filename:
+                # Sanitize remote filename to a safe basename, rejecting path traversal
+                cleaned = orig_filename.replace("\\", "/").strip().strip("\"'")
+                safe_base = Path(cleaned).name
+                safe_base = re.sub(r'[\x00-\x1f\x7f]', '', safe_base).strip()
+                while safe_base.startswith(".."):
+                    safe_base = safe_base.lstrip(".")
+                if not safe_base or safe_base in [".", ".."]:
+                    orig_filename = default_name
+                else:
+                    orig_filename = safe_base
+
             if not orig_filename:
                 parsed_path = urllib.parse.urlparse(url).path
                 inferred = Path(parsed_path).name
                 if inferred and "." in inferred:
-                    orig_filename = inferred
+                    inferred_clean = Path(inferred.replace("\\", "/")).name
+                    orig_filename = inferred_clean if inferred_clean and inferred_clean not in [".", ".."] else default_name
                 else:
-                    default_ext = ".mp3" if expected_type == "audio" else ".pdf"
-                    orig_filename = f"downloaded_{expected_type}{default_ext}"
+                    orig_filename = default_name
 
             if is_drive:
-                final_path = target_dir / orig_filename
+                final_path = (target_dir / orig_filename).resolve()
             else:
                 clean_prefix = str(uuid.uuid4())[:8]
-                final_path = target_dir / f"{clean_prefix}_{orig_filename}"
+                final_path = (target_dir / f"{clean_prefix}_{orig_filename}").resolve()
+
+            # Verify containment inside target_dir
+            resolved_target = target_dir.resolve()
+            if not (resolved_target in final_path.parents):
+                raise ValueError(f"Path traversal detected: {final_path} is outside {target_dir}")
 
             with open(final_path, "wb") as f_out:
                 for chunk in resp.iter_content(chunk_size=1024 * 1024):
