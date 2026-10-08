@@ -10,7 +10,7 @@
 
 **Transform spoken university lectures and slide decks into publication-quality academic study guides, automated engineering schematics, practice exam kits, and audio-audited PDFs.**
 
-[Key Capabilities](#-key-capabilities) • [System Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [CLI Usage](#-cli-usage) • [Interactive Web UI](#-interactive-web-ui) • [License](#-license)
+[Sample Output](samples/demo_guide.pdf) • [Key Capabilities](#-key-capabilities) • [System Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [CLI Usage](#-cli-usage) • [Interactive Web UI](#-interactive-web-ui) • [License](#-license)
 
 </div>
 
@@ -22,26 +22,28 @@ University lectures in Engineering, Medicine, Science, and STEM often move fast.
 
 **LectureAI** is an intelligent, multimodal academic companion. Feed it lecture audio and optional slide decks:
 
-1. **Listens & Translates**: Transcribes spoken audio, handles multilingual dialect code-switching, and synthesizes 100% academic English notes.
+1. **Listens & Translates**: Transcribes spoken audio, handles multilingual dialect code-switching, and synthesizes academic English notes.
 2. **Grounds in Slides**: Matches spoken topics to slide decks, extracts precise formulas, and excludes unmentioned slide material.
 3. **Fact-Checks & Reconciles**: Cross-examines generated notes against the spoken recording to eliminate hallucinations and embeds an official **Audio & Slides Fidelity Certificate**.
 4. **Draws Visual Schematics**: Automatically generates publication-grade block diagrams, circuit waveforms, flowcharts, timelines, and concept maps.
 5. **Compiles Publication PDFs**: Builds print-ready PDFs with two-pass page numbering (`Page X of Y`), typographic math, and verbatim transcript appendices.
 
+> 📄 **Sample Output**: Inspect [samples/demo_guide.pdf](samples/demo_guide.pdf) to view a pre-compiled sample study guide produced in simulated demo mode (simulated demo with no real audio processed).
+
 ---
 
 ## 🌟 Key Capabilities
 
-### 🎙️ 1. Multimodal Audio & Slide Ingestion
-- **Audio Formats**: `.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `.flac`, `.webm`, `.wma`.
+### 🎙️ 1. Unified Lecture Sources Intake
+- **Audio Formats**: `.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `.flac`, `.webm`, `.wma` (local uploads supported up to 2 GB per file via chunked streaming).
 - **Notes / Slides Formats**: `.pdf`, `.txt`, `.md`.
 - **Direct Cloud & Google Drive Streaming**: Paste public or shareable Google Drive links or direct URLs.
 - **Multi-Part Lectures**: Handles multiple consecutive recordings (Part 1, Part 2) and merges them chronologically into one unified narrative.
-- **Slide Range Bounds**: Target specific slides (e.g. `Slides 5–28`). If left blank, LectureAI inspects the full deck and includes only concepts verbally taught.
+- **Slide Range Bounds**: Target specific slides per deck (e.g. `Slides 5–28`). If left blank, LectureAI inspects the full deck and includes only concepts verbally taught.
 
 #### 🔀 Unified Mixed-Source Intake
-One lecture can seamlessly combine recordings and slide notes from different sources simultaneously:
-1. **Computer Files**: Local file picker or drag-and-drop directly onto intake lists.
+One lecture can seamlessly combine recordings and slide notes from different sources simultaneously in a single intake queue:
+1. **Computer Files**: Local file picker or drag-and-drop directly onto intake dropzones.
 2. **Drive / Direct Links**: Paste public Google Drive links or direct media URLs.
 3. **Course Folders**: Browse and select files from scanned local or Google Drive-synced course folders without locking manual uploads.
 
@@ -57,7 +59,7 @@ Items are ordered chronologically with up/down controls (`▲`/`▼`) and indivi
 
 ### 🌐 2. Bilingual Speech & Dialect Code-Switching
 - Seamlessly transcribes bilingual college lectures (e.g., Egyptian / Levantine Arabic mixed with English engineering terms).
-- Synthesizes clean, formal, **100% Academic English** summaries and study guides with zero tofu boxes (`□`) or mixed-language clutter in the final document.
+- Synthesizes clean, formal academic English summaries and study guides with zero tofu boxes (`□`) or mixed-language clutter in the final document.
 
 ### 📊 3. Zero-Collision Universal Diagram Generator
 Generates high-resolution vector diagrams via Matplotlib with collision-free layouts:
@@ -263,7 +265,7 @@ The comprehensive automated test suite runs locally and verifies:
 - ✅ System block diagram integrity & node label preservation
 - ✅ History deletion lifecycle & file unlinking
 - ✅ Demo endpoint lifecycle & simulated audit badging
-- ✅ Course folder mode upload isolation
+- ✅ Unified mixed-source intake & per-deck slide range bounding
 - ✅ Corrupt and encrypted PDF error handling
 - ✅ Single source of truth configuration & API key privacy
 
@@ -274,6 +276,7 @@ The comprehensive automated test suite runs locally and verifies:
 - **Your API key stays local**: It is read from `.env` (excluded via `.gitignore`) and is never committed.
 - **What leaves your machine**: Lecture audio and slides are uploaded to the **Google Gemini API** for transcription and analysis (subject to [Google's Gemini API terms](https://ai.google.dev/gemini-api/terms)). Demo mode (`--demo`) sends nothing.
 - **What stays local**: Uploaded files (`uploads/`), generated PDFs (`output_pdfs/`), diagrams (`generated_assets/`), and history (`lecture_history.json`, `cached_last_guide.json`) are stored only on your device — unless you enable the optional Google Drive folder sync.
+- **Privacy in History**: Past lecture history records sanitized item counts and categories; raw download URLs, authentication tokens, and local file paths are not stored in history.
 
 ---
 
@@ -281,7 +284,7 @@ The comprehensive automated test suite runs locally and verifies:
 
 - **File Picker Behavior**: If your browser's native file picker dialog is slow or unresponsive, drag-and-drop works directly onto the "Recordings" and "Notes / Slides" dropzones.
 - **Recommended Browser**: For optimal UI responsiveness and local streaming, launch with `python app.py` and open **http://127.0.0.1:8000** in **Google Chrome** or **Microsoft Edge**.
-- **Upload Streaming**: Uploads are written to disk in 1 MB chunks without buffering entire multi-gigabyte recordings into system memory. If an upload fails, any staged temporary files are automatically cleaned up.
+- **Upload Streaming & Size Limits**: Local uploads up to 2 GB are streamed to disk in 1 MB chunks without buffering entire multi-gigabyte recordings into system memory. If an upload fails, staged temporary files are automatically cleaned up.
 
 ---
 
@@ -309,9 +312,12 @@ lecture-ai-study-suite/
 ├── .gitignore                 # Excludes .env, recordings, and outputs
 ├── pytest.ini                 # Limits pytest to the tests/ folder
 ├── LICENSE                    # MIT Open Source License
+├── AUDIT_REPORT.md            # Security, privacy, and quality audit report
 ├── LECTUREAI_FULL_DOCUMENTATION.md  # In-depth architecture & development log
 ├── Install_Dependencies.bat   # 1-click installer for Windows
 ├── Launch_LectureAI.bat       # 1-click launcher for Windows
+├── samples/
+│   └── demo_guide.pdf         # Sample pre-compiled study guide (demo mode)
 ├── templates/
 │   └── index.html             # Interactive web UI dashboard
 ├── static/                    # Icons and application branding
