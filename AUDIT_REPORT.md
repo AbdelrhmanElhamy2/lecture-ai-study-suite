@@ -1,9 +1,98 @@
 # LectureAI Study Suite - Comprehensive Audit & Quality Assurance Report
 
 **Date:** October 8, 2026  
-**Status:** All Screen-Recording Defects Resolved & Verified  
-**Test Suite:** 26/26 Tests Passing (`python -m unittest tests/test_suite.py -v`)  
-**Demo Sample:** `samples/demo_guide.pdf` (Verified Zero Tofu, Zero Collisions, 100% Consistent Math)
+**Status:** Unified Mixed-Source Intake Implemented & Fully Verified  
+**Test Suite:** 35/35 Tests Passing (`python -m unittest tests/test_suite.py -v`)  
+**CLI Demo Sample:** `output_pdfs/Lecture_Concurrency Control Semaphores_Study_Guide.pdf` (Verified DEMO Badge, Zero Tofu, Zero Math Defects)
+
+---
+
+## 🔀 Mixed-Source Intake Implementation & Verification Audit (October 8, 2026)
+
+### 1. Architectural Design & Experience
+- **Unified Experience**: Replaced the previous three mutually exclusive intake tabs ("Upload File", "Drive Links", "Drive Folder") with a unified **"Lecture sources"** panel.
+- **Two Distinct Ordered Lists**:
+  1. **Recordings (Audio)**: Requires at least 1 recording. Multi-part audio is stitched in exact chronological order.
+  2. **Notes / Slides (Optional)**: Can hold multiple decks in sequence or be left empty for audio-only synthesis.
+- **Item Cards UI**: Each item card features:
+  - Source badge: `💻 Computer`, `🔗 Link`, or `📂 Course folder`.
+  - Item name and formatted size (when known).
+  - Status indicator: `Ready`, `Checking`, or `Error`.
+  - Chronological movement buttons (`▲` Move Up, `▼` Move Down) and removal (`✕`).
+  - Slide range inputs for notes decks (`Slides: [Start] - [End]`).
+- **Flexible Ingestion per List**:
+  - `Choose from computer`: Native file picker dialog with multi-file support.
+  - `Drag and Drop`: Directly into the list dropzones with visual dragover feedback.
+  - `Paste link`: Inline drawer accepting Google Drive URLs or direct links (supports comma or newline separation).
+  - `Choose from course folder`: Opens the course folder search & selection drawer without locking manual uploads.
+- **Validation & Ergonomics**:
+  - Format validation runs at addition time as well as submission time (rejecting unsupported extensions like `.exe`, `.mp4` for notes).
+  - Duplicate warnings: Detects duplicate files with identical names and sizes.
+  - Dynamic total size counter badge (`Total: X.X MB`).
+  - Clear, user-friendly error message if no audio recording is provided.
+
+### 2. Slide Range Bounds: Per-Item vs Global
+- **Per-Notes-Item Slide Range Supported**: The processing pipeline (`process_lecture` in `pipeline.py`, `analyze_lecture_audio` in `pedagogy_engine.py`, and `app.py`) was extended with `slide_ranges: Optional[List[Tuple[Optional[int], Optional[int]]]]`.
+- Each notes deck is sliced individually based on its own start/end slide bounds. Blank slide ranges default to inspecting the entire deck.
+
+### 3. Replacement of Legacy Course-Folder Lock
+- **Previous Behavior**: Previously, selecting the Drive Folder tab activated `setFolderModeLock(true)`, greying out manual upload controls, and `app.py` discarded manual uploads if folder items were present.
+- **New Architecture**: The course-folder scanner was refactored into an "Add from Course Folder" drawer. Selected recordings and notes feed directly into the unified `Recordings` and `Notes / Slides` lists as items with `kind: "folder"`.
+- **Regression Test Updated**: `test_14_folder_mode_ignores_manual_uploads` was updated to verify that manual uploads and course folder items work together in unified mixed-source intake without locking or discarding each other.
+
+### 4. Upload Robustness & Memory Protection
+- **Unified Client Handler**: File picker and drag-and-drop route through the exact same lightweight `addComputerFiles()` handler, inspecting only `name`, `size`, and extension without blocking the main browser thread.
+- **Chunked Server Streaming**: In `app.py`, uploads stream directly to disk in 1 MB chunks (`while chunk := await u_file.read(1024 * 1024)`) without buffering multi-gigabyte files into memory, capped at 2 GB.
+- **60MB Dummy File Test**: Verified via automated regression test `test_35_chunked_upload_60mb_dummy_file`.
+- **Atomic Staging Rollback**: If any upload or link download fails during ingestion, all staged files in `UPLOAD_DIR` are deleted immediately, preventing disk leaks.
+
+### 5. Containment & Privacy Safeguards
+- **Course Folder Containment**: `validate_course_folder_path` enforces that all folder-source paths reside strictly within configured course roots (`FALL_DRIVE_CANDIDATE_ROOTS` or `LECTUREAI_COURSES_DIR`). Containment is evaluated before filesystem existence to prevent path enumeration.
+- **Safe Link Downloads**: Filenames from `Content-Disposition` or URLs are sanitized to prevent directory traversal and confined to the target directory.
+- **Privacy Assurance**: Google Drive links, local filesystem paths, URL tokens, and usernames are strictly excluded from history entries, status logs, error messages shown to users, and generated PDFs. `format_sources_summary` stores privacy-safe summaries (e.g. `2 recordings (computer + link), 1 notes (course folder)`).
+
+### 6. CLI Mixed-Source Support
+- The CLI (`cli.py`) supports mixed sources: users can specify `--folder <path/url> --session <query>` alongside `--audio` and `--notes` arguments (which accept multiple comma- or space-separated local file paths and URLs). All sources are ingested sequentially in order.
+
+### 7. Files Changed
+| File | Changes Made |
+| :--- | :--- |
+| `templates/index.html` | Unified "Lecture sources" UI; Recordings & Notes lists; 3 add options each; item cards with badges, reordering, deletion, and per-deck slide ranges; duplicate warnings; total size badge; course folder feeder drawer. |
+| `app.py` | Added `sanitize_display_name`, `format_sources_summary`, and `resolve_mixed_sources` with atomic rollback; updated `/api/process_audio` to accept structured JSON `sources`, chunked streaming uploads (1MB), and upfront format/containment validation; updated `background_process` for multi-source resolution and cleanup. |
+| `link_downloader.py` | Added `get_configured_courses_roots` and `validate_course_folder_path` with containment-before-existence security checks. |
+| `pipeline.py` | Extended `process_lecture` with `slide_ranges` parameter; slices each notes deck individually. |
+| `pedagogy_engine.py` | Extended `analyze_lecture_audio` with `slide_ranges` parameter. |
+| `cli.py` | Updated argument parsing and sequential ingestion loops for `--audio`, `--notes`, and `--folder`. |
+| `tests/test_suite.py` | Updated `test_14`; added `test_27` through `test_35` covering all-computer, all-links, all-folder, mixed combination, failing link cleanup, unsupported extensions, path containment, order preservation, and 60MB chunked upload. |
+| `README.md` | Added "Unified Mixed-Source Intake" section with scenario example; added "Troubleshooting" section. |
+| `AUDIT_REPORT.md` | Documented mixed-source intake architecture, files changed, test results, and verification table. |
+
+### 8. Verification Matrix
+| Requirement / Item | Status | Verification Evidence |
+| :--- | :---: | :--- |
+| Unified "Lecture sources" intake UI | **VERIFIED** | Replaced 3 tabs with 2 ordered lists (Recordings & Notes) with source badges, sizes, statuses, and move/remove controls. |
+| 3 Add Options per list | **VERIFIED** | Choose from computer, Paste link, and Choose from course folder verified in UI and tests. |
+| Drag and drop file ingestion | **VERIFIED** | Dropzones implemented with dragover/dragleave visual feedback and shared validation. |
+| Course folder no longer locks manual uploads | **VERIFIED** | Feeder drawer adds `kind: "folder"` items without disabling manual controls; tested in `test_14`. |
+| Slide ranges per notes deck | **VERIFIED** | Supported per-item in UI, `app.py`, `pipeline.py`, and `pedagogy_engine.py`; tested in `test_30`. |
+| Preserved study modes, options & hints | **VERIFIED** | Study modes (detailed/revision/exam), diagrams, exam questions, transcript, course/lecturer hints verified. |
+| Validation: Minimum 1 recording required | **VERIFIED** | Returns friendly 400 detail `"No lecture recording provided"`; tested in `test_14` & `test_32`. |
+| Upfront extension format validation | **VERIFIED** | Rejects unsupported extensions at submission/add time with HTTP 400; tested in `test_32`. |
+| Duplicate warning banner & total size | **VERIFIED** | `#duplicateWarningBanner` and `#totalSizeBadge` active in `templates/index.html`. |
+| Structured sources JSON payload | **VERIFIED** | Server processes `{id, kind, role, order, display_name, link/local_path, slide_range}`. |
+| Safe link download containment | **VERIFIED** | Downloads confined to target directory; tested in `test_19`. |
+| Course-folder path containment | **VERIFIED** | Paths outside configured course roots rejected with HTTP 400; tested in `test_33`. |
+| Atomic rollback on item failure | **VERIFIED** | Staged files unlinked on failure; error message names failing item & reason; tested in `test_31`. |
+| Privacy: no paths/tokens in logs, history, PDF | **VERIFIED** | Sanitized display names and privacy-safe summary format verified; tested in `test_17` & `test_30`. |
+| 60MB chunked upload streaming | **VERIFIED** | Server streams 1MB chunks without full memory buffer; tested in `test_35`. |
+| All-computer sources backend test | **VERIFIED** | `test_27_mixed_sources_all_computer` passing. |
+| All-links sources backend test | **VERIFIED** | `test_28_mixed_sources_all_links` passing. |
+| All-folder sources backend test | **VERIFIED** | `test_29_mixed_sources_all_folder` passing. |
+| Mixed combination in user order backend test | **VERIFIED** | `test_30_mixed_sources_combination` passing. |
+| Order preservation backend test | **VERIFIED** | `test_34_mixed_sources_order_preserved` passing. |
+| CLI `--demo` PDF verified | **VERIFIED** | 8 pages, `DEMO` badge present, 0 tofu glyphs (`\u25a1`, `\ufffd`, `\x00`), correct Banker's math. |
+| CLI mixed-source capability | **VERIFIED** | Supports `--folder` combined with multi-part `--audio` and `--notes`. |
+| Full regression test suite passing | **VERIFIED** | 35/35 tests passing (`python -m unittest tests/test_suite.py -v`). |
 
 ---
 

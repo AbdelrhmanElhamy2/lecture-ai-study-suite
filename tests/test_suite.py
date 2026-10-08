@@ -499,9 +499,13 @@ class TestLectureAISuite(unittest.TestCase):
         self.assertEqual(bad_cancel.status_code, 404)
 
     def test_14_folder_mode_ignores_manual_uploads(self):
-        """Regression test for Part 1: Validation and ignoring manual uploads when folder mode is active."""
+        """Regression test for Part 1: Unified mixed intake replaces old folder-mode lock; manual uploads and folder items work together."""
         from fastapi.testclient import TestClient
         from app import app
+        import tempfile
+        import io
+        import json
+        from unittest.mock import patch
 
         client = TestClient(app)
 
@@ -509,6 +513,49 @@ class TestLectureAISuite(unittest.TestCase):
         res_empty = client.post("/api/process_audio", data={})
         self.assertEqual(res_empty.status_code, 400)
         self.assertIn("No lecture recording provided", res_empty.json()["detail"])
+
+        # 2. In unified mixed intake, course folder items and manual computer uploads can be combined
+        # (the old folder-mode lock that discarded manual uploads is completely eliminated)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            course_dir = Path(tmp_dir) / "Fall 2026" / "Biomaterials"
+            course_dir.mkdir(parents=True, exist_ok=True)
+            folder_slide_file = course_dir / "Biomaterials_Deck.pdf"
+            folder_slide_file.write_bytes(b"%PDF-1.4 folder dummy slide content")
+
+            dummy_audio_bytes = io.BytesIO(b"dummy mp3 audio data")
+            dummy_audio_bytes.name = "part1_recording.mp3"
+
+            sources_payload = json.dumps([
+                {"id": "rec_upload", "kind": "upload", "role": "audio", "order": 0, "display_name": "part1_recording.mp3"},
+                {"id": "notes_folder", "kind": "folder", "role": "notes", "order": 0, "local_path": str(folder_slide_file), "display_name": "Biomaterials_Deck.pdf"}
+            ])
+
+            with patch("link_downloader.get_configured_courses_roots", return_value=[Path(tmp_dir)]):
+                with patch("app.process_lecture") as mock_pipeline:
+                    mock_pipeline.return_value = {
+                        "success": True,
+                        "pdf_path": str(Path("output_pdfs") / "mock.pdf"),
+                        "pdf_filename": "mock.pdf",
+                        "lecture_title": "Biomaterials",
+                        "summary": "Mock summary",
+                        "contradictions": [],
+                        "notes_audited": True,
+                        "notes_reference": "Full slide deck",
+                        "audio_fidelity_score": 100,
+                    }
+                    res_mixed = client.post(
+                        "/api/process_audio",
+                        data={"sources": sources_payload, "api_key": "mock_api_key"},
+                        files={"file_rec_upload": ("part1_recording.mp3", dummy_audio_bytes, "audio/mpeg")}
+                    )
+                    self.assertEqual(res_mixed.status_code, 200)
+                    self.assertTrue(res_mixed.json().get("success"))
+                    self.assertTrue(mock_pipeline.called)
+                    # Verify both manual upload audio and course folder notes were passed to pipeline
+                    call_kwargs = mock_pipeline.call_args.kwargs
+                    self.assertEqual(len(call_kwargs["audio_path"]), 1)
+                    self.assertEqual(len(call_kwargs["notes_path"]), 1)
+                    self.assertEqual(call_kwargs["notes_path"][0].name, "Biomaterials_Deck.pdf")
 
     def test_15_pdf_corrupt_and_encrypted_error_handling(self):
         """Regression test for corrupt and encrypted PDFs raising user-friendly errors."""
@@ -1092,6 +1139,415 @@ class TestLectureAISuite(unittest.TestCase):
                 headers={"host": "127.0.0.1:8000", "origin": "http://127.0.0.1:8000"}
             )
             self.assertEqual(resp_prod_local.status_code, 200)
+
+    def test_27_mixed_sources_all_computer(self):
+        """Mixed sources: All-computer sources (multiple audio + notes) are resolved and staged in order."""
+        import io
+        import json
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        audio1_bytes = io.BytesIO(b"audio part 1 dummy bytes")
+        audio2_bytes = io.BytesIO(b"audio part 2 dummy bytes")
+        notes_bytes = io.BytesIO(b"%PDF-1.4 notes dummy bytes")
+
+        sources_payload = json.dumps([
+            {"id": "a1", "kind": "upload", "role": "audio", "order": 0, "display_name": "lecture_part1.mp3"},
+            {"id": "a2", "kind": "upload", "role": "audio", "order": 1, "display_name": "lecture_part2.wav"},
+            {"id": "n1", "kind": "upload", "role": "notes", "order": 0, "display_name": "lecture_notes.pdf"},
+        ])
+
+        with patch("app.process_lecture") as mock_pipeline:
+            mock_pipeline.return_value = {
+                "success": True,
+                "pdf_path": "output_pdfs/mock.pdf",
+                "pdf_filename": "mock.pdf",
+                "lecture_title": "All Computer Test",
+                "summary": "Mock summary",
+                "contradictions": [],
+                "notes_audited": True,
+                "notes_reference": "Full slide deck",
+                "audio_fidelity_score": 100,
+            }
+            res = client.post(
+                "/api/process_audio",
+                data={"sources": sources_payload, "api_key": "mock_api_key"},
+                files={
+                    "file_a1": ("lecture_part1.mp3", audio1_bytes, "audio/mpeg"),
+                    "file_a2": ("lecture_part2.wav", audio2_bytes, "audio/wav"),
+                    "file_n1": ("lecture_notes.pdf", notes_bytes, "application/pdf"),
+                }
+            )
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertTrue(data.get("success"))
+            self.assertTrue(mock_pipeline.called)
+            kwargs = mock_pipeline.call_args.kwargs
+            self.assertEqual(len(kwargs["audio_path"]), 2)
+            self.assertTrue(kwargs["audio_path"][0].name.endswith("lecture_part1.mp3"))
+            self.assertTrue(kwargs["audio_path"][1].name.endswith("lecture_part2.wav"))
+            self.assertEqual(len(kwargs["notes_path"]), 1)
+            self.assertTrue(kwargs["notes_path"][0].name.endswith("lecture_notes.pdf"))
+
+    def test_28_mixed_sources_all_links(self):
+        """Mixed sources: All-links sources (mocked downloader) are safely retrieved and passed in order."""
+        import json
+        import tempfile
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        sources_payload = json.dumps([
+            {"id": "l1", "kind": "link", "role": "audio", "order": 0, "link": "https://drive.google.com/file/d/audio1", "display_name": "cloud_audio1.mp3"},
+            {"id": "l2", "kind": "link", "role": "audio", "order": 1, "link": "https://example.com/audio2.m4a", "display_name": "cloud_audio2.m4a"},
+            {"id": "ln1", "kind": "link", "role": "notes", "order": 0, "link": "https://example.com/slides.pdf", "display_name": "cloud_slides.pdf"},
+        ])
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            a1_file = Path(tmp_dir) / "cloud_audio1.mp3"
+            a2_file = Path(tmp_dir) / "cloud_audio2.m4a"
+            n1_file = Path(tmp_dir) / "cloud_slides.pdf"
+            a1_file.write_bytes(b"mock audio 1")
+            a2_file.write_bytes(b"mock audio 2")
+            n1_file.write_bytes(b"%PDF-1.4 mock notes")
+
+            def mock_dl(url, target_dir, expected_type, progress_callback=None):
+                if "audio1" in url:
+                    return a1_file, "cloud_audio1.mp3"
+                elif "audio2" in url:
+                    return a2_file, "cloud_audio2.m4a"
+                else:
+                    return n1_file, "cloud_slides.pdf"
+
+            with patch("app.download_from_link", side_effect=mock_dl):
+                with patch("app.process_lecture") as mock_pipeline:
+                    mock_pipeline.return_value = {
+                        "success": True,
+                        "pdf_path": "output_pdfs/mock.pdf",
+                        "pdf_filename": "mock.pdf",
+                        "lecture_title": "All Links Test",
+                        "summary": "Mock summary",
+                        "contradictions": [],
+                        "notes_audited": True,
+                        "notes_reference": "Full slide deck",
+                        "audio_fidelity_score": 100,
+                    }
+                    res = client.post(
+                        "/api/process_audio",
+                        data={"sources": sources_payload, "api_key": "mock_api_key"}
+                    )
+                    self.assertEqual(res.status_code, 200)
+                    self.assertTrue(res.json().get("success"))
+                    self.assertTrue(mock_pipeline.called)
+                    kwargs = mock_pipeline.call_args.kwargs
+                    self.assertEqual(len(kwargs["audio_path"]), 2)
+                    self.assertEqual(kwargs["audio_path"][0], a1_file)
+                    self.assertEqual(kwargs["audio_path"][1], a2_file)
+                    self.assertEqual(len(kwargs["notes_path"]), 1)
+                    self.assertEqual(kwargs["notes_path"][0], n1_file)
+
+    def test_29_mixed_sources_all_folder(self):
+        """Mixed sources: All-folder sources (audio + notes) inside configured courses directory are validated and resolved."""
+        import json
+        import tempfile
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            course_dir = Path(tmp_dir) / "Biomechanics"
+            course_dir.mkdir(parents=True, exist_ok=True)
+            folder_audio = course_dir / "lecture_01.mp3"
+            folder_notes = course_dir / "lecture_01_notes.pdf"
+            folder_audio.write_bytes(b"dummy audio folder content")
+            folder_notes.write_bytes(b"%PDF-1.4 dummy notes folder content")
+
+            sources_payload = json.dumps([
+                {"id": "f_a", "kind": "folder", "role": "audio", "order": 0, "local_path": str(folder_audio), "display_name": "lecture_01.mp3"},
+                {"id": "f_n", "kind": "folder", "role": "notes", "order": 0, "local_path": str(folder_notes), "display_name": "lecture_01_notes.pdf"},
+            ])
+
+            with patch("link_downloader.get_configured_courses_roots", return_value=[Path(tmp_dir)]):
+                with patch("app.process_lecture") as mock_pipeline:
+                    mock_pipeline.return_value = {
+                        "success": True,
+                        "pdf_path": "output_pdfs/mock.pdf",
+                        "pdf_filename": "mock.pdf",
+                        "lecture_title": "All Folder Test",
+                        "summary": "Mock summary",
+                        "contradictions": [],
+                        "notes_audited": True,
+                        "notes_reference": "Full slide deck",
+                        "audio_fidelity_score": 100,
+                    }
+                    res = client.post(
+                        "/api/process_audio",
+                        data={"sources": sources_payload, "api_key": "mock_api_key"}
+                    )
+                    self.assertEqual(res.status_code, 200)
+                    self.assertTrue(res.json().get("success"))
+                    self.assertTrue(mock_pipeline.called)
+                    kwargs = mock_pipeline.call_args.kwargs
+                    self.assertEqual(len(kwargs["audio_path"]), 1)
+                    self.assertEqual(kwargs["audio_path"][0].resolve(), folder_audio.resolve())
+                    self.assertEqual(len(kwargs["notes_path"]), 1)
+                    self.assertEqual(kwargs["notes_path"][0].resolve(), folder_notes.resolve())
+
+    def test_30_mixed_sources_combination(self):
+        """Mixed sources: Mixed combination (computer + link + folder) preserves user order and per-deck slide ranges."""
+        import io
+        import json
+        import tempfile
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            course_dir = Path(tmp_dir) / "Medical_Robotics"
+            course_dir.mkdir(parents=True, exist_ok=True)
+            folder_slides = course_dir / "deck_intro.pdf"
+            folder_slides.write_bytes(b"%PDF-1.4 intro slides")
+
+            link_audio_file = Path(tmp_dir) / "part2_web.mp3"
+            link_audio_file.write_bytes(b"mock link audio bytes")
+
+            comp_audio_bytes = io.BytesIO(b"part 1 upload bytes")
+            comp_notes_bytes = io.BytesIO(b"%PDF-1.4 upload continued slides")
+
+            sources_payload = json.dumps([
+                {"id": "up_a", "kind": "upload", "role": "audio", "order": 0, "display_name": "part1_mic.mp3"},
+                {"id": "lk_a", "kind": "link", "role": "audio", "order": 1, "link": "https://example.com/part2_web.mp3", "display_name": "part2_web.mp3"},
+                {"id": "fd_n", "kind": "folder", "role": "notes", "order": 0, "local_path": str(folder_slides), "display_name": "deck_intro.pdf", "start_slide": 1, "end_slide": 25},
+                {"id": "up_n", "kind": "upload", "role": "notes", "order": 1, "display_name": "deck_advanced.pdf", "slide_range": "26-50"},
+            ])
+
+            def mock_dl(url, target_dir, expected_type, progress_callback=None):
+                return link_audio_file, "part2_web.mp3"
+
+            with patch("link_downloader.get_configured_courses_roots", return_value=[Path(tmp_dir)]):
+                with patch("app.download_from_link", side_effect=mock_dl):
+                    with patch("app.process_lecture") as mock_pipeline:
+                        mock_pipeline.return_value = {
+                            "success": True,
+                            "pdf_path": "output_pdfs/mock.pdf",
+                            "pdf_filename": "mock.pdf",
+                            "lecture_title": "Mixed Combo Test",
+                            "summary": "Mock summary",
+                            "contradictions": [],
+                            "notes_audited": True,
+                            "notes_reference": "Slides 1-50",
+                            "audio_fidelity_score": 100,
+                        }
+                        res = client.post(
+                            "/api/process_audio",
+                            data={"sources": sources_payload, "api_key": "mock_api_key"},
+                            files={
+                                "file_up_a": ("part1_mic.mp3", comp_audio_bytes, "audio/mpeg"),
+                                "file_up_n": ("deck_advanced.pdf", comp_notes_bytes, "application/pdf"),
+                            }
+                        )
+                        self.assertEqual(res.status_code, 200)
+                        self.assertTrue(res.json().get("success"))
+                        self.assertTrue(mock_pipeline.called)
+                        kwargs = mock_pipeline.call_args.kwargs
+                        # Chronological order verified
+                        self.assertEqual(len(kwargs["audio_path"]), 2)
+                        self.assertTrue(kwargs["audio_path"][0].name.endswith("part1_mic.mp3"))
+                        self.assertEqual(kwargs["audio_path"][1], link_audio_file)
+                        self.assertEqual(len(kwargs["notes_path"]), 2)
+                        self.assertEqual(kwargs["notes_path"][0].resolve(), folder_slides.resolve())
+                        self.assertTrue(kwargs["notes_path"][1].name.endswith("deck_advanced.pdf"))
+                        # Per-deck slide ranges verified
+                        self.assertEqual(kwargs["slide_ranges"], [(1, 25), (26, 50)])
+
+    def test_31_mixed_sources_failing_link_cleanup(self):
+        """Mixed sources: Failing link in the middle fails the job with item name and cleans up staged files."""
+        import io
+        import json
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app, jobs, UPLOAD_DIR
+
+        client = TestClient(app)
+        audio_upload_bytes = io.BytesIO(b"part 1 upload bytes to stage")
+
+        sources_payload = json.dumps([
+            {"id": "up_1", "kind": "upload", "role": "audio", "order": 0, "display_name": "part1_stage.mp3"},
+            {"id": "lk_2", "kind": "link", "role": "audio", "order": 1, "link": "https://example.com/bad_link.mp3", "display_name": "bad_link.mp3"},
+        ])
+
+        def failing_dl(url, target_dir, expected_type, progress_callback=None):
+            raise RuntimeError("Connection timed out 504")
+
+        with patch("app.download_from_link", side_effect=failing_dl):
+            res = client.post(
+                "/api/process_audio",
+                data={"sources": sources_payload, "api_key": "mock_api_key"},
+                files={"file_up_1": ("part1_stage.mp3", audio_upload_bytes, "audio/mpeg")}
+            )
+            self.assertEqual(res.status_code, 200)
+            job_id = res.json()["job_id"]
+
+            job_state = jobs[job_id]
+            self.assertEqual(job_state["status"], "failed")
+            self.assertIn("bad_link.mp3", job_state["error"])
+            self.assertIn("Connection timed out 504", job_state["error"])
+
+            # Verify no orphaned staged files from this job remain in UPLOAD_DIR
+            staged_matches = list(UPLOAD_DIR.glob("*part1_stage.mp3"))
+            self.assertEqual(len(staged_matches), 0, "All staged files must be removed on failure")
+
+    def test_32_mixed_sources_unsupported_extension_rejected(self):
+        """Mixed sources: Unsupported extensions and empty audio are rejected upfront with HTTP 400."""
+        import json
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+
+        # 1. Unsupported audio extension (e.g. .exe)
+        bad_audio = json.dumps([
+            {"id": "bad_a", "kind": "link", "role": "audio", "order": 0, "link": "https://example.com/malware.exe", "display_name": "malware.exe"}
+        ])
+        res_bad_a = client.post("/api/process_audio", data={"sources": bad_audio, "api_key": "mock_key"})
+        self.assertEqual(res_bad_a.status_code, 400)
+        self.assertIn("Unsupported audio format '.exe'", res_bad_a.json()["detail"])
+
+        # 2. Unsupported notes extension (e.g. .mp4)
+        bad_notes = json.dumps([
+            {"id": "good_a", "kind": "link", "role": "audio", "order": 0, "link": "https://example.com/lec.mp3", "display_name": "lec.mp3"},
+            {"id": "bad_n", "kind": "link", "role": "notes", "order": 0, "link": "https://example.com/video.mp4", "display_name": "video.mp4"}
+        ])
+        res_bad_n = client.post("/api/process_audio", data={"sources": bad_notes, "api_key": "mock_key"})
+        self.assertEqual(res_bad_n.status_code, 400)
+        self.assertIn("Unsupported lecture notes format '.mp4'", res_bad_n.json()["detail"])
+
+        # 3. Missing recording validation
+        empty_audio = json.dumps([
+            {"id": "n1", "kind": "link", "role": "notes", "order": 0, "link": "https://example.com/deck.pdf", "display_name": "deck.pdf"}
+        ])
+        res_no_audio = client.post("/api/process_audio", data={"sources": empty_audio, "api_key": "mock_key"})
+        self.assertEqual(res_no_audio.status_code, 400)
+        self.assertIn("No lecture recording provided", res_no_audio.json()["detail"])
+
+    def test_33_mixed_sources_path_outside_courses_rejected(self):
+        """Mixed sources: Course folder path outside allowed courses roots is rejected upfront with HTTP 400."""
+        import json
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        bad_folder = json.dumps([
+            {"id": "a1", "kind": "folder", "role": "audio", "order": 0, "local_path": "C:/Windows/System32/evil.mp3", "display_name": "evil.mp3"}
+        ])
+        res = client.post("/api/process_audio", data={"sources": bad_folder, "api_key": "mock_key"})
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("outside the configured courses directory", res.json()["detail"])
+
+    def test_34_mixed_sources_order_preserved(self):
+        """Mixed sources: Exact chronological ordering is preserved regardless of alphabetical sorting."""
+        import json
+        import tempfile
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        sources_payload = json.dumps([
+            {"id": "a_z", "kind": "link", "role": "audio", "order": 0, "link": "https://example.com/z.mp3", "display_name": "Zeta_Part_A.mp3"},
+            {"id": "a_a", "kind": "link", "role": "audio", "order": 1, "link": "https://example.com/a.mp3", "display_name": "Alpha_Part_B.mp3"},
+            {"id": "n_w", "kind": "link", "role": "notes", "order": 0, "link": "https://example.com/w.pdf", "display_name": "Omega_Slides.pdf"},
+            {"id": "n_b", "kind": "link", "role": "notes", "order": 1, "link": "https://example.com/b.pdf", "display_name": "Beta_Slides.pdf"},
+        ])
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zeta_file = Path(tmp_dir) / "Zeta_Part_A.mp3"
+            alpha_file = Path(tmp_dir) / "Alpha_Part_B.mp3"
+            omega_file = Path(tmp_dir) / "Omega_Slides.pdf"
+            beta_file = Path(tmp_dir) / "Beta_Slides.pdf"
+            zeta_file.write_bytes(b"z")
+            alpha_file.write_bytes(b"a")
+            omega_file.write_bytes(b"%PDF-1.4 w")
+            beta_file.write_bytes(b"%PDF-1.4 b")
+
+            def mock_dl(url, target_dir, expected_type, progress_callback=None):
+                if "z.mp3" in url: return zeta_file, "Zeta_Part_A.mp3"
+                if "a.mp3" in url: return alpha_file, "Alpha_Part_B.mp3"
+                if "w.pdf" in url: return omega_file, "Omega_Slides.pdf"
+                return beta_file, "Beta_Slides.pdf"
+
+            with patch("app.download_from_link", side_effect=mock_dl):
+                with patch("app.process_lecture") as mock_pipeline:
+                    mock_pipeline.return_value = {
+                        "success": True,
+                        "pdf_path": "output_pdfs/mock.pdf",
+                        "pdf_filename": "mock.pdf",
+                        "lecture_title": "Order Preserved Test",
+                        "summary": "Mock summary",
+                        "contradictions": [],
+                        "notes_audited": True,
+                        "notes_reference": "Full slide deck",
+                        "audio_fidelity_score": 100,
+                    }
+                    res = client.post("/api/process_audio", data={"sources": sources_payload, "api_key": "mock_key"})
+                    self.assertEqual(res.status_code, 200)
+                    self.assertTrue(mock_pipeline.called)
+                    kwargs = mock_pipeline.call_args.kwargs
+                    self.assertEqual(kwargs["audio_path"], [zeta_file, alpha_file])
+                    self.assertEqual(kwargs["notes_path"], [omega_file, beta_file])
+
+    def test_35_chunked_upload_60mb_dummy_file(self):
+        """Mixed sources robustness: 60MB dummy file is written in chunks to disk without whole-file memory buffering."""
+        import json
+        import io
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from app import app, UPLOAD_DIR
+
+        client = TestClient(app)
+        target_size = 60 * 1024 * 1024  # 60 MB
+
+        # 60 MB stream in 1 MB blocks
+        chunk = b"0" * (1024 * 1024)
+        large_stream = io.BytesIO(chunk * 60)
+        large_stream.name = "large_60mb_lecture.mp3"
+
+        sources_payload = json.dumps([
+            {"id": "big_upload", "kind": "upload", "role": "audio", "order": 0, "display_name": "large_60mb_lecture.mp3"}
+        ])
+
+        with patch("app.process_lecture") as mock_pipeline:
+            mock_pipeline.return_value = {
+                "success": True,
+                "pdf_path": "output_pdfs/mock.pdf",
+                "pdf_filename": "mock.pdf",
+                "lecture_title": "60MB Upload Test",
+                "summary": "Mock summary",
+                "contradictions": [],
+                "notes_audited": True,
+                "notes_reference": "Full slide deck",
+                "audio_fidelity_score": 100,
+            }
+            res = client.post(
+                "/api/process_audio",
+                data={"sources": sources_payload, "api_key": "mock_api_key"},
+                files={"file_big_upload": ("large_60mb_lecture.mp3", large_stream, "audio/mpeg")}
+            )
+            self.assertEqual(res.status_code, 200)
+            self.assertTrue(res.json().get("success"))
+            self.assertTrue(mock_pipeline.called)
+
+            passed_path = mock_pipeline.call_args.kwargs["audio_path"][0]
+            self.assertTrue(passed_path.exists())
+            self.assertEqual(passed_path.stat().st_size, target_size)
+
+            # Cleanup staged file
+            passed_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

@@ -39,6 +39,22 @@ University lectures in Engineering, Medicine, Science, and STEM often move fast.
 - **Multi-Part Lectures**: Handles multiple consecutive recordings (Part 1, Part 2) and merges them chronologically into one unified narrative.
 - **Slide Range Bounds**: Target specific slides (e.g. `Slides 5–28`). If left blank, LectureAI inspects the full deck and includes only concepts verbally taught.
 
+#### 🔀 Unified Mixed-Source Intake
+One lecture can seamlessly combine recordings and slide notes from different sources simultaneously:
+1. **Computer Files**: Local file picker or drag-and-drop directly onto intake lists.
+2. **Drive / Direct Links**: Paste public Google Drive links or direct media URLs.
+3. **Course Folders**: Browse and select files from scanned local or Google Drive-synced course folders without locking manual uploads.
+
+**Example Scenario**:
+- **Recordings List**:
+  - `Part 1 (Computer)`: `Lecture_Part1.m4a` (uploaded from local computer)
+  - `Part 2 (Link)`: `https://drive.google.com/file/d/1.../view` (downloaded from Google Drive)
+- **Notes / Slides List**:
+  - `Deck 1 (Course Folder)`: `Bioinstrumentation_Ch1.pdf` (Slides 1–25)
+  - `Deck 2 (Computer)`: `Bioinstrumentation_Ch2_Supplements.pdf` (Slides 26–50)
+
+Items are ordered chronologically with up/down controls (`▲`/`▼`) and individual removal controls (`✕`). Multi-part audio is stitched in sequence, and slide decks are bounded by per-deck slide ranges.
+
 ### 🌐 2. Bilingual Speech & Dialect Code-Switching
 - Seamlessly transcribes bilingual college lectures (e.g., Egyptian / Levantine Arabic mixed with English engineering terms).
 - Synthesizes clean, formal, **100% Academic English** summaries and study guides with zero tofu boxes (`□`) or mixed-language clutter in the final document.
@@ -258,6 +274,14 @@ The comprehensive automated test suite runs locally and verifies:
 - **Your API key stays local**: It is read from `.env` (excluded via `.gitignore`) and is never committed.
 - **What leaves your machine**: Lecture audio and slides are uploaded to the **Google Gemini API** for transcription and analysis (subject to [Google's Gemini API terms](https://ai.google.dev/gemini-api/terms)). Demo mode (`--demo`) sends nothing.
 - **What stays local**: Uploaded files (`uploads/`), generated PDFs (`output_pdfs/`), diagrams (`generated_assets/`), and history (`lecture_history.json`, `cached_last_guide.json`) are stored only on your device — unless you enable the optional Google Drive folder sync.
+
+---
+
+## 🔧 Troubleshooting
+
+- **File Picker Behavior**: If your browser's native file picker dialog is slow or unresponsive, drag-and-drop works directly onto the "Recordings" and "Notes / Slides" dropzones.
+- **Recommended Browser**: For optimal UI responsiveness and local streaming, launch with `python app.py` and open **http://127.0.0.1:8000** in **Google Chrome** or **Microsoft Edge**.
+- **Upload Streaming**: Uploads are written to disk in 1 MB chunks without buffering entire multi-gigabyte recordings into system memory. If an upload fails, any staged temporary files are automatically cleaned up.
 
 ---
 
