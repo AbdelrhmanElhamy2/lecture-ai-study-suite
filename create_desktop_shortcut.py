@@ -7,7 +7,9 @@ from pathlib import Path
 def create_shortcut():
     project_dir = Path(__file__).resolve().parent
     launcher_py = project_dir / "launcher.py"
-    icon_path = project_dir / "biomedical_icon.ico"
+    icon_path = project_dir / "app_icon.ico"
+    if not icon_path.exists():
+        icon_path = project_dir / "biomedical_icon.ico"
     
     # Locate pythonw.exe for silent windowless launch
     py_dir = Path(sys.executable).parent

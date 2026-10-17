@@ -1564,7 +1564,7 @@ class TestLectureAISuite(unittest.TestCase):
             # Cleanup staged file
             passed_path.unlink(missing_ok=True)
 
-    def test_35_universal_engineering_math_and_cue_cleaning(self):
+    def test_36_universal_engineering_math_and_cue_cleaning(self):
         """Test universal engineering math entity conversions, cue prefix stripping, and PDF builder hardening."""
         from pdf_builder import format_math_in_text, clean_cue_text, PDFStudyGuideBuilder
         from models import TableDefinition, DiagramDefinition, DiagramElement
@@ -1609,6 +1609,28 @@ class TestLectureAISuite(unittest.TestCase):
 
         # 4. Cleanup any generated test file
         (OUTPUT_DIR / "Engineering_PDF_Hardening_Test.pdf").unlink(missing_ok=True)
+
+    def test_37_engineering_app_icon_and_ui_consistency(self):
+        """Test that the Universal Engineering app icon files exist, have valid dimensions, and match UI references."""
+        from PIL import Image
+
+        png_icon = PROJECT_ROOT / "static" / "app_icon.png"
+        ico_icon = PROJECT_ROOT / "app_icon.ico"
+        legacy_ico = PROJECT_ROOT / "biomedical_icon.ico"
+        index_html = (PROJECT_ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+
+        self.assertTrue(png_icon.exists(), "static/app_icon.png must exist")
+        self.assertTrue(ico_icon.exists(), "app_icon.ico must exist")
+        self.assertTrue(legacy_ico.exists(), "biomedical_icon.ico must exist for backward compatibility")
+
+        with Image.open(png_icon) as img:
+            self.assertEqual(img.size, (512, 512))
+            self.assertEqual(img.mode, "RGBA")
+
+        self.assertIn("/static/app_icon.png?v=4", index_html)
+        self.assertIn("Engineering Study Suite", index_html)
+        self.assertIn("Professor Exam Highlights", index_html)
+        self.assertIn("Professor's Exam Alerts", index_html)
 
 
 if __name__ == "__main__":

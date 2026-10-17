@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LectureAI — Bilingual Lecture to Study Guide & Exam Prep</title>
-  <link rel="icon" type="image/png" href="/static/app_icon.png?v=3">
+  <title>LectureAI — Engineering &amp; Academic Lecture to Study Guide Suite</title>
+  <link rel="icon" type="image/png" href="/static/app_icon.png?v=4">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
@@ -100,7 +100,7 @@
   <header class="bg-white/90 dark:bg-[#0b1322]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-200">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
-        <img src="/static/app_icon.png?v=3" alt="LectureAI Engineering Study Suite" class="w-10 h-10 rounded-xl shadow-md ring-1 ring-slate-300 dark:ring-slate-700 object-cover" title="LectureAI Engineering Study Suite">
+        <img src="/static/app_icon.png?v=4" alt="LectureAI Engineering Study Suite" class="w-10 h-10 rounded-xl shadow-md ring-1 ring-slate-300 dark:ring-slate-700 object-cover" title="LectureAI Engineering Study Suite">
         <div>
           <h1 class="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             LectureAI
@@ -134,7 +134,7 @@
 
         <!-- Dark / Light Mode Toggle Button -->
         <button id="themeToggleBtn" onclick="toggleTheme()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer" title="Toggle Dark/Light Mode">
-          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleIcon">◐</span>
           <span id="themeToggleText">Dark</span>
         </button>
       </div>
@@ -185,7 +185,7 @@
           <!-- Selection Lock Banner (Shown while generating) -->
           <div id="selectionLockBanner" class="hidden flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs transition-all animate-pulse">
             <div class="flex items-center gap-2">
-              <span class="text-base leading-none">🔒</span>
+              <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               <span>All options & uploaded files are locked during generation. Your choices remain visible below.</span>
             </div>
             <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 tracking-wider uppercase">LOCKED</span>
@@ -197,7 +197,8 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
               <div>
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📚</span> <span>Lecture Sources</span>
+                  <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  <span>Lecture Sources</span>
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400">
                   Combine audio and notes from your computer, Google Drive links, and course folders. Stitched chronologically.
@@ -213,7 +214,7 @@
             <!-- Duplicate Warning Notice Banner -->
             <div id="duplicateWarningBanner" class="hidden flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs transition-all">
               <div class="flex items-center gap-2">
-                <span class="text-base leading-none">⚠️</span>
+                <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <span id="duplicateWarningText">Duplicate files detected. Check if this was intentional.</span>
               </div>
               <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 tracking-wider uppercase">DUPLICATE</span>
@@ -223,7 +224,8 @@
             <div id="courseFolderPanel" class="hidden p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3.5 transition-all">
               <div class="flex items-center justify-between pb-2 border-b border-indigo-200/60 dark:border-indigo-900/40">
                 <div class="flex items-center gap-2 text-xs font-bold text-indigo-900 dark:text-indigo-200">
-                  <span>📂</span> <span>Add from Course Folder</span>
+                  <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                  <span>Add from Course Folder</span>
                 </div>
                 <button type="button" onclick="closeCourseFolderPanel()" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 text-sm font-bold cursor-pointer" title="Close course folder panel">✕</button>
               </div>
@@ -232,7 +234,7 @@
               <div id="detectedCoursesBox" class="hidden p-3 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-indigo-100 dark:border-indigo-950 space-y-2">
                 <div class="flex items-center justify-between">
                   <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <span id="detectedCoursesHeaderLabel">⚡ Detected Courses:</span>
+                    <span id="detectedCoursesHeaderLabel">Detected Courses:</span>
                   </span>
                   <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">&bull; Instant Access</span>
                 </div>
@@ -242,7 +244,8 @@
               <!-- Folder Link or Local Path Input -->
               <div class="space-y-1">
                 <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <span>🔗</span> <span>Course Folder Link or Local Path:</span>
+                  <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                  <span>Course Folder Link or Local Path:</span>
                 </label>
                 <input type="text" id="folderUrlInput" placeholder="Google Drive folder URL or local path (e.g. G:\My Drive\fall 2026\CourseName)"
                        class="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -253,7 +256,7 @@
               <div class="space-y-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/40">
                 <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
                   <span class="flex items-center gap-1.5">
-                    <span>🎯</span> <span>Target Lecture or Section:</span>
+                    <span>Target Lecture or Section:</span>
                   </span>
                   <span class="text-[10px] text-slate-400">e.g. Lecture 1, Section 1, Lecture 2</span>
                 </label>
@@ -264,8 +267,8 @@
                          onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchCourseFolder(); }">
                   <button type="button" id="searchFolderBtn" onclick="searchCourseFolder()" 
                           class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
-                    <span id="searchFolderBtnSpinner" class="hidden animate-spin">⏳</span>
-                    <span id="searchFolderBtnText">🔍 Find Materials</span>
+                    <span id="searchFolderBtnSpinner" class="hidden animate-spin">↻</span>
+                    <span id="searchFolderBtnText">Find Materials</span>
                   </button>
                 </div>
 
@@ -287,7 +290,8 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span>🎙️</span> <span>Recordings (Audio)</span>
+                    <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    <span>Recordings (Audio)</span>
                     <span class="text-rose-500 font-extrabold">*</span>
                     <span id="recordingsCountBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">0 items</span>
                   </label>
@@ -299,14 +303,17 @@
                 <!-- Add Audio Options -->
                 <div class="flex flex-wrap items-center gap-1.5 shrink-0">
                   <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" multiple class="hidden" onchange="handleComputerFileInput(event, 'audio')">
-                  <button type="button" onclick="triggerAudioFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>💻</span> <span>Choose from computer</span>
+                  <button type="button" onclick="triggerAudioFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Choose from computer</span>
                   </button>
-                  <button type="button" onclick="toggleLinkInputDrawer('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>🔗</span> <span>Paste link</span>
+                  <button type="button" onclick="toggleLinkInputDrawer('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/50 text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                    <span>Paste link</span>
                   </button>
-                  <button type="button" onclick="openCourseFolderPanel('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>📂</span> <span>Choose from course folder</span>
+                  <button type="button" onclick="openCourseFolderPanel('audio')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <span>Choose from course folder</span>
                   </button>
                 </div>
               </div>
@@ -336,8 +343,8 @@
                    ondrop="handleDrop(event, 'audio')">
                 <div id="recordingsList" class="space-y-2"></div>
                 <div id="recordingsEmptyPrompt" class="py-4 text-center cursor-pointer" onclick="triggerAudioFilePick()">
-                  <div class="w-8 h-8 mx-auto rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm mb-1.5">
-                    🎙️
+                  <div class="w-9 h-9 mx-auto rounded-xl bg-brand-50 dark:bg-brand-950/80 border border-brand-200 dark:border-brand-800/80 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                   </div>
                   <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Click to choose audio or drag and drop recordings here
@@ -354,7 +361,8 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <label class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span>📑</span> <span>Notes / Slides (Optional)</span>
+                    <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Notes / Slides (Optional)</span>
                     <span id="notesCountBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">0 items</span>
                   </label>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400">
@@ -365,14 +373,17 @@
                 <!-- Add Notes Options -->
                 <div class="flex flex-wrap items-center gap-1.5 shrink-0">
                   <input type="file" id="notesFileInput" accept=".pdf,.txt,.md" multiple class="hidden" onchange="handleComputerFileInput(event, 'notes')">
-                  <button type="button" onclick="triggerNotesFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>💻</span> <span>Choose from computer</span>
+                  <button type="button" onclick="triggerNotesFilePick()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Choose from computer</span>
                   </button>
-                  <button type="button" onclick="toggleLinkInputDrawer('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>🔗</span> <span>Paste link</span>
+                  <button type="button" onclick="toggleLinkInputDrawer('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                    <span>Paste link</span>
                   </button>
-                  <button type="button" onclick="openCourseFolderPanel('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1 cursor-pointer">
-                    <span>📂</span> <span>Choose from course folder</span>
+                  <button type="button" onclick="openCourseFolderPanel('notes')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <span>Choose from course folder</span>
                   </button>
                 </div>
               </div>
@@ -402,8 +413,8 @@
                    ondrop="handleDrop(event, 'notes')">
                 <div id="notesList" class="space-y-2"></div>
                 <div id="notesEmptyPrompt" class="py-4 text-center cursor-pointer" onclick="triggerNotesFilePick()">
-                  <div class="w-8 h-8 mx-auto rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm mb-1.5">
-                    📄
+                  <div class="w-9 h-9 mx-auto rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   </div>
                   <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Click to choose notes or drag and drop slides / PDF here
@@ -551,7 +562,7 @@
     <div id="successBox" class="hidden p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium space-y-1 shadow-sm transition-all duration-300">
       <div class="flex items-center justify-between">
         <p class="font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-1.5" id="successTitle">
-          <span>✅</span> <span id="successTitleText">Success</span>
+          <span class="w-4 h-4 rounded-full bg-emerald-600 text-white inline-flex items-center justify-center text-[10px]">&check;</span> <span id="successTitleText">Success</span>
         </p>
         <button type="button" onclick="hideSuccessToast()" class="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-bold text-sm cursor-pointer" title="Dismiss">&times;</button>
       </div>
@@ -562,7 +573,7 @@
     <div id="errorBox" class="hidden p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-medium space-y-2 shadow-sm transition-all duration-300">
       <div class="flex items-center justify-between">
         <p class="font-bold text-rose-900 dark:text-rose-100 flex items-center gap-1.5" id="errorTitle">
-          <span>⚠️</span> <span id="errorTitleText">An error occurred</span>
+          <span class="w-4 h-4 rounded-full bg-rose-600 text-white inline-flex items-center justify-center text-[10px]">!</span> <span id="errorTitleText">An error occurred</span>
         </p>
         <button type="button" onclick="hideErrorBox()" class="text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 font-bold text-sm cursor-pointer" title="Dismiss">&times;</button>
       </div>
@@ -594,7 +605,8 @@
           <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="resLectureTitle">Lecture Title</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400" id="resCourseLecturer">Course &bull; Instructor</p>
           <div id="resDriveBadge" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold">
-            <span>💾</span> <span id="resDriveBadgeText">Saved directly to Google Drive</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span id="resDriveBadgeText">Saved directly to Google Drive</span>
           </div>
         </div>
 
@@ -606,7 +618,8 @@
           </a>
           <button id="deleteCurrentResultBtn" onclick="deleteCurrentResult()" 
              class="px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 font-semibold text-sm transition flex items-center justify-center gap-1.5 cursor-pointer" title="Delete this study guide from records and local disk">
-            <span>🗑️</span> <span class="hidden sm:inline">Delete Record</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span class="hidden sm:inline">Delete Record</span>
           </button>
         </div>
       </div>
@@ -637,7 +650,7 @@
         </div>
         <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
           <p class="text-2xl font-extrabold text-amber-600 dark:text-amber-400" id="metricAlerts">0</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Doctor Exam Highlights</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Professor Exam Highlights</p>
         </div>
         <div class="glass-card rounded-xl p-4 text-center border border-slate-200/80 dark:border-slate-800">
           <p class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400" id="metricDiagrams">0</p>
@@ -651,26 +664,30 @@
 
       <!-- Tabs Navigation -->
       <div class="border-b border-slate-200 dark:border-slate-800">
-        <nav class="flex space-x-6 text-sm font-semibold" aria-label="Tabs">
-          <button onclick="switchTab('tabHighlights')" id="btnTabHighlights" class="tab-btn py-3 px-1 border-b-2 border-brand-600 dark:border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer">
-            ⚠️ Doctor's Exam Alerts (<span id="countHighlightsTab">0</span>)
+        <nav class="flex space-x-6 text-sm font-semibold overflow-x-auto" aria-label="Tabs">
+          <button onclick="switchTab('tabHighlights')" id="btnTabHighlights" class="tab-btn py-3 px-1 border-b-2 border-brand-600 dark:border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span>Professor's Exam Alerts (<span id="countHighlightsTab">0</span>)</span>
           </button>
-          <button onclick="switchTab('tabChapters')" id="btnTabChapters" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
-            📖 Notes & Visuals
+          <button onclick="switchTab('tabChapters')" id="btnTabChapters" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span>Notes &amp; Visuals</span>
           </button>
-          <button onclick="switchTab('tabExam')" id="btnTabExam" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
-            🎯 Exam Prep Questions
+          <button onclick="switchTab('tabExam')" id="btnTabExam" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <span>Exam Prep Questions</span>
           </button>
-          <button onclick="switchTab('tabTranscript')" id="btnTabTranscript" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
-            📝 English Transcript
+          <button onclick="switchTab('tabTranscript')" id="btnTabTranscript" class="tab-btn py-3 px-1 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h12"/></svg>
+            <span>English Transcript</span>
           </button>
         </nav>
       </div>
 
-      <!-- Tab Content 1: Doctor Highlights -->
+      <!-- Tab Content 1: Professor Highlights -->
       <div id="tabHighlights" class="tab-pane space-y-4">
         <p class="text-xs text-slate-500 dark:text-slate-400">
-          The following alerts highlight every concept where the doctor gave explicit exam cues, warned about common mistakes, or repeated critical rules.
+          The following alerts highlight every concept where the professor or instructor gave explicit exam cues, warned about common mistakes, or repeated critical rules.
         </p>
         <div id="alertsContainer" class="space-y-4"></div>
       </div>
@@ -1317,13 +1334,13 @@
       const sourceBadge = document.createElement('span');
       if (item.kind === 'upload') {
         sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0';
-        sourceBadge.innerText = '💻 Computer';
+        sourceBadge.innerText = 'Computer';
       } else if (item.kind === 'link') {
         sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0';
-        sourceBadge.innerText = '🔗 Link';
+        sourceBadge.innerText = 'Link';
       } else {
         sourceBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shrink-0';
-        sourceBadge.innerText = '📂 Course folder';
+        sourceBadge.innerText = 'Course Folder';
       }
 
       const nameBox = document.createElement('div');
@@ -1922,7 +1939,7 @@
         `);
       } finally {
         if (spinner) spinner.classList.add('hidden');
-        if (btnText) btnText.innerText = "🔍 Find Materials";
+        if (btnText) btnText.innerText = "Find Materials";
       }
     }
 
@@ -2001,7 +2018,7 @@
       if (data.status === 'found_both') {
         html += `
           <div class="flex items-start gap-2">
-            <span class="text-base text-emerald-600 dark:text-emerald-400">✅</span>
+            <span class="text-base text-emerald-600 dark:text-emerald-400">&check;</span>
             <div>
               <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300">${data.message}</p>
               <p class="text-[11px] text-slate-500 dark:text-slate-400">Select which recordings and lecture notes you want included in the study guide below.</p>
@@ -2011,10 +2028,10 @@
       } else if (data.status === 'no_notes') {
         html += `
           <div class="flex items-start gap-2">
-            <span class="text-base text-amber-500">⚠️</span>
+            <span class="text-base text-amber-500">!</span>
             <div>
               <p class="text-xs font-bold text-amber-800 dark:text-amber-300">${data.message}</p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">You can proceed with audio-only, or click "Add Another Lecture Note" to attach slides the doctor continued from.</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">You can proceed with audio-only, or click "Add Another Lecture Note" to attach slides the instructor continued from.</p>
             </div>
           </div>
         `;
@@ -2697,7 +2714,7 @@
           if (entry.notes_reference || result.notes_reference) {
             const badge = document.createElement('span');
             badge.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800';
-            badge.textContent = `📑 ${entry.notes_reference || result.notes_reference}`;
+            badge.textContent = `Slides: ${entry.notes_reference || result.notes_reference}`;
             title.appendChild(badge);
           }
           const meta = document.createElement('p');
@@ -2712,7 +2729,7 @@
           link.className = 'px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer';
           link.href = `/api/download/${encodeURIComponent(result.pdf_filename)}`;
           link.download = '';
-          link.innerHTML = '<span>📥</span> Download PDF';
+          link.innerHTML = '<span>&darr;</span> Download PDF';
 
           const reviewBtn = document.createElement('button');
           reviewBtn.className = 'px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition cursor-pointer';
@@ -2722,7 +2739,7 @@
           const delBtn = document.createElement('button');
           delBtn.className = 'px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/60 transition flex items-center gap-1 cursor-pointer text-xs font-semibold';
           delBtn.title = 'Delete from records and disk';
-          delBtn.innerHTML = '<span>🗑️</span> <span class="hidden sm:inline">Delete</span>';
+          delBtn.innerHTML = '<span>&times;</span> <span class="hidden sm:inline">Delete</span>';
           delBtn.onclick = (e) => deleteHistoryEntry(entry.id, result.lecture_title || entry.source_name, e);
 
           actions.append(reviewBtn, link, delBtn);
@@ -2813,7 +2830,7 @@
 
       const notesRef = data.notes_reference || (data.guide && data.guide.notes_reference);
       const notesAudited = Boolean(data.notes_audited || (data.verification_report && data.verification_report.notes_audited) || notesRef);
-      const notesLabel = notesRef ? ` • 📑 Slides: ${notesRef}` : '';
+      const notesLabel = notesRef ? ` • Slides: ${notesRef}` : '';
       document.getElementById('resCourseLecturer').innerText = `${data.course_name} • Instructor: ${data.lecturer_name}${notesLabel}`;
       
       document.getElementById('downloadBtn').href = `/api/download/${encodeURIComponent(data.pdf_filename)}`;
@@ -2922,7 +2939,7 @@
       const guide = data.guide;
       window.currentStudyGuide = guide;
 
-      // 1. Doctor's Exam Alerts
+      // 1. Professor's Exam Alerts
       const alertsContainer = document.getElementById('alertsContainer');
       alertsContainer.innerHTML = '';
       let allAlerts = [];
@@ -2935,7 +2952,7 @@
         card.className = 'p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 border-l-4 border-l-amber-600 dark:border-l-amber-500 shadow-sm space-y-2';
         setSafeHtml(card, `
           <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide">⚠️ [!] DOCTOR'S EXAM ALERT: ${a.highlight_title}</span>
+            <span class="text-xs font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-wide">[!] PROFESSOR'S EXAM ALERT: ${a.highlight_title}</span>
             <span class="text-[10px] px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-semibold border border-amber-300 dark:border-amber-800">${a.alert_type}</span>
           </div>
           <p class="text-xs font-mono text-amber-900 dark:text-amber-200 italic bg-amber-100/50 dark:bg-amber-900/30 p-2 rounded border border-amber-200 dark:border-amber-800/50">
@@ -3003,7 +3020,7 @@
         if (s.formulas && s.formulas.length > 0) {
           formulasHtml = s.formulas.map((f, fIdx) => `
             <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 border-l-4 border-l-brand-600 dark:border-l-brand-500 space-y-2">
-              <span class="text-xs font-bold text-brand-900 dark:text-brand-300">📐 Equation ${fIdx+1}: ${f.formula_name}</span>
+              <span class="text-xs font-bold text-brand-900 dark:text-brand-300">&Sigma; Equation ${fIdx+1}: ${f.formula_name}</span>
               <div class="p-3 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 text-center font-mono font-bold text-sm text-slate-800 dark:text-slate-100 shadow-sm">
                 ${f.plain_text_expression || f.latex_expression}
               </div>
@@ -3018,7 +3035,7 @@
         }
 
         setSafeHtml(secDiv, `
-          <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-base font-bold text-brand-800 dark:text-brand-300">Chapter ${s.section_number}: ${s.topic_title}</h3>${s.source_reference ? `<span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">⏱ ${s.source_reference}</span>` : ''}</div>
+          <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-base font-bold text-brand-800 dark:text-brand-300">Chapter ${s.section_number}: ${s.topic_title}</h3>${s.source_reference ? `<span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Ref: ${s.source_reference}</span>` : ''}</div>
           <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">${s.detailed_explanation}</p>
           ${bulletsHtml}
           ${formulasHtml}
@@ -3058,7 +3075,7 @@
               <p class="font-bold text-emerald-900 dark:text-emerald-300">&check; Model Answer:</p>
               <p class="text-emerald-800 dark:text-emerald-200 whitespace-pre-line font-medium">${q.correct_answer}</p>
               <p class="text-slate-600 dark:text-slate-400"><strong>Rubric / Key Points:</strong> ${q.model_explanation}</p>
-              <p class="text-amber-800 dark:text-amber-300 italic"><strong>Doctor's Hint:</strong> &ldquo;${q.doctor_hint}&rdquo;</p>
+              <p class="text-amber-800 dark:text-amber-300 italic"><strong>Professor's Hint:</strong> &ldquo;${q.doctor_hint}&rdquo;</p>
             </div>
           </div>
         `);
