@@ -42,7 +42,7 @@ $Shortcut.TargetPath = '{pythonw_exe}'
 $Shortcut.Arguments = '"{launcher_py}"'
 $Shortcut.WorkingDirectory = '{project_dir}'
 $Shortcut.IconLocation = '{icon_path}, 0'
-$Shortcut.Description = 'LectureAI - Biomedical Engineering Study Guide & Exam Prep'
+$Shortcut.Description = 'LectureAI - Universal Engineering Study Suite & Exam Prep'
 $Shortcut.Save()
 """
     subprocess.run(

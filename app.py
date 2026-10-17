@@ -2,6 +2,7 @@ import os
 import sys
 import uuid
 import threading
+import asyncio
 import json
 import re
 import urllib.parse
@@ -90,6 +91,17 @@ def is_job_cancelled(job_id: str) -> bool:
     if ev and ev.is_set():
         return True
     return False
+
+
+def safe_public_error(error: Exception | str, api_key: Optional[str] = None) -> str:
+    """Remove credentials, signed links, and private absolute paths from job errors."""
+    message = str(error)
+    if api_key:
+        message = message.replace(api_key, "[redacted]")
+    message = re.sub(r"https?://\S+", "[link]", message, flags=re.IGNORECASE)
+    message = re.sub(r"(?i)\b[A-Z]:\\[^\s'\"]+", "[local file]", message)
+    message = re.sub(r"(?i)(?:/Users/|/home/)[^\s'\"]+", "[local file]", message)
+    return message[:1000]
 
 
 def load_history():
@@ -608,7 +620,8 @@ def background_process(
             study_mode=study_mode,
             pdf_options=pdf_options,
             use_sample_demo=is_demo,
-            progress_callback=update_progress
+            progress_callback=update_progress,
+            cancellation_check=check_cancellation
         )
         check_cancellation()
 
@@ -653,8 +666,9 @@ def background_process(
             jobs[job_id]["status_message"] = "Job cancelled by user."
             return
         jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e)
-        jobs[job_id]["status_message"] = f"Error: {e}"
+        safe_error = safe_public_error(e, api_key)
+        jobs[job_id]["error"] = safe_error
+        jobs[job_id]["status_message"] = f"Error: {safe_error}"
 
 
 @app.get("/api/detected_courses")
@@ -662,8 +676,8 @@ async def get_detected_courses():
     r"""Returns detected courses found locally in G:\My Drive\fall 2026 or PC storage."""
     try:
         from link_downloader import get_drive_fall_root
-        courses = detect_local_fall_courses()
-        root = get_drive_fall_root()
+        courses = await asyncio.to_thread(detect_local_fall_courses)
+        root = await asyncio.to_thread(get_drive_fall_root)
         sem_name = root.name if root else None
         return {"success": True, "courses": courses, "semester_name": sem_name}
     except Exception as e:
@@ -679,7 +693,7 @@ async def search_course_folder_endpoint(
     Scans a course folder (local or Google Drive link) and searches for lecture/section materials.
     """
     try:
-        res = search_session_in_folder(folder_url, query)
+        res = await asyncio.to_thread(search_session_in_folder, folder_url, query)
         return res
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

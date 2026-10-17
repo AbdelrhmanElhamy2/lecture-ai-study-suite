@@ -138,6 +138,20 @@ def format_math_in_text(text: str) -> str:
 
     # 9. Math & Greek symbols with word-boundary
     symbols = [
+        (r'\\partial(?![a-zA-Z])', '&part;'),
+        (r'\\nabla(?![a-zA-Z])', '&nabla;'),
+        (r'\\ohm(?![a-zA-Z])', '&Omega;'),
+        (r'\\perp(?![a-zA-Z])', '&perp;'),
+        (r'\\parallel(?![a-zA-Z])', '||'),
+        (r'\\sum(?![a-zA-Z])', '&Sigma;'),
+        (r'\\prod(?![a-zA-Z])', '&Pi;'),
+        (r'\\phi(?![a-zA-Z])', '&phi;'),
+        (r'\\Phi(?![a-zA-Z])', '&Phi;'),
+        (r'\\rho(?![a-zA-Z])', '&rho;'),
+        (r'\\tau(?![a-zA-Z])', '&tau;'),
+        (r'\\epsilon(?![a-zA-Z])', '&epsilon;'),
+        (r'\\varepsilon(?![a-zA-Z])', '&epsilon;'),
+        (r'\\zeta(?![a-zA-Z])', '&zeta;'),
         (r'\\times(?![a-zA-Z])', '&times;'),
         (r'\\approx(?![a-zA-Z])', '&asymp;'),
         (r'\\thickapprox(?![a-zA-Z])', '&asymp;'),
@@ -267,9 +281,10 @@ def clean_cue_text(cue: str, topic_title: str, content: str = "") -> str:
     if ARABIC_REGEX.search(cue):
         cue = ARABIC_REGEX.sub('', cue).strip()
     
-    # Strip nested or repeated prefixes like 'The doctor warned:', 'Doctor stated:', 'Doctor emphasized:'
-    cleaned = re.sub(r'^(?:The\s+doctor|Doctor)\s+(?:noted|emphasized|warned|stated|stressed|mentioned)\s*[:\-]?\s*', '', cue, flags=re.IGNORECASE).strip()
-    cleaned = re.sub(r'^(?:The\s+doctor|Doctor)\s+(?:noted|emphasized|warned|stated|stressed|mentioned)\s*[:\-]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+    # Strip nested or repeated prefixes like 'The professor warned:', 'Doctor stated:', 'Instructor emphasized:'
+    cue_prefix_pattern = r'^(?:The\s+)?(?:doctor|professor|instructor|lecturer)\s+(?:noted|emphasized|warned|stated|stressed|mentioned|highlighted|pointed\s+out|cautioned|explained)\s*[:\-]?\s*'
+    cleaned = re.sub(cue_prefix_pattern, '', cue, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(cue_prefix_pattern, '', cleaned, flags=re.IGNORECASE).strip()
     
     # Strip stray outer quotes and symbols
     cleaned = cleaned.strip(' "\'“”)(\'[]:-.,')
@@ -594,7 +609,7 @@ class PDFStudyGuideBuilder:
         features = [
             [
                 Paragraph("<b>Complete Breakdown</b><br/><font color='#64748B' size=8>Verbatim depth with zero omissions</font>", self.styles["TableCell"]),
-                Paragraph("<b>Doctor's Exam Focus</b><br/><font color='#64748B' size=8>Highlighted spoken alerts & traps</font>", self.styles["TableCell"]),
+                Paragraph("<b>Professor's Exam Focus</b><br/><font color='#64748B' size=8>Highlighted spoken alerts & traps</font>", self.styles["TableCell"]),
                 Paragraph("<b>Charts & Tables</b><br/><font color='#64748B' size=8>Auto-generated visual diagrams</font>", self.styles["TableCell"]),
                 Paragraph("<b>Exam Practice Bank</b><br/><font color='#64748B' size=8>Realistic exam-style questions & answers</font>", self.styles["TableCell"])
             ]
@@ -632,7 +647,7 @@ class PDFStudyGuideBuilder:
                     contradictions_detected=0,
                     contradictions=[],
                     is_simulation=True,
-                    overall_fidelity_summary="Verified in simulation: 0 contradictions detected. 100% faithful to lecture simulation.",
+                    overall_fidelity_summary="Simulated transcript-to-guide check; no real recording was processed or checked.",
                     verified_at="Academic Term 2026",
                     notes_audited=bool(notes_ref),
                     notes_reference=notes_ref,
@@ -655,45 +670,53 @@ class PDFStudyGuideBuilder:
         notes_ref = getattr(report, "notes_reference", None) or getattr(self.guide, "notes_reference", None)
         scope_tag = " &amp; SLIDES" if has_notes else ""
         is_failed = not getattr(report, "audit_passed", True)
+        summary = getattr(report, "overall_fidelity_summary", "")
+        if not is_demo and not is_failed and (
+            "transcript" not in summary.lower() or "not independently verified" not in summary.lower()
+        ):
+            if has_fixes:
+                summary = f"Transcript-to-guide check reconciled {report.contradictions_detected} discrepancy issue(s). Audio-to-transcript accuracy was not independently verified."
+            else:
+                summary = "Transcript-to-guide check completed. Audio-to-transcript accuracy was not independently verified."
 
         if is_demo:
             card_bg = colors.HexColor("#FFFBEB")
             border_col = colors.HexColor("#F59E0B")
             title_col = "#B45309"
             if has_notes:
-                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED AUDIO{scope_tag} FIDELITY AUDIT (no real audio checked)</b></font>"
+                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED TRANSCRIPT{scope_tag} CHECK (no real audio checked)</b></font>"
             else:
-                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED AUDIT (no real audio checked)</b></font>"
-            status_text = "Verified in simulation against synthetic lecture model (no live audio recording uploaded)."
+                title_text = f"<font color='{title_col}'><b>DEMO MODE: SIMULATED CHECK (no real audio checked)</b></font>"
+            status_text = "Simulated guide check using sample content; no live audio recording was processed."
         elif is_failed:
             card_bg = colors.HexColor("#FEF2F2")
             border_col = colors.HexColor("#DC2626")
             title_col = "#B91C1C"
-            title_text = f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY AUDIT: UNAVAILABLE / COULD NOT BE COMPLETED</b></font>"
-            status_text = "Verification audit could not be completed (cross-check service unavailable)."
+            title_text = f"<font color='{title_col}'><b>TRANSCRIPT{scope_tag} CHECK: UNAVAILABLE / COULD NOT BE COMPLETED</b></font>"
+            status_text = "Transcript-to-guide check could not be completed. Audio transcription accuracy was not independently verified."
         else:
             card_bg = colors.HexColor("#F0FDF4") if not has_fixes else colors.HexColor("#EFF6FF")
             border_col = colors.HexColor("#059669") if not has_fixes else colors.HexColor("#2563EB")
             title_col = "#047857" if not has_fixes else "#1D4ED8"
             title_text = (
-                f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY &amp; CONTRADICTION AUDIT: 100% VERIFIED</b></font>"
+                f"<font color='{title_col}'><b>TRANSCRIPT{scope_tag} CHECK: NO DISCREPANCIES FOUND</b></font>"
                 if not has_fixes else
-                f"<font color='{title_col}'><b>AUDIO{scope_tag} FIDELITY AUDIT: {report.contradictions_detected} CONTRADICTION(S) RECONCILED WITH RECORDING</b></font>"
+                f"<font color='{title_col}'><b>TRANSCRIPT{scope_tag} CHECK: {report.contradictions_detected} ISSUE(S) RECONCILED</b></font>"
             )
             status_text = (
-                f"Audio &amp; lecture slides cross-check performed against original recording and slides ({notes_ref})."
+                f"Guide checked against the locally generated transcript and slides ({notes_ref}). Audio-to-transcript accuracy was not independently verified."
                 if has_notes and notes_ref else
-                ("Audio &amp; lecture slides cross-check performed against recording and slides." if has_notes else "Audio cross-check performed against original lecture recording.")
+                ("Guide checked against the locally generated transcript and slides. Audio-to-transcript accuracy was not independently verified." if has_notes else "Guide checked against the locally generated transcript. Audio-to-transcript accuracy was not independently verified.")
             )
 
         body_lines = [
             f"<font size=8.5><b>Verification Status:</b> {status_text}</font>",
-            f"<font size=8.5><b>Fidelity Summary:</b> {format_math_in_text(report.overall_fidelity_summary)}</font>"
+            f"<font size=8.5><b>Transcript Check Summary:</b> {format_math_in_text(summary)}</font>"
         ]
 
         if has_notes and not is_failed:
             body_lines.append(
-                "<font size=8.5 color='#047857'><b>Scope &amp; Fidelity Audit:</b> Strictly grounded in spoken lecture. Slide terminology and formulas integrated; unmentioned slide topics excluded.</font>"
+                "<font size=8.5 color='#047857'><b>Transcript &amp; Scope Check:</b> The guide was checked against transcript text and the selected slides; speech recognition accuracy was not independently checked.</font>"
             )
 
         if has_fixes and getattr(report, "contradictions", None):
@@ -703,7 +726,7 @@ class PDFStudyGuideBuilder:
                 clean_truth = format_math_in_text(c.audio_truth)
                 clean_fix = format_math_in_text(c.correction_applied)
                 body_lines.append(
-                    f"<font size=8 color='#334155'>- <b>{clean_sec}</b>: Reconciled with audio (<i>\"{clean_truth}\"</i>) -&gt; {clean_fix}</font>"
+                    f"<font size=8 color='#334155'>- <b>{clean_sec}</b>: Reconciled with transcript (<i>\"{clean_truth}\"</i>) -&gt; {clean_fix}</font>"
                 )
 
         full_html = f"{title_text}<br/>" + "<br/>".join(body_lines)
@@ -724,11 +747,11 @@ class PDFStudyGuideBuilder:
         """Renders an eye-catching highlight box for points the doctor emphasized."""
         type_titles = {
             "EXAM_PREDICTION": "EXAM PREDICTION ALERT",
-            "CRITICAL_CONCEPT": "CRITICAL CONCEPT - DOCTOR EMPHASIS",
+            "CRITICAL_CONCEPT": "CRITICAL CONCEPT - PROFESSOR EMPHASIS",
             "COMMON_PITFALL": "EXAM TRAP / COMMON STUDENT MISTAKE",
             "PROFESSOR_EMPHASIS": "IMPORTANT PROFESSOR FOCUS"
         }
-        title_tag = type_titles.get(alert.alert_type, "IMPORTANT DOCTOR'S NOTE")
+        title_tag = type_titles.get(alert.alert_type, "IMPORTANT PROFESSOR'S NOTE")
         
         safe_title = format_math_in_text(alert.highlight_title)
         safe_cue = format_math_in_text(clean_cue_text(alert.cue_detected, alert.highlight_title, alert.alert_content))
@@ -815,16 +838,20 @@ class PDFStudyGuideBuilder:
             clean_tbl_title = format_math_in_text(table_def.title)
             items.append(Paragraph(f"<b>Table: {clean_tbl_title}</b>", self.styles["SubSectionHeading"]))
             
-        num_cols = len(table_def.columns)
-        if num_cols == 0:
-            return items
+        cols = list(table_def.columns)
+        if not cols:
+            if table_def.rows and len(table_def.rows) > 0:
+                cols = [f"Col {i+1}" for i in range(len(table_def.rows[0]))]
+            else:
+                return items
             
-        col_width = 504 / num_cols
+        num_cols = len(cols)
+        col_width = 504.0 / num_cols
         
         # Build cells with Paragraphs to support auto-wrapping
         table_matrix = []
         # Header row
-        header_cells = [Paragraph(f"<b>{format_math_in_text(col)}</b>", self.styles["TableHead"]) for col in table_def.columns]
+        header_cells = [Paragraph(f"<b>{format_math_in_text(col)}</b>", self.styles["TableHead"]) for col in cols]
         table_matrix.append(header_cells)
         
         # Data rows
@@ -871,12 +898,22 @@ class PDFStudyGuideBuilder:
             img_path = generate_diagram(diagram_def, ASSETS_DIR)
             if img_path and img_path.exists():
                 from PIL import Image as PILImage
+                needs_rgb_save = False
+                rgb_im = None
                 with PILImage.open(img_path) as pim:
                     pw, ph = pim.size
                     if pim.mode == "RGBA":
+                        needs_rgb_save = True
                         rgb_im = PILImage.new("RGB", pim.size, (255, 255, 255))
                         rgb_im.paste(pim, mask=pim.split()[3])
+
+                # Save RGB version outside the open handle context to avoid Windows PermissionError
+                if needs_rgb_save and rgb_im is not None:
+                    try:
                         rgb_im.save(img_path, format="PNG")
+                    except Exception:
+                        pass
+
                 max_w = 480.0
                 max_h = 360.0
                 scale = min(max_w / max(pw, 1), max_h / max(ph, 1))
@@ -938,7 +975,7 @@ class PDFStudyGuideBuilder:
             sol_items = [
                 Paragraph(f"<b>Model Answer / Solution:</b><br/>{clean_ans}", self.styles["ExamAnswer"]),
                 Paragraph(f"<b>Grading Rubric & Key Points:</b> {clean_rubric}", self.styles["ExamRubric"]),
-                Paragraph(f"<b>Doctor's Spoken Exam Tip:</b> <i>\"{clean_hint}\"</i>", self.styles["AlertCue"])
+                Paragraph(f"<b>Professor's Spoken Exam Tip:</b> <i>\"{clean_hint}\"</i>", self.styles["AlertCue"])
             ]
             sol_table = Table([[item] for item in sol_items], colWidths=[490])
             sol_table.setStyle(TableStyle([

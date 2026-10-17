@@ -1,5 +1,8 @@
 # LectureAI Study Suite - Core Dependencies
 google-genai>=2.24.0
+faster-whisper==1.2.1
+# faster-whisper 1.2.1 uses PyAV's metadata_errors argument, removed in PyAV 19.
+av>=11,<19
 reportlab>=4.4.0
 matplotlib>=3.10.0
 numpy>=1.26.0

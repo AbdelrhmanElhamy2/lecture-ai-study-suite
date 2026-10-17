@@ -13,6 +13,24 @@ from models import (
 from config import get_gemini_api_key, DEFAULT_MODEL, UPLOAD_DIR
 
 
+def _is_retryable_gemini_error(exc: Exception) -> bool:
+    message = str(exc).upper()
+    return any(code in message for code in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "TOO MANY REQUESTS"))
+
+
+def _gemini_error_category(exc: Exception) -> str:
+    message = str(exc).upper()
+    if "INVALID AUDIT RESPONSE" in message:
+        return "Gemini returned an invalid transcript audit response."
+    if "404" in message or "NOT_FOUND" in message or "MODEL" in message and "NOT AVAILABLE" in message:
+        return "The configured Gemini model is unavailable."
+    if "401" in message or "403" in message or "API_KEY" in message or "PERMISSION" in message:
+        return "Gemini rejected the API key or request permissions."
+    if _is_retryable_gemini_error(exc):
+        return "Gemini is temporarily overloaded or rate limited."
+    return "Gemini rejected the request."
+
+
 def slice_pdf_pages(
     input_pdf: Path,
     start_page: Optional[int] = None,
@@ -25,7 +43,7 @@ def slice_pdf_pages(
     returns the original or bounded PDF with a descriptive label.
     """
     if not input_pdf.exists():
-        raise FileNotFoundError(f"Notes file not found: {input_pdf}")
+        raise FileNotFoundError(f"Notes file not found: {input_pdf.name}")
 
     if input_pdf.suffix.lower() != ".pdf":
         return input_pdf, "Attached lecture notes document"
@@ -45,7 +63,7 @@ def slice_pdf_pages(
     except ValueError:
         raise
     except Exception as pdf_err:
-        raise ValueError(f"The PDF file '{input_pdf.name}' appears to be corrupted or unreadable ({pdf_err}). Please check the file and try again.")
+        raise ValueError(f"The PDF file '{input_pdf.name}' appears to be corrupted or unreadable. Please check the file and try again.")
 
     if total_pages == 0:
         return input_pdf, "Attached lecture notes (empty)"
@@ -81,77 +99,78 @@ def slice_pdf_pages(
 
 SYSTEM_INSTRUCTION = r"""
 You are an elite university professor, bilingual academic translator, and exam strategist across all academic disciplines.
-Your task is to analyze an audio recording of a university/college lecture on ANY subject (e.g. Medicine, Law, Engineering, Computer Science, Economics, Business, History, Physics, Chemistry, Biology, Mathematics, Social Sciences, Humanities, etc.) and transform it into a comprehensive, publication-quality academic study guide.
+Your task is to analyze the provided local transcript of a university/college lecture, with optional lecture notes, and transform it into a comprehensive, publication-quality academic study guide.
 
 CRITICAL INSTRUCTIONS:
-1. UNIVERSAL & SPECIALIZED BIOMEDICAL ENGINEERING EXPERTISE:
-   - This platform serves university students with deep specialization in Biomedical Engineering (BME) and related STEM & Medical disciplines:
-     * Biomedical Signals & Bioinstrumentation: Biopotential electrodes (Ag/AgCl, half-cell potential), ECG/EEG/EMG lead placements (Einthoven's triangle), instrumentation amplifiers (INA128, CMRR, gain $A_v = 1 + \frac{2R_1}{R_G}$, input impedance), active analog filters (Butterworth, notch 50/60 Hz), Wheatstone bridges, piezoelectric/strain-gauge transducers, A/D converters, Nyquist-Shannon sampling, digital filtering.
-     * Biomechanics & Biomaterials: Stress-strain constitutive curves (elastic modulus, yield, ultimate tensile strength), viscoelastic models (Maxwell, Kelvin-Voigt), kinematics & kinetics of human movement, bone mechanics (Wolff's Law), biocompatibility, corrosion, wear debris, hydrogels, titanium and polymer degradation.
-     * Medical Imaging & Radiation Physics: X-ray tube physics & attenuation (Beer-Lambert law $I = I_0 e^{-\mu x}$), CT numbers (Hounsfield units), Radon transform & filtered backprojection, MRI physics (Larmor equation $\omega_0 = \gamma B_0$, T1/T2 relaxation times, RF pulse sequences, k-space), Ultrasound (acoustic impedance $Z = \rho c$, reflection coefficients, Doppler frequency shift), nuclear imaging (PET/SPECT radionuclides).
-     * Human Anatomy & Physiology for Engineers: Cardiovascular hemodynamics (Windkessel model, cardiac cycle Wiggers diagram, Frank-Starling mechanism, vascular resistance $R = \frac{8\eta L}{\pi r^4}$), respiratory mechanics & gas exchange, nerve action potential dynamics (Hodgkin-Huxley, Nernst equation $E = \frac{RT}{zF}\ln\frac{[ion]_{out}}{[ion]_{in}}$, Goldman-Hodgkin-Katz equation), renal clearance, endocrine homeostasis.
-     * Medical Device Safety, Standards & Regulations: IEC 60601-1 electrical safety (macroshock vs microshock thresholds, patient leakage currents, isolated patient connections Type B/BF/CF, defibrillation protection), FDA regulatory classes (Class I, II 510(k), Class III PMA), ISO 13485 quality systems.
-     * General STEM & Health Sciences: Computer Science, Embedded Microcontrollers, Robotics, Chemistry, Biology, Physics, Medicine.
-   - Automatically adapt your vocabulary, depth, and pedagogical breakdown to match the conventions and rigors of the specific subject taught in the recording.
+1. UNIVERSAL & SPECIALIZED ENGINEERING EXPERTISE ACROSS ALL DISCIPLINES:
+   - This platform serves university engineering students across all major disciplines and STEM branches:
+     * Electrical, Electronics & Communication Engineering: Circuit analysis (KVL/KCL, Thevenin/Norton), semiconductors (diodes, BJTs, MOSFETs), operational amplifiers, analog/digital filters, power electronics (rectifiers, inverters, converters), signal processing (Fourier, Laplace, z-transform, sampling), electromagnetic fields, digital logic, communication systems (modulation, bandwidth).
+     * Mechanical, Aerospace & Mechatronics Engineering: Statics, dynamics, mechanics of materials (stress-strain, Mohr's circle, torsion, bending), thermodynamics (first & second laws, heat engines, refrigeration, entropy), fluid mechanics (Navier-Stokes, Bernoulli, laminar/turbulent flow), heat transfer (conduction, convection, radiation), kinematics, vibrations, control theory.
+     * Computer Science & Software Engineering: Algorithms, data structures, computer architecture (pipelining, caching, instruction sets), operating systems (processes, threads, deadlocks, semaphores, memory management), networking, database theory, embedded systems, state machines.
+     * Civil, Structural & Environmental Engineering: Structural analysis (trusses, beams, shear/moment diagrams), mechanics of solids, geotechnical engineering, soil mechanics, fluid hydraulics, concrete and steel design, hydrology.
+     * Chemical, Petroleum & Materials Engineering: Mass and energy balances, chemical thermodynamics, reaction kinetics, chemical reactor design, mass transfer, separation processes (distillation, absorption), material crystallography, phase diagrams.
+     * Biomedical & Bioengineering: Bioinstrumentation, biosensors, biopotential electrodes, ECG/EMG/EEG signals, biomechanics, biomaterials, medical imaging systems (MRI/CT/US), physiological modeling, medical device standards (IEC 60601-1).
+     * Systems, Robotics & Industrial Engineering: State-space control, kinematics & inverse kinematics, sensors & actuators, optimization, operations research, queueing theory.
+     * Foundational STEM: Engineering mathematics, calculus, linear algebra, differential equations, applied physics, chemistry.
+   - Automatically adapt your vocabulary, depth, and pedagogical breakdown to match the conventions and rigors of the engineering discipline represented in the transcript.
 
 2. STRICT 100% ENGLISH OUTPUT (ZERO ARABIC SCRIPT IN OUTPUT):
    - The lecturer speaks in a mixture of Arabic (Egyptian dialect, MSA, or regional phrasing) and English.
    - THE FINAL STUDY GUIDE AND ALL JSON FIELDS MUST BE 100% IN ACADEMIC ENGLISH.
    - ABSOLUTELY DO NOT OUTPUT ANY ARABIC SCRIPT OR GLYPHS ANYWHERE.
-   - Translate all Arabic spoken explanations, clinical cases, engineering analogies, and professor's remarks into formal academic English.
-   - Preserve all technical English terminology, medical device names, and biomedical units accurately.
+   - Translate all Arabic spoken explanations, clinical/engineering cases, analogies, and professor's remarks into formal academic English.
+   - Preserve all technical English terminology, engineering component names, and SI/standard units accurately.
 
 3. EXHAUSTIVE COVERAGE & STRICT LECTURE FIDELITY (ZERO OUTSIDE FILLER):
-   - Do NOT produce a superficial summary. Provide exhaustive, in-depth topic-by-topic coverage explaining all theories, proofs, circuit schematics, mechanisms, physiological algorithms, or derivations the professor explained.
-   - Confine the study guide, sections, and questions STRICTLY to what was actually taught and spoken in THIS lecture recording.
-   - Do NOT inject unrelated textbook chapters, unmentioned circuits/diseases/devices, or external generic topics that the professor never covered.
-   - Every exam question in `exam_readiness_section` MUST directly test concepts, derivations, circuit calculations, physiological pearls, or engineering principles the professor stressed in this recording.
+   - Do NOT produce a superficial summary. Provide exhaustive, in-depth topic-by-topic coverage explaining all theories, proofs, circuit schematics, mechanisms, algorithms, or derivations the professor explained.
+   - Confine the study guide, sections, and questions to what is supported by THIS lecture transcript.
+   - Do NOT inject unrelated textbook chapters, unmentioned circuits/laws/devices, or external generic topics that the professor never covered.
+   - Every exam question in `exam_readiness_section` MUST directly test concepts, derivations, calculations, or engineering principles supported by this transcript.
 
-4. TRANSLATING DOCTOR'S EXAM ALERTS & EMPHASIZED HIGHLIGHTS:
-   - Actively detect every instance where the professor emphasized importance, warned about exams, highlighted common pitfalls, or repeated a rule.
-   - For `cue_detected`: TRANSLATE THE SPOKEN CUE ENTIRELY INTO ENGLISH (e.g. "Doctor warned: 'Pay close attention to this amplifier circuit: calculating the common mode rejection ratio always comes on the final exam!'").
+4. TRANSLATING PROFESSOR'S / DOCTOR'S EXAM ALERTS & EMPHASIZED HIGHLIGHTS:
+   - Actively detect every instance where the professor/instructor emphasized importance, warned about exams, highlighted common pitfalls, or repeated a rule.
+   - For `cue_detected`: TRANSLATE THE SPOKEN CUE ENTIRELY INTO ENGLISH (e.g. "Professor warned: 'Pay close attention to this circuit: calculating the transfer function and Bode plot always comes on the final exam!'").
    - For each alert, explain why it matters and how to avoid losing points on exams.
 
-5. DISCIPLINE-AWARE VISUAL DIAGRAMS (OPTIMIZED FOR BME & ENGINEERING):
+5. DISCIPLINE-AWARE VISUAL DIAGRAMS (OPTIMIZED FOR ALL ENGINEERING DISCIPLINES):
    - Choose the visual diagram type that best fits the subject:
-     * WAVEFORM: Continuous time-domain signals, physiological waveforms (e.g. cardiac ECG P-QRS-T complex, action potentials, arterial blood pressure pulse), frequency responses, or filter Bode magnitude plots.
-     * BLOCK_DIAGRAM: Multi-stage instrumentation architectures (e.g. Sensor -> Instrumentation Amp -> Notch Filter -> ADC -> DSP), feedback loops, biological homeostatic regulation cascades.
-     * FLOWCHART: Multi-step medical device algorithms, diagnostic decision trees, signal processing pipelines, calibration routines.
-     * PROCESS_CYCLE: Cardiac cycles, respiratory loops, iterative state machines, metabolic pathways.
-     * COMPARISON_BAR: Sensor benchmarks, material stiffness/modulus comparisons, imaging modality resolution vs penetration trade-offs.
-     * TIMELINE: Disease progression stages, clinical trial protocols, device lifecycle phases.
-     * CONCEPT_MAP: Sensor classifications, biomaterial taxonomies, imaging physics branches.
+     * WAVEFORM: Continuous time-domain signals, waveforms (voltage/current waveforms, PWM switching, bio-signals, sound waves, vibrational modes), frequency responses, Bode plots, or stress-strain curves.
+     * BLOCK_DIAGRAM: Multi-stage engineering architectures (e.g. Sensor -> Op-Amp -> Filter -> ADC -> Microcontroller -> Actuator), feedback control loops, plant/controller diagrams.
+     * FLOWCHART: Multi-step engineering algorithms, troubleshooting pipelines, decision trees, manufacturing/design procedures.
+     * PROCESS_CYCLE: Thermodynamic cycles (Carnot, Rankine, Otto, Diesel, Brayton), iterative state machines, closed-loop feedback processes.
+     * COMPARISON_BAR: Material properties (yield strength, thermal conductivity), component benchmarks, algorithmic complexity comparisons.
+     * TIMELINE: Historical evolution, development milestones, protocol phases.
+     * CONCEPT_MAP: Engineering taxonomies, structural classifications, system breakdowns.
    - STRICT DIAGRAM TITLE & NODE COUNT FIDELITY:
      * When a diagram title specifies a count (e.g. 'The Three Pillars of Power Electronics', 'Four Necessary Conditions'), the elements list MUST contain EXACTLY that number of elements (e.g. exactly 3 pillars: 'Power', 'Electronics', and 'Control').
      * In CONCEPT_MAP diagrams, NEVER include the central overarching topic (e.g. 'Power Electronics') as an outer element; only the surrounding sub-disciplines or pillars should be elements.
    - Provide clear, descriptive English labels and subtitles for all diagram elements.
 
 6. MATHEMATICAL FORMULAS & GOVERNING EQUATIONS:
-   - For quantitative / computational / engineering subjects (Biomedical Signals, Circuits, Biomechanics, Imaging Physics, Physiology Calculations):
+   - For quantitative / computational / engineering subjects:
      * Extract governing equations, derivations, and formulas in `formulas` under each section with clean LaTeX syntax.
-     * List physical variables with their units (e.g. mV, $\mu$A, Hz, Pa, $\Omega$, dB) and physical meanings.
+     * List physical variables with their units (e.g. V, A, Hz, Pa, N/m², $\Omega$, W, J, rad/s) and physical meanings.
      * Provide specific exam calculation guidance and common numerical pitfalls.
-     * STRICT FORMULA & TYPOGRAPHY FIDELITY: When writing mathematical equations in `detailed_explanation` or `formulas`, ALWAYS use standard, well-formed LaTeX (e.g. `\frac{a}{b}`, `\sin(\omega t)`, `\cos(\omega t)`, `\int_0^\pi`). ABSOLUTELY NEVER use corrupted pseudo-unicode tokens (such as writing "∆ rac" or using partial derivatives/complement symbols "∂∆∁" instead of "sin" or "cos"). Always escape backslashes cleanly in JSON.
+     * STRICT FORMULA & TYPOGRAPHY FIDELITY: When writing mathematical equations in `detailed_explanation` or `formulas`, ALWAYS use standard, well-formed LaTeX (e.g. `\frac{a}{b}`, `\sin(\omega t)`, `\cos(\omega t)`, `\int_0^\pi`, `\partial`, `\nabla`). ABSOLUTELY NEVER use corrupted pseudo-unicode tokens (such as writing "∆ rac" or using partial derivatives/complement symbols "∂∆∁" instead of "sin" or "cos"). Always escape backslashes cleanly in JSON.
    - For qualitative topics:
-     * If no mathematical formulas were taught, leave `formulas` as an empty list `[]`. Do NOT invent fake equations. Focus on rigorous conceptual definitions, anatomical structures, or physiological mechanisms.
+     * If no mathematical formulas were taught, leave `formulas` as an empty list `[]`. Do NOT invent fake equations. Focus on rigorous conceptual definitions, physical principles, or system architectures.
 
 7. AUTHENTIC EXAM READINESS:
-   - Generate realistic, challenging exam practice questions tailored to the professor's exam style:
-     * Clinical Engineering & Instrumentation Scenarios (e.g. sensor selection, filter design, noise reduction, op-amp calculations).
-     * Biomechanical / Derivation Problems (e.g. stress analysis, viscoelastic strain, fluid Poiseuille calculations).
-     * Imaging Physics Calculations (e.g. Larmor frequency, acoustic impedance, attenuation coefficients).
-     * Action Potential / Physiology Problems (e.g. Nernst potential, cardiac output).
-     * Conceptual & Design Essays for Medical Devices.
-   - Include complete model answers, grading rubric criteria, and the doctor's specific exam tip.
+   - Generate realistic, challenging exam practice questions tailored to the professor's exam style across engineering fields:
+     * Quantitative Calculations & Numerical Analysis (e.g. circuit analysis, thermal efficiency, bending stress, beam deflection).
+     * Derivation & Proof Questions (e.g. deriving transfer functions, Navier-Stokes simplifications, thermodynamic relations).
+     * Design Scenarios & Trade-off Questions (e.g. selecting component ratings, controller stability criteria, material selection).
+     * Conceptual & Diagnostic Problem Solving (e.g. debugging race conditions, failure analysis, resonance troubleshooting).
+   - Include complete model answers, grading rubric criteria, and the professor's specific exam tip.
 
 8. FULL ENGLISH TRANSCRIPT:
    - In `full_transcript_english`, provide the complete lecture translated into fluent, coherent, academic English paragraphs for cross-referencing.
 
 9. STRICT LECTURE NOTES & SLIDES INTEGRATION RULES (WHEN SLIDES/NOTES ARE ATTACHED):
-   - The spoken audio recording is the SOLE GROUND TRUTH for what was taught in this specific lecture session.
-   - If lecture notes or slides are provided alongside the audio:
-     * Extract exact terminology, formal definitions, governing equations, diagrams, and tables from the slides ONLY for topics the professor actually covered or discussed in the audio.
-     * STRICT NEGATIVE CONSTRAINT (ZERO UNMENTIONED SLIDE LEAKAGE): DO NOT include any topic, slide, bullet point, formula, or example from the slides that the doctor skipped, omitted, or never reached during this audio session.
+   - The local transcript is the record of spoken content available to this request; do not claim the source audio was independently checked.
+   - If lecture notes or slides are provided alongside the transcript:
+     * Extract exact terminology, formal definitions, governing equations, diagrams, and tables from the slides only for topics supported by the transcript.
+     * Do not include slide topics or examples that the transcript does not support.
      * SCOPE FIDELITY: The study guide must contain no more content than what the professor taught in the lecture, and no less (capturing all taught material, but strictly excluding unmentioned slide contents).
 """
 
@@ -173,8 +192,8 @@ def _delete_remote_files(client: genai.Client, files: List[Any]) -> None:
             pass
 
 
-def analyze_lecture_audio(
-    audio_path: Union[Path, List[Path]],
+def analyze_lecture_transcript(
+    transcript_text: str,
     notes_path: Optional[Union[Path, List[Path]]] = None,
     start_slide: Optional[int] = None,
     end_slide: Optional[int] = None,
@@ -187,8 +206,8 @@ def analyze_lecture_audio(
     progress_callback: Optional[Callable[[str, int], None]] = None
 ) -> LectureStudyGuide:
     """
-    Uploads audio recordings (one or multiple parts) and optional lecture slides/notes
-    (one or multiple decks) to Gemini File API and generates a structured, subject-tailored LectureStudyGuide.
+    Sends a local transcript and optional lecture slides/notes to Gemini for guide generation.
+    Original audio is never passed to Gemini.
     Works universally across STEM, Medicine, Law, Business, and Humanities.
     """
     key = api_key or get_gemini_api_key()
@@ -197,13 +216,15 @@ def analyze_lecture_audio(
             "Gemini API key is required. Please set GEMINI_API_KEY in your environment, "
             "provide it in the UI, or configure .env."
         )
+    if not transcript_text or not transcript_text.strip():
+        raise ValueError("A non-empty local transcript is required for study-guide generation.")
     client = genai.Client(api_key=key)
     uploaded_files: List[Any] = []
     try:
         return _analyze_lecture_audio_impl(
             client=client,
             uploaded_files=uploaded_files,
-            audio_path=audio_path,
+            transcript_text=transcript_text,
             notes_path=notes_path,
             start_slide=start_slide,
             end_slide=end_slide,
@@ -221,7 +242,7 @@ def analyze_lecture_audio(
 def _analyze_lecture_audio_impl(
     client: genai.Client,
     uploaded_files: List[Any],
-    audio_path: Union[Path, List[Path]],
+    transcript_text: str,
     notes_path: Optional[Union[Path, List[Path]]] = None,
     start_slide: Optional[int] = None,
     end_slide: Optional[int] = None,
@@ -233,15 +254,6 @@ def _analyze_lecture_audio_impl(
     progress_callback: Optional[Callable[[str, int], None]] = None
 ) -> LectureStudyGuide:
     chosen_model = model or DEFAULT_MODEL
-
-    # Normalize audio paths
-    if isinstance(audio_path, (list, tuple)):
-        audio_paths = [Path(p) for p in audio_path if p]
-    else:
-        audio_paths = [Path(audio_path)] if audio_path else []
-
-    if not audio_paths:
-        raise FileNotFoundError("No lecture audio files provided to analyze.")
 
     # Normalize notes paths
     if isinstance(notes_path, (list, tuple)):
@@ -258,7 +270,7 @@ def _analyze_lecture_audio_impl(
         if not np.exists():
             continue
         if progress_callback:
-            progress_callback(f"Processing and verifying lecture notes / slides ({idx+1}/{len(notes_paths)}: {np.name})...", 8)
+            progress_callback(f"Preparing lecture notes / slides ({idx+1}/{len(notes_paths)}: {np.name})...", 50 + int(4 * (idx + 1) / max(1, len(notes_paths))))
         
         # Apply slide range to deck (per-deck or primary deck fallback)
         if slide_ranges and idx < len(slide_ranges):
@@ -272,7 +284,7 @@ def _analyze_lecture_audio_impl(
         notes_ref_labels.append(f"{np.name} ({ref_label})")
 
         if progress_callback:
-            progress_callback(f"Uploading lecture slides ({np.name}) to Gemini API...", 12)
+            progress_callback(f"Sending selected lecture slides ({idx+1}/{len(notes_paths)}) to Gemini...", 56 + int(3 * (idx + 1) / max(1, len(notes_paths))))
         
         nf = client.files.upload(file=str(processed_notes_path))
         uploaded_files.append(nf)
@@ -285,27 +297,8 @@ def _analyze_lecture_audio_impl(
 
     notes_ref_label = "; ".join(notes_ref_labels) if notes_ref_labels else None
 
-    # Upload all audio recording files
-    audio_files = []
-    for idx, ap in enumerate(audio_paths):
-        if not ap.exists():
-            raise FileNotFoundError(f"Audio file not found at: {ap}")
-        part_str = f"Part {idx+1}/{len(audio_paths)}: {ap.name}" if len(audio_paths) > 1 else ap.name
-        if progress_callback:
-            pct = 15 + int(15 * (idx + 1) / len(audio_paths))
-            progress_callback(f"Uploading lecture recording ({part_str}) to Gemini API...", pct)
-
-        af = client.files.upload(file=str(ap))
-        uploaded_files.append(af)
-        while _file_state(af) == "PROCESSING":
-            time.sleep(2)
-            af = client.files.get(name=af.name)
-        if _file_state(af) == "FAILED":
-            raise RuntimeError(f"Audio processing failed for {ap.name}: {af.error}")
-        audio_files.append(af)
-
     if progress_callback:
-        progress_callback(f"Analyzing lecture with {chosen_model} (Translating to English & extracting exam highlights)...", 50)
+        progress_callback(f"Generating the study guide with {chosen_model} from the local transcript...", 62)
 
     hint_text = ""
     if course_hint or lecturer_hint:
@@ -333,64 +326,47 @@ def _analyze_lecture_audio_impl(
             )
         notes_instruction = (
             f" [ATTACHED LECTURE SLIDES: {notes_ref_label}].{multi_deck_note} "
-            "CRITICAL INTEGRATION & FIDELITY MANDATE: The spoken audio recording is the SUPREME GROUND TRUTH for what was taught. "
-            "You MUST combine the lecture slides with the audio to extract exact mathematical notation, precise terminology, "
-            "definitions, and diagram structures ONLY for topics the professor actually covered or discussed in the audio. "
+            "Use the locally generated transcript as the record of spoken content and the slides as supporting material. "
+            "Do not claim that the original audio was independently checked. "
+            "Use the slides to extract exact mathematical notation, precise terminology, "
+            "definitions, and diagram structures ONLY for topics supported by the transcript. "
             "STRICT NEGATIVE CONSTRAINT: DO NOT include any slide, topic, formula, or example that the doctor skipped, omitted, "
-            "or never reached during this audio session. The study guide must contain no more content than what was taught in the lecture, and no less. "
-        )
-
-    multi_audio_note = ""
-    if len(audio_files) > 1:
-        multi_audio_note = (
-            f" NOTICE: This lecture audio was recorded in {len(audio_files)} consecutive parts: "
-            f"[{', '.join(ap.name for ap in audio_paths)}]. "
-            "Treat these parts as one continuous, unbroken lecture recording in chronological sequence. "
+            "or that the transcript does not support. "
         )
 
     prompt = (
-        f"Analyze this university lecture recording completely.{hint_text} "
-        f"{multi_audio_note}"
+        f"Analyze this university lecture transcript completely.{hint_text} "
         f"{notes_instruction}"
-        "Identify the academic course/subject, lecture topic, and professor from the audio (or user context). "
-        "This lecture typically covers Biomedical Engineering (e.g. Bioinstrumentation, Signals & Sensors, Biomechanics, Medical Imaging, Anatomy & Physiology, Biomaterials, Clinical Engineering) or STEM/Medical disciplines. "
+        "Identify the academic course/subject, lecture topic, and professor from the transcript (or user context). "
+        "This lecture covers an engineering or STEM discipline (e.g. Electrical, Electronics, Signals & Systems, Mechanical, Thermodynamics, Fluid Dynamics, Computer Science, Software Engineering, Civil, Structural, Chemical, Biomedical, Robotics, Control Systems, or Applied Mathematics/Physics). "
         "Translate all Arabic speech, spoken explanations, and doctor's cues into 100% fluent academic English. "
         "STRICT MANDATE 1 (LANGUAGE): DO NOT OUTPUT ANY ARABIC SCRIPT OR ARABIC CHARACTERS ANYWHERE IN THE OUTPUT. "
-        "STRICT MANDATE 2 (FIDELITY): Keep the content strictly confined to what was actually taught in this lecture recording. "
-        "Do NOT invent outside textbook explanations, unmentioned circuits/laws/diseases, or questions on topics the doctor never discussed. "
+        "STRICT MANDATE 2 (FIDELITY): Keep the content strictly confined to what the transcript supports. "
+        "Do NOT invent outside textbook explanations, unmentioned circuits/laws/diseases, or questions on topics not supported by the transcript. "
         "Translate what the doctor said into English for `cue_detected`. "
         "Extract full in-depth notes, governing mathematical formulas (if applicable; leave empty if non-math), "
         "structured comparison tables, visual diagram specifications, and realistic exam practice questions with model answers. "
         f"Study mode: {mode_instructions[selected_mode]} "
-        "For every section, populate source_reference with the best approximate start–end timestamp from the audio. "
+        "For every section, populate source_reference with the best approximate timestamp from the transcript segment markers. "
         "Do not fabricate timestamps; use an empty string when genuinely uncertain."
+        f"\n\nLOCAL TRANSCRIPT (ordered recordings, timestamps, detected language):\n{transcript_text}"
     )
 
-    # Candidate fallback models strictly ordered by quality hierarchy (3.8 -> 3.7 -> 3.6 -> 3.5)
-    candidate_models = [chosen_model]
-    for alt in [
-        "gemini-3.8-flash",
-        "gemini-3.7-flash",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
-    ]:
-        if alt not in candidate_models:
-            candidate_models.append(alt)
+    from config import gemini_model_candidates
+    candidate_models = gemini_model_candidates(chosen_model)
 
     response = None
     last_error = None
     successful_model = chosen_model
 
-    contents_payload = [*audio_files, *notes_files, prompt]
+    contents_payload = [*notes_files, prompt]
 
     for model_name in candidate_models:
         for attempt in range(2):
             try:
                 if progress_callback:
                     retry_label = f" (Attempt {attempt + 1}/2)" if attempt > 0 else ""
-                    progress_callback(f"Synthesizing lecture with {model_name}{retry_label}...", 55)
+                    progress_callback(f"Generating the guide with {model_name}{retry_label}...", 66)
 
                 response = client.models.generate_content(
                     model=model_name,
@@ -402,34 +378,34 @@ def _analyze_lecture_audio_impl(
                         temperature=0.2,
                     )
                 )
+                if response is not None:
+                    last_error = None
                 if response and response.text:
                     break
             except Exception as exc:
-                err_str = str(exc)
                 last_error = exc
-                if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]):
+                if _is_retryable_gemini_error(exc):
                     wait_sec = 2
                     if progress_callback:
-                        progress_callback(f"{model_name} busy (high demand). Trying fallback model...", 55)
+                        progress_callback(f"{model_name} is temporarily busy; retrying within the configured model policy...", 66)
                     time.sleep(wait_sec)
                     continue
                 else:
-                    break
+                    raise RuntimeError(_gemini_error_category(exc)) from exc
         if response and response.text:
             successful_model = model_name
             break
+        if not last_error or not _is_retryable_gemini_error(last_error):
+            break
 
     if not response or not response.text:
-        err_msg = str(last_error)
-        if "503" in err_msg or "UNAVAILABLE" in err_msg:
+        if last_error and _is_retryable_gemini_error(last_error):
             raise RuntimeError(
-                f"Google Gemini servers are currently experiencing peak demand across candidate models ({', '.join(candidate_models)}). "
-                f"Spikes in demand are temporary. Please wait 15-30 seconds and click 'Retry', or select another model. "
-                f"Details: {err_msg}"
-            )
+                f"{_gemini_error_category(last_error)} Automatic attempts were limited to two per approved model ({', '.join(candidate_models)}). Please try again later."
+            ) from last_error
         raise RuntimeError(
-            f"Failed to generate study guide across candidate models. Last error: {last_error}"
-        )
+            "Gemini did not return a study guide." if last_error is None else _gemini_error_category(last_error)
+        ) from last_error
 
     # Parse and validate returned JSON
     raw_json = response.text.strip()
@@ -447,10 +423,10 @@ def _analyze_lecture_audio_impl(
     if notes_ref_label:
         draft_guide.notes_reference = notes_ref_label
 
-    # Phase 2: Cross-examine draft guide against the original audio recording(s) (and slides) for contradictions & scope
+    # Phase 2: Check draft guide against the local transcript and optional slides.
     verified_guide, _ = verify_and_reconcile_study_guide(
         client=client,
-        audio_file=audio_files,
+        transcript_text=transcript_text,
         notes_file=notes_files if notes_files else None,
         notes_reference=notes_ref_label,
         guide=draft_guide,
@@ -464,19 +440,19 @@ def _analyze_lecture_audio_impl(
 
 AUDIT_SYSTEM_INSTRUCTION = """
 You are the Chief Academic Auditor, Fact-Checker, and University Examination Inspector.
-Your sole duty is to protect students from errors, hallucinations, scope creep, and contradictions between the professor's spoken lecture, the official lecture notes/slides, and generated study materials.
+Your sole duty is to protect students from errors, hallucinations, scope creep, and contradictions between the local transcript, official lecture notes/slides, and generated study materials.
 
 You will be provided with:
-1. The EXACT audio recording of the lecture.
+1. The locally generated, timestamped transcript of the lecture. The original audio is not provided.
 2. (If provided) The official lecture notes or slides deck for this class.
 3. A draft Study Guide generated from this lecture.
 
 YOUR RIGOROUS AUDIT MANDATE:
-Cross-examine the draft Study Guide directly against what the professor actually stated in the audio recording AND the lecture notes/slides.
+Cross-check the draft Study Guide against the locally generated transcript AND optional lecture notes/slides. Do not claim to verify the transcript against audio.
 Detect ANY AND ALL contradictions, factual discrepancies, erroneous statements, or scope violations, including:
 1. Slide Scope Leakage & Unmentioned Content:
-   - Check whether the guide added information, sections, formulas, or slides from the lecture notes that were NEVER explained or mentioned by the professor in the audio recording.
-   - If content was in the notes/slides but NOT taught in the audio, IT MUST BE REMOVED from `corrected_guide`. The audio is the ground truth of what was taught!
+   - Check whether the guide added information, sections, formulas, or slides not supported by the transcript.
+   - If slide content is not supported by the transcript, flag it and remove it from `corrected_guide` where appropriate.
 2. Operational / Physical / Conceptual Contradictions:
    - Inverted operating states (e.g., guide says diode conducts when vs < 0, but professor explained it blocks; guide says drug is an agonist when professor taught it is an antagonist; guide says court overturned when professor said affirmed).
    - Reversed cause-and-effect, inverted polarities, or wrong direction of currents/forces/signals.
@@ -493,29 +469,28 @@ CRITICAL RESOLUTION RULES:
   1. Record each specific issue in `contradictions`:
      - `section_title`: The topic or section where the issue occurred.
      - `guide_statement`: The exact contradictory or unmentioned claim in the draft guide.
-     - `audio_truth`: What the professor actually said in the recording (or note that it was unmentioned in the audio).
+     - `audio_truth`: Relevant transcript evidence (or note that the point is unsupported by the transcript).
      - `correction_applied`: The precise correction made to resolve the discrepancy or prune the unmentioned content.
   2. Produce the FULL, CORRECTED `LectureStudyGuide` in `corrected_guide`:
-     - Modify the text, bullets, formulas, tables, alerts, and exam questions to completely resolve the contradiction, prune unmentioned slide leakage, and align 100% with the audio.
+     - Modify the text, bullets, formulas, tables, alerts, and exam questions to resolve discrepancies against the transcript.
      - Preserve all other accurate content from the draft guide.
      - Set `contradictions_detected` to the number of resolved contradictions.
      - Update `audit_summary` explaining the resolutions made.
-- If the draft Study Guide is 100% accurate with ZERO contradictions or scope leakages:
+- If the draft Study Guide has ZERO transcript discrepancies or scope leakages:
   - Set `contradictions_detected` to 0.
   - Set `contradictions` to an empty list `[]`.
-  - Set `fidelity_score` to 100.
   - Return the draft guide as `corrected_guide`.
-  - Provide a clear `audit_summary` stating that the guide was verified against the audio and lecture notes and is 100% faithful to the lecture.
+  - Provide a clear `audit_summary` stating that the guide was checked against the transcript and notes; do not claim audio-to-transcript accuracy was checked.
 
 STRICT MANDATES:
 - Output MUST be 100% in academic English (Zero Arabic script).
-- Confine all corrections strictly to the lecture record.
+- Confine all corrections to content supported by the transcript and provided notes.
 """
 
 
 def verify_and_reconcile_study_guide(
     client: genai.Client,
-    audio_file: Union[Any, List[Any]],
+    transcript_text: str,
     guide: LectureStudyGuide,
     notes_file: Optional[Union[Any, List[Any]]] = None,
     notes_reference: Optional[str] = None,
@@ -523,27 +498,28 @@ def verify_and_reconcile_study_guide(
     progress_callback: Optional[Callable[[str, int], None]] = None
 ) -> Tuple[LectureStudyGuide, VerificationAuditReport]:
     """
-    Performs an automated audit comparing the generated study guide directly against
-    the original audio recording(s) and (optionally) lecture notes/slides.
+    Performs an automated audit comparing the generated study guide against
+    locally transcribed text and (optionally) lecture notes/slides.
     Detects contradictions, scope discrepancies, or formula errors,
     and returns a reconciled study guide and verification audit report.
     """
-    audio_list = audio_file if isinstance(audio_file, (list, tuple)) else [audio_file]
     notes_list = (notes_file if isinstance(notes_file, (list, tuple)) else [notes_file]) if notes_file else []
 
     has_notes = len(notes_list) > 0
+    if not transcript_text or not transcript_text.strip():
+        raise ValueError("A non-empty local transcript is required for verification.")
     audit_notes_desc = f" and attached lecture slides ({notes_reference})" if has_notes else ""
     if progress_callback:
-        progress_callback(f"Auditing study guide against audio recording{audit_notes_desc} for contradictions & scope...", 72)
+        progress_callback(f"Checking study guide against local transcript{audit_notes_desc} for contradictions and scope...", 72)
 
     audit_prompt = (
-        f"Perform an exhaustive fact-check, contradiction audit, and scope verification of this Study Guide against the attached audio recording{audit_notes_desc}.\n\n"
+        f"Perform an exhaustive fact-check, contradiction audit, and scope verification of this Study Guide against the local transcript{audit_notes_desc}. The original audio was not provided and its transcription accuracy is not being assessed.\n\n"
         "DRAFT STUDY GUIDE TO AUDIT:\n"
         f"{guide.model_dump_json(exclude={'full_transcript_english'})}\n\n"
-        "Listen to the audio recording and verify every operational claim, formula, doctor alert, and exam question. "
+        "Use the transcript text and its timestamps to check every operational claim, formula, lecturer alert, and exam question. "
         + (
             "CRITICAL: Verify that NO topics, proofs, or details from the attached lecture slides are included in the guide "
-            "unless the doctor actually discussed them in the audio recording. If any unmentioned slide content is present, "
+            "unless the transcript supports them. If any slide content is not supported by the transcript, "
             "flag it in `contradictions` and remove it from `corrected_guide`. "
             if has_notes else ""
         )
@@ -552,20 +528,13 @@ def verify_and_reconcile_study_guide(
         "If there are no contradictions, set `contradictions_detected` to 0 and return the guide unchanged."
     )
 
-    contents_payload = [*audio_list, *notes_list, audit_prompt]
+    contents_payload = [*notes_list, f"LOCAL TRANSCRIPT:\n{transcript_text}\n\n{audit_prompt}"]
 
-    candidate_models = [model]
-    for alt in [
-        "gemini-3.8-flash",
-        "gemini-3.7-flash",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
-    ]:
-        if alt not in candidate_models:
-            candidate_models.append(alt)
+    from config import gemini_model_candidates
+    candidate_models = gemini_model_candidates(model)
 
+    last_audit_error = None
+    nonretryable_audit_failure = False
     for model_name in candidate_models:
         resp = None
         for attempt in range(2):
@@ -580,14 +549,22 @@ def verify_and_reconcile_study_guide(
                         temperature=0.1,
                     )
                 )
+                if resp is not None:
+                    last_audit_error = None
                 if resp and resp.text:
                     break
             except Exception as e:
-                err_str = str(e)
-                if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]):
+                last_audit_error = e
+                if _is_retryable_gemini_error(e):
                     time.sleep(2)
                     continue
+                nonretryable_audit_failure = True
                 break
+
+        if nonretryable_audit_failure:
+            break
+        if (not resp or not resp.text) and (not last_audit_error or not _is_retryable_gemini_error(last_audit_error)):
+            break
 
         if resp and resp.text:
             raw_json = resp.text.strip()
@@ -599,9 +576,16 @@ def verify_and_reconcile_study_guide(
                     try:
                         v_result = VerificationResult.model_validate_json(m.group(0))
                     except Exception:
-                        continue
+                        last_audit_error = ValueError("Invalid audit response")
+                        nonretryable_audit_failure = True
+                        break
                 else:
-                    continue
+                    last_audit_error = ValueError("Invalid audit response")
+                    nonretryable_audit_failure = True
+                    break
+
+            if nonretryable_audit_failure:
+                break
 
             scope_discrepancies = 0
             if v_result.contradictions:
@@ -614,10 +598,10 @@ def verify_and_reconcile_study_guide(
                 audit_passed=True,
                 contradictions_detected=v_result.contradictions_detected,
                 contradictions=v_result.contradictions,
-                overall_fidelity_summary=v_result.audit_summary or (
-                    f"Audit completed: {v_result.contradictions_detected} discrepancy/scope issue(s) identified and reconciled with lecture recording."
+                overall_fidelity_summary=(
+                    f"Transcript-to-guide check completed: {v_result.contradictions_detected} discrepancy/scope issue(s) identified and reconciled. Audio-to-transcript accuracy was not independently verified."
                     if v_result.contradictions_detected > 0 else
-                    f"Verified against lecture audio recording{' and slides' if has_notes else ''}: 0 contradictions found. 100% faithful to lecture."
+                    f"No discrepancies found in the transcript-to-guide check{' with slides' if has_notes else ''}. Audio-to-transcript accuracy was not independently verified."
                 ),
                 verified_at=datetime.now().astimezone().isoformat(timespec="seconds"),
                 notes_audited=has_notes,
@@ -636,23 +620,28 @@ def verify_and_reconcile_study_guide(
             if progress_callback:
                 if v_result.contradictions_detected > 0:
                     progress_callback(
-                        f"Resolved {v_result.contradictions_detected} contradiction/scope issue(s) with audio{' & slides' if has_notes else ''}. Updated study guide.",
+                        f"Resolved {v_result.contradictions_detected} transcript/slide discrepancy issue(s). Updated study guide.",
                         82
                     )
                 else:
                     progress_callback(
-                        f"Audio verification passed: 0 contradictions found. 100% faithful to lecture{' & slides' if has_notes else ''}.",
+                        "Transcript-to-guide check complete: no discrepancies found; audio recognition accuracy was not independently verified.",
                         82
                     )
 
             return reconciled, audit_report
 
     # Graceful fallback if verification API call fails: preserve original guide
+    failure_summary = (
+        f"Transcript-to-guide verification unavailable: {_gemini_error_category(last_audit_error)} Audio recognition accuracy was not independently verified."
+        if last_audit_error else
+        "Transcript-to-guide verification unavailable: Gemini did not return a usable audit response. Audio recognition accuracy was not independently verified."
+    )
     fallback_report = VerificationAuditReport(
         audit_passed=False,
         contradictions_detected=0,
         contradictions=[],
-        overall_fidelity_summary="Verification audit unavailable: cross-check could not be completed.",
+        overall_fidelity_summary=failure_summary,
         verified_at=datetime.now().astimezone().isoformat(timespec="seconds"),
         notes_audited=has_notes,
         notes_reference=notes_reference,

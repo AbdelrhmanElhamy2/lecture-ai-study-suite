@@ -299,7 +299,7 @@ def main():
         print(f"   * Diagrams:       {result['diagrams_count']} visual figures embedded")
         print(f"   * Exam Prep Bank: {result['exam_questions_count']} predicted questions with answers")
         if "contradictions_detected" in result:
-            audit_label = "Audio & Slides Fidelity" if result.get("notes_audited") else "Audio Fidelity"
+            audit_label = "Transcript & Slides Check" if result.get("notes_audited") else "Transcript-to-Guide Check"
             print(f"   * {audit_label}: {result['contradictions_detected']} discrepancy/scope issue(s) reconciled")
         print(f"   * Output PDF:     {result['pdf_path']}")
         if drive_pdf:

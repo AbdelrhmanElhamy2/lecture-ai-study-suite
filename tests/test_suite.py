@@ -22,6 +22,33 @@ import pypdf
 
 class TestLectureAISuite(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+        import app
+        cls._orig_history_file = app.HISTORY_FILE
+        cls._temp_history_dir = tempfile.TemporaryDirectory()
+        app.HISTORY_FILE = Path(cls._temp_history_dir.name) / "test_history.json"
+
+    @classmethod
+    def tearDownClass(cls):
+        import app
+        app.HISTORY_FILE = cls._orig_history_file
+        try:
+            cls._temp_history_dir.cleanup()
+        except Exception:
+            pass
+        # Clean up any test PDFs generated in OUTPUT_DIR during test execution
+        for test_pdf_name in [
+            "Notes_Integrated_Guide.pdf",
+            "Pipeline_Test_Guide.pdf",
+            "Tofu_Glyph_Regression_Guide.pdf",
+            "UnitTest_Guide.pdf",
+            "Verified_Audit_Test_Guide.pdf",
+            "Lecture_Concurrency Control Semaphores_Study_Guide.pdf",
+        ]:
+            (OUTPUT_DIR / test_pdf_name).unlink(missing_ok=True)
+
     def test_01_models_validation(self):
         """Test Pydantic model validation and serialization."""
         guide = get_sample_bilingual_lecture_guide()
@@ -141,7 +168,7 @@ class TestLectureAISuite(unittest.TestCase):
         # 3. Read back PDF and confirm it contains the verified audit certificate
         reader = pypdf.PdfReader(str(pdf_path))
         page_texts = "".join([p.extract_text() or "" for p in reader.pages])
-        self.assertIn("AUDIO FIDELITY AUDIT", page_texts)
+        self.assertIn("TRANSCRIPT CHECK", page_texts)
         self.assertIn("Priority values in this system are inverted", page_texts)
 
     def test_06_lecture_notes_and_slide_slicing(self):
@@ -188,7 +215,8 @@ class TestLectureAISuite(unittest.TestCase):
         reader = pypdf.PdfReader(res["pdf_path"])
         full_text = "".join([p.extract_text() or "" for p in reader.pages])
         self.assertIn("Lecture Notes / Slides:", full_text)
-        self.assertIn("AUDIO & SLIDES FIDELITY", full_text)
+        self.assertIn("SIMULATED TRANSCRIPT & SLIDES CHECK", full_text)
+        self.assertIn("no live audio recording was processed", full_text.lower())
 
     def test_07_record_deletion_and_math_healing(self):
         """Test math defect auto-healing and record deletion API."""
@@ -889,7 +917,7 @@ class TestLectureAISuite(unittest.TestCase):
         # 1. verify_and_reconcile_study_guide returns fallback with audit_passed=False
         reconciled_guide, report = verify_and_reconcile_study_guide(
             client=mock_client,
-            audio_file=MagicMock(),
+            transcript_text="[Recording 1]\n[0.00-1.00] deterministic test transcript",
             notes_file=None,
             notes_reference=None,
             guide=draft_guide,
@@ -916,8 +944,8 @@ class TestLectureAISuite(unittest.TestCase):
         finally:
             pdf_path.unlink(missing_ok=True)
 
-    def test_22_standalone_auditor_cleans_up_uploaded_media(self):
-        """Regression test for Issue 4: verify_audio_fidelity deletes uploaded files on both success and exception."""
+    def test_22_standalone_auditor_never_uploads_audio(self):
+        """Standalone audit transcribes locally and never uploads audio to Gemini."""
         from unittest.mock import patch, MagicMock
         import verify_audio_fidelity
         import tempfile
@@ -930,43 +958,30 @@ class TestLectureAISuite(unittest.TestCase):
             fake_guide = tmp_path / "fake_guide.json"
             sample_guide = get_sample_bilingual_lecture_guide()
             fake_guide.write_text(sample_guide.model_dump_json(), encoding="utf-8")
-
-            # Case A: Normal completion -> uploaded file is deleted
+            test_args = ["verify_audio_fidelity.py", "--audio", str(fake_audio), "--guide", str(fake_guide), "--api-key", "dummy_key"]
             mock_client = MagicMock()
-            mock_audio_file = MagicMock()
-            mock_audio_file.name = "files/test_audio_success"
-            mock_client.files.upload.return_value = mock_audio_file
-
-            test_args = [
-                "verify_audio_fidelity.py",
-                "--audio", str(fake_audio),
-                "--guide", str(fake_guide),
-                "--api-key", "dummy_key"
-            ]
-
             with patch("sys.argv", test_args), \
                  patch("verify_audio_fidelity.genai.Client", return_value=mock_client), \
-                 patch("verify_audio_fidelity.verify_and_reconcile_study_guide", return_value=(sample_guide, MagicMock(contradictions_detected=0, contradictions=[], notes_audited=False, overall_fidelity_summary="Passed", audit_passed=True))), \
+                 patch("verify_audio_fidelity.transcribe_audio_sources", return_value=[MagicMock()]), \
+                 patch("verify_audio_fidelity.format_transcript", return_value="[Recording 1] test transcript"), \
+                 patch("verify_audio_fidelity.verify_and_reconcile_study_guide", return_value=(sample_guide, MagicMock(contradictions_detected=0, contradictions=[], notes_audited=False, overall_fidelity_summary="Transcript checked", audit_passed=True))), \
                  patch("verify_audio_fidelity.PDFStudyGuideBuilder.build", return_value=tmp_path / "out.pdf"), \
                  patch("sys.stdout", new_callable=io.StringIO):
                 verify_audio_fidelity.main()
+            mock_client.files.upload.assert_not_called()
+            mock_client.files.delete.assert_not_called()
 
-            mock_client.files.delete.assert_called_with(name="files/test_audio_success")
-
-            # Case B: Exception occurs during verification -> uploaded file is still deleted in finally block
             mock_client.reset_mock()
-            mock_audio_file_fail = MagicMock()
-            mock_audio_file_fail.name = "files/test_audio_failure"
-            mock_client.files.upload.return_value = mock_audio_file_fail
-
             with patch("sys.argv", test_args), \
                  patch("verify_audio_fidelity.genai.Client", return_value=mock_client), \
+                 patch("verify_audio_fidelity.transcribe_audio_sources", return_value=[MagicMock()]), \
+                 patch("verify_audio_fidelity.format_transcript", return_value="[Recording 1] test transcript"), \
                  patch("verify_audio_fidelity.verify_and_reconcile_study_guide", side_effect=RuntimeError("Simulated Gemini error")), \
                  patch("sys.stdout", new_callable=io.StringIO):
                 with self.assertRaises(RuntimeError):
                     verify_audio_fidelity.main()
-
-            mock_client.files.delete.assert_called_with(name="files/test_audio_failure")
+            mock_client.files.upload.assert_not_called()
+            mock_client.files.delete.assert_not_called()
 
     def test_23_staged_upload_cleanup_on_later_rejected_file(self):
         """Regression test for Issue 5: Rejected multi-file upload cleans up every file staged earlier in the same request."""
@@ -1548,6 +1563,52 @@ class TestLectureAISuite(unittest.TestCase):
 
             # Cleanup staged file
             passed_path.unlink(missing_ok=True)
+
+    def test_35_universal_engineering_math_and_cue_cleaning(self):
+        """Test universal engineering math entity conversions, cue prefix stripping, and PDF builder hardening."""
+        from pdf_builder import format_math_in_text, clean_cue_text, PDFStudyGuideBuilder
+        from models import TableDefinition, DiagramDefinition, DiagramElement
+
+        # 1. Engineering math notation
+        eq1 = format_math_in_text(r"\frac{\partial T}{\partial t} = \alpha \nabla^2 T")
+        self.assertIn("&part;", eq1)
+        self.assertIn("&nabla;", eq1)
+
+        eq2 = format_math_in_text(r"R_{eq} = R_1 \parallel R_2 \text{ where } R_1 = 10 \Omega")
+        self.assertIn("||", eq2)
+        self.assertIn("&Omega;", eq2)
+
+        eq3 = format_math_in_text(r"\sum_{i=1}^{n} F_i = 0 \text{ and } \mathbf{B} \perp \mathbf{v}")
+        self.assertIn("&Sigma;", eq3)
+        self.assertIn("&perp;", eq3)
+
+        # 2. Universal academic faculty cue cleaning
+        c1 = clean_cue_text("Professor warned: Remember the Reynolds number formula!", "Fluid Mechanics")
+        self.assertEqual(c1, "Remember the Reynolds number formula!")
+
+        c2 = clean_cue_text("The instructor emphasized: Do not forget to check boundary conditions", "Heat Transfer")
+        self.assertEqual(c2, "Do not forget to check boundary conditions")
+
+        c3 = clean_cue_text("The lecturer pointed out: Concurrency semaphores are on the final", "Operating Systems")
+        self.assertEqual(c3, "Concurrency semaphores are on the final")
+
+        c4 = clean_cue_text("Doctor stated: Calculate the op-amp CMRR", "Analog Circuits")
+        self.assertEqual(c4, "Calculate the op-amp CMRR")
+
+        # 3. PDF Builder table fallback hardening (empty columns with populated rows)
+        sample_guide = get_sample_bilingual_lecture_guide()
+        builder = PDFStudyGuideBuilder(sample_guide, output_filename="Engineering_PDF_Hardening_Test.pdf")
+        malformed_table = TableDefinition(
+            title="Boundary Conditions",
+            columns=[],
+            rows=[["Inlet", "100 C", "1 atm"], ["Outlet", "25 C", "1 atm"]],
+            notes="Steady state flow"
+        )
+        rendered_table_items = builder._build_table(malformed_table)
+        self.assertTrue(len(rendered_table_items) > 0)
+
+        # 4. Cleanup any generated test file
+        (OUTPUT_DIR / "Engineering_PDF_Hardening_Test.pdf").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

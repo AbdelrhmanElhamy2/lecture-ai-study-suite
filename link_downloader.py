@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import uuid
 import shutil
 import urllib.parse
@@ -228,34 +229,39 @@ def extract_gdrive_id(url: str) -> Optional[str]:
     return None
 
 
-def detect_local_fall_courses() -> List[Dict[str, str]]:
+_COURSES_CACHE: Optional[Tuple[float, List[Dict[str, Any]]]] = None
+_COURSES_CACHE_TTL = 60.0  # seconds
+
+
+def clear_courses_cache() -> None:
+    """Clear the in-memory detected courses cache."""
+    global _COURSES_CACHE
+    _COURSES_CACHE = None
+
+
+def detect_local_fall_courses(force_refresh: bool = False) -> List[Dict[str, Any]]:
     r"""
     Detects course folders located in the local Google Drive or laptop storage (e.g. G:\My Drive\fall 2026).
     Returns list of {'name': course_name, 'path': course_path}.
+    Uses a 60-second in-memory cache and shallow iteration to avoid freezing the server.
     """
+    global _COURSES_CACHE
+    now = time.time()
+    if not force_refresh and _COURSES_CACHE and (now - _COURSES_CACHE[0] < _COURSES_CACHE_TTL):
+        return _COURSES_CACHE[1]
+
     root = get_drive_fall_root()
     detected = []
     if root and root.exists() and root.is_dir():
         for sub in sorted(root.iterdir()):
             if sub.is_dir() and not sub.name.startswith("."):
-                notes_count = 0
-                record_count = 0
-                try:
-                    for f in sub.rglob("*"):
-                        if f.is_file():
-                            ext = f.suffix.lower()
-                            if ext in SUPPORTED_NOTES_EXTS:
-                                notes_count += 1
-                            elif ext in SUPPORTED_AUDIO_EXTS:
-                                record_count += 1
-                except Exception:
-                    pass
                 detected.append({
                     "name": sub.name,
                     "path": str(sub.resolve()),
-                    "lecture_count": notes_count,
-                    "record_count": record_count
+                    "lecture_count": 0,
+                    "record_count": 0
                 })
+    _COURSES_CACHE = (now, detected)
     return detected
 
 

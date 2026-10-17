@@ -120,15 +120,15 @@ class ContradictionItem(BaseModel):
     """Details of a contradiction or factual discrepancy detected between the guide and audio."""
     section_title: str = Field(..., description="Topic or section where discrepancy occurred")
     guide_statement: str = Field(..., description="What the draft guide claimed or stated")
-    audio_truth: str = Field(..., description="What the professor actually said in the audio recording (with timestamp if known)")
+    audio_truth: str = Field(..., description="Transcript evidence relevant to the discrepancy (with timestamp if known)")
     correction_applied: str = Field(..., description="The exact modification made to fix the guide and harmonize with the audio")
 
 class VerificationAuditReport(BaseModel):
     """Audit report of the fact-check comparison against the original lecture recording."""
-    audit_passed: bool = Field(default=True, description="True if verification succeeded and contradictions were reconciled")
+    audit_passed: bool = Field(default=True, description="True if the transcript-to-guide check succeeded and contradictions were reconciled")
     contradictions_detected: int = Field(default=0, description="Total count of contradictions identified")
     contradictions: List[ContradictionItem] = Field(default_factory=list, description="List of resolved contradictions")
-    overall_fidelity_summary: str = Field(default="100% verified against original lecture recording.", description="Summary of fidelity check")
+    overall_fidelity_summary: str = Field(default="Transcript-to-guide verification status is unavailable.", description="Summary of transcript-to-guide check; audio transcription accuracy is not independently verified")
     verified_at: Optional[str] = Field(default=None, description="ISO timestamp or date of verification")
     notes_audited: bool = Field(default=False, description="True if lecture slides or notes were audited alongside audio")
     notes_reference: Optional[str] = Field(default=None, description="Details of lecture slides or notes audited (e.g. 'Slides 1–25')")
@@ -165,10 +165,10 @@ class LectureStudyGuide(BaseModel):
     )
 
 class VerificationResult(BaseModel):
-    """Output schema for Gemini when performing the audio-vs-guide verification pass."""
-    contradictions_detected: int = Field(..., description="Number of contradictions found between guide and audio recording")
+    """Output schema for Gemini's transcript-to-guide verification pass."""
+    contradictions_detected: int = Field(..., description="Number of discrepancies found between guide and transcript")
     contradictions: List[ContradictionItem] = Field(default_factory=list, description="List of detected contradictions")
-    fidelity_score: int = Field(default=100, description="Fidelity score out of 100")
-    audit_summary: str = Field(..., description="Summary explanation of the cross-check against the audio recording")
+    fidelity_score: Optional[int] = Field(default=None, description="Unused; audio-to-transcript accuracy is not independently scored")
+    audit_summary: str = Field(..., description="Summary of transcript-to-guide checking")
     corrected_guide: LectureStudyGuide = Field(..., description="The complete reconciled LectureStudyGuide with all contradictions resolved")
 

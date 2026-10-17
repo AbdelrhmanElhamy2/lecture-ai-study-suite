@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 
-**Transform spoken university lectures and slide decks into publication-quality academic study guides, automated engineering schematics, practice exam kits, and audio-audited PDFs.**
+**Transform university lecture recordings and slide decks into publication-quality study guides, diagrams, and practice exam kits.**
 
 [Sample Output](samples/demo_guide.pdf) • [Key Capabilities](#-key-capabilities) • [System Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [CLI Usage](#-cli-usage) • [Interactive Web UI](#-interactive-web-ui) • [License](#-license)
 
@@ -22,13 +22,15 @@ University lectures in Engineering, Medicine, Science, and STEM often move fast.
 
 **LectureAI** is an intelligent, multimodal academic companion. Feed it lecture audio and optional slide decks:
 
-1. **Listens & Translates**: Transcribes spoken audio, handles multilingual dialect code-switching, and synthesizes academic English notes.
+1. **Transcribes Locally**: Uses faster-whisper with automatic language detection, including multilingual Arabic and English speech.
 2. **Grounds in Slides**: Matches spoken topics to slide decks, extracts precise formulas, and excludes unmentioned slide material.
-3. **Fact-Checks & Reconciles**: Cross-examines generated notes against the spoken recording to eliminate hallucinations and embeds an official **Audio & Slides Fidelity Certificate**.
+3. **Checks the Guide**: Gemini checks generated notes against the local transcript and selected slides. Speech recognition accuracy against the original audio is not independently verified.
 4. **Draws Visual Schematics**: Automatically generates publication-grade block diagrams, circuit waveforms, flowcharts, timelines, and concept maps.
 5. **Compiles Publication PDFs**: Builds print-ready PDFs with two-pass page numbering (`Page X of Y`), typographic math, and verbatim transcript appendices.
 
 > 📄 **Sample Output**: Inspect [samples/demo_guide.pdf](samples/demo_guide.pdf) to view a pre-compiled sample study guide produced in simulated demo mode (simulated demo with no real audio processed).
+
+> **Data flow:** Lecture audio is transcribed locally using faster-whisper. The transcript and relevant selected slide/note content are sent to Gemini to generate and check the study guide, so a Gemini API key is still required for live processing. Audio files are not sent to Gemini.
 
 ---
 
@@ -58,7 +60,7 @@ One lecture can seamlessly combine recordings and slide notes from different sou
 Items are ordered chronologically with up/down controls (`▲`/`▼`) and individual removal controls (`✕`). Multi-part audio is stitched in sequence, and slide decks are bounded by per-deck slide ranges.
 
 ### 🌐 2. Bilingual Speech & Dialect Code-Switching
-- Seamlessly transcribes bilingual college lectures (e.g., Egyptian / Levantine Arabic mixed with English engineering terms).
+- Supports multilingual transcription, including Arabic and English. Arabic-English code-switching and specialist terminology can still be recognized imperfectly and should be reviewed.
 - Synthesizes clean, formal academic English summaries and study guides with zero tofu boxes (`□`) or mixed-language clutter in the final document.
 
 ### 📊 3. Zero-Collision Universal Diagram Generator
@@ -75,25 +77,25 @@ Generates high-resolution vector diagrams via Matplotlib with collision-free lay
 - Advanced regex healer repairs corrupted mathematical tokens (such as `\Delta rac` &rarr; `\frac`, missing square roots, unrendered subscripts).
 - Converts formulas into clear, beautifully formatted mathematical typography without missing-glyph defects.
 
-### 🛡️ 5. Audio & Slides Contradiction Auditor
-- Every generated guide is automatically cross-examined against the original spoken audio and slides.
-- Contradictions, misheard numbers, or slide discrepancies are caught and reconciled before PDF compilation.
-- Embeds a timestamped **Audio & Slides Fidelity Certificate** (audit summary + list of corrections) directly in the PDF.
+### 🛡️ 5. Transcript & Slides Check
+- Gemini checks the generated guide against the locally generated transcript and selected slides.
+- The PDF reports transcript-to-guide discrepancies and corrections. It clearly states that transcription accuracy against the original recording was not independently verified.
 
 ### ⚠️ 6. "Doctor's Spoken Exam Traps" & Exam Kit
 - **Doctor Alerts**: Highlights verbal warnings, grading pitfalls, and "this will be on the final" hints in prominent amber callout boxes.
 - **Active Recall Exam Kit**: Generates clinical vignettes, engineering derivations, and conceptual questions modeled on university exams.
 - **Interactive Quiz Mode**: Practice one question at a time in the web dashboard, test your knowledge, reveal model answers, and track your recall score.
 
-### 🧬 7. Pre-Configured STEM & Biomedical Focus
-- Preloaded with Biomedical Engineering & College STEM courses:
-  - *Bioinstrumentation & Biosensors*
-  - *Biomedical Signal Processing*
-  - *Biomechanics & Biomaterials*
-  - *Medical Imaging Systems*
-  - *Human Anatomy & Physiology for Engineers*
-  - *Medical Device Design & Electrical Safety*
-- Add any custom course with 1 click; saved permanently in your browser via `localStorage`.
+### 📐 7. Universal Engineering Disciplines & Custom Course Presets
+- Interactive discipline filters and curated presets across:
+  - *Electrical & Electronic*: Circuit Analysis, Signals & Systems, Power Electronics, CMOS & Op-Amps
+  - *Mechanical & Aerospace*: Thermodynamics & Heat Transfer, Fluid Mechanics, Mechanics of Materials
+  - *Computer & Software*: Operating Systems & Concurrency, Algorithms, Computer Architecture
+  - *Civil & Structural*: Structural Analysis, Reinforced Concrete Design, Geotechnical Engineering
+  - *Chemical & Materials*: Reaction Kinetics, Mass Transfer & Distillation, Chemical Thermodynamics
+  - *Biomedical & Bio-Tech*: Bioinstrumentation, Signal Processing, Biomechanics, Medical Imaging
+  - *Robotics & Systems*: Control Systems Engineering, Kinematics, Operations Research
+- Add any custom college course with 1 click; saved permanently in your browser via `localStorage`.
 
 ---
 
@@ -108,19 +110,19 @@ flowchart TD
     end
 
     subgraph INGEST["2. Ingestion & Preprocessing"]
-        A & C --> D["Chunked Audio Streamer<br/>& Media Normalizer"]
+        A & C --> D["Local faster-whisper<br/>Transcription"]
         B --> E["Slide Slicer & Page Extractor<br/>(PyPDF)"]
     end
 
     subgraph ENGINE["3. Pedagogical AI Engine"]
-        D & E --> F["Google Gemini 3.8 Flash<br/>Multimodal Analysis"]
+        D & E --> F["Google Gemini 3.8 Flash<br/>Transcript & Slides Analysis"]
         F --> G["Pedagogical Breakdown<br/>(Sections, Alerts, Formulas)"]
         F --> H["Exam Readiness Kit<br/>(Vignettes, Derivations, MCQs)"]
         F --> I["Verbatim Spoken Transcript"]
     end
 
     subgraph AUDIT["4. Fidelity & Verification"]
-        G & D --> J["Contradiction Auditor<br/>Cross-Examines Draft vs Audio"]
+        G & D --> J["Transcript-to-Guide Check<br/>Audio Accuracy Not Verified"]
         J --> K["Reconciled Study Guide<br/>+ Fidelity Certificate"]
     end
 
@@ -169,6 +171,7 @@ flowchart TD
    ```bash
    pip install -r requirements.txt
    ```
+   This installs faster-whisper 1.2.1. On the first live transcription, faster-whisper may need an internet connection to download the selected model weights. The model cache is kept by the library outside the repository.
 
 4. **Set your Gemini API key:**
    ```bash
@@ -179,7 +182,11 @@ flowchart TD
    ```ini
    GEMINI_API_KEY=your_gemini_api_key_here
    GEMINI_MODEL=gemini-3.8-flash
+   LECTUREAI_WHISPER_MODEL=small
+   LECTUREAI_WHISPER_DEVICE=cpu
+   LECTUREAI_WHISPER_COMPUTE_TYPE=int8
    ```
+   The Gemini primary is `gemini-3.8-flash`; temporary overloads can retry with `gemini-3.6-flash`. Set `LECTUREAI_WHISPER_MODEL=base` to reduce local resource use. `small` is the multilingual default; model size, device, and compute type can be configured with the three `LECTUREAI_WHISPER_*` settings.
    *(Alternatively, you can leave it blank and paste it directly into the web interface when launching).*
 
 5. **Run the application:**
@@ -222,9 +229,11 @@ python cli.py --audio "part1.m4a" "part2.m4a" --notes "deck.pdf" --output "Lectu
 # 5. Process directly from Google Drive share links
 python cli.py --course "Power Electronics" --audio "https://drive.google.com/file/d/1.../view"
 
-# 6. Run standalone Audio & Slides Contradiction Auditor
+# 6. Run standalone local transcript & slides checker
 python verify_audio_fidelity.py --audio "lecture.m4a" --notes "slides.pdf" --guide "cached_last_guide.json"
 ```
+
+Live CLI and web jobs use the same local transcription stage. The Gemini API key is needed for guide generation and transcript-to-guide checking, but never for audio transcription itself. Demo mode uses simulated content and does not load Whisper or contact Gemini.
 
 ### 📂 Optional: Course Folder & Google Drive Integration
 
@@ -256,7 +265,7 @@ The comprehensive automated test suite runs locally and verifies:
 - ✅ Visualizer diagram generation (Flowcharts, Cycles, Bar charts)
 - ✅ ReportLab PDF compilation and page numbering
 - ✅ End-to-end pipeline simulation
-- ✅ Contradiction detection & fidelity audit certificate
+- ✅ Transcript-to-guide discrepancy check with an explicit speech-recognition limitation
 - ✅ PDF slide deck slicing and range bounding
 - ✅ Math defect auto-healing & history deletion API
 - ✅ Selective course material discovery
@@ -274,7 +283,7 @@ The comprehensive automated test suite runs locally and verifies:
 ## 🔒 Security & Privacy
 
 - **Your API key stays local**: It is read from `.env` (excluded via `.gitignore`) and is never committed.
-- **What leaves your machine**: Lecture audio and slides are uploaded to the **Google Gemini API** for transcription and analysis (subject to [Google's Gemini API terms](https://ai.google.dev/gemini-api/terms)). Demo mode (`--demo`) sends nothing.
+- **What leaves your machine**: The local transcript and selected slides/notes are sent to the **Google Gemini API** for guide generation and transcript-to-guide checking (subject to [Google's Gemini API terms](https://ai.google.dev/gemini-api/terms)). Audio itself is transcribed locally and is not sent to Gemini. Demo mode (`--demo`) sends nothing.
 - **What stays local**: Uploaded files (`uploads/`), generated PDFs (`output_pdfs/`), diagrams (`generated_assets/`), and history (`lecture_history.json`, `cached_last_guide.json`) are stored only on your device — unless you enable the optional Google Drive folder sync.
 - **Privacy in History**: Past lecture history records sanitized item counts and categories; raw download URLs, authentication tokens, and local file paths are not stored in history.
 
@@ -285,6 +294,7 @@ The comprehensive automated test suite runs locally and verifies:
 - **File Picker Behavior**: If your browser's native file picker dialog is slow or unresponsive, drag-and-drop works directly onto the "Recordings" and "Notes / Slides" dropzones.
 - **Recommended Browser**: For optimal UI responsiveness and local streaming, launch with `python app.py` and open **http://127.0.0.1:8000** in **Google Chrome** or **Microsoft Edge**.
 - **Upload Streaming & Size Limits**: Local uploads up to 2 GB are streamed to disk in 1 MB chunks without buffering entire multi-gigabyte recordings into system memory. If an upload fails, staged temporary files are automatically cleaned up.
+- **Whisper model download or slow transcription**: The first use may need an internet connection to fetch model weights. Confirm `LECTUREAI_WHISPER_MODEL`, `LECTUREAI_WHISPER_DEVICE`, and `LECTUREAI_WHISPER_COMPUTE_TYPE`; `base` uses fewer resources than `small`. Reinstall with `pip install -r requirements.txt` if the Python environment reports an incompatible PyAV version.
 
 ---
 
@@ -296,7 +306,7 @@ lecture-ai-study-suite/
 ├── launcher.py                # Desktop application launcher
 ├── cli.py                     # Command-line interface
 ├── pipeline.py                # End-to-end processing pipeline
-├── pedagogy_engine.py         # Gemini multimodal analysis & auditor
+├── pedagogy_engine.py         # Gemini transcript and notes analysis/checking
 ├── pdf_builder.py             # ReportLab PDF compiler & math healer
 ├── visualizer.py              # Matplotlib visual schematics generator
 ├── models.py                  # Pydantic data schemas
@@ -306,7 +316,6 @@ lecture-ai-study-suite/
 ├── verify_audio_fidelity.py   # Standalone audio/slides contradiction auditor
 ├── create_desktop_shortcut.py # Creates a Windows desktop shortcut
 ├── create_icon.py             # Builds the multi-resolution app icon
-├── test_*.py                  # Standalone demo/render scripts (not unit tests)
 ├── requirements.txt           # Python package dependencies
 ├── .env.example               # Template environment configuration
 ├── .gitignore                 # Excludes .env, recordings, and outputs

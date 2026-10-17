@@ -20,7 +20,7 @@ def get_sample_bilingual_lecture_guide() -> LectureStudyGuide:
             contradictions_detected=0,
             contradictions=[],
             is_simulation=True,
-            overall_fidelity_summary="Verified in simulation: 0 contradictions detected. 100% faithful to lecture simulation.",
+            overall_fidelity_summary="Simulated transcript-to-guide check; no real recording was processed or checked.",
             verified_at="Academic Term 2026",
             notes_audited=True,
             notes_reference="Slides 1–25 of 25 (Simulation Deck)",

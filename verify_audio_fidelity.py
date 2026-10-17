@@ -12,20 +12,19 @@ import argparse
 from pathlib import Path
 from google import genai
 
-from config import get_gemini_api_key, DEFAULT_MODEL, OUTPUT_DIR, UPLOAD_DIR
+from config import get_gemini_api_key, DEFAULT_MODEL, OUTPUT_DIR, UPLOAD_DIR, resolve_gemini_model
 from models import LectureStudyGuide
 from pedagogy_engine import verify_and_reconcile_study_guide, slice_pdf_pages
 from pdf_builder import PDFStudyGuideBuilder
+from transcription import transcribe_audio_sources, format_transcript
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Verify and reconcile a Lecture Study Guide against the original audio recording and optional lecture notes."
-    )
+    parser = argparse.ArgumentParser(description="Verify a study guide against a local transcript and optional lecture notes.")
     parser.add_argument(
         "--audio",
         required=True,
-        help="Path to the original lecture audio file (MP3, M4A, WAV, etc.)"
+        help="Path to lecture audio; it is transcribed locally and never uploaded to Gemini."
     )
     parser.add_argument(
         "--notes",
@@ -57,7 +56,8 @@ def main():
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help="Gemini model to use for the audit (default: gemini-3.8-flash)"
+        choices=["gemini-3.8-flash", "gemini-3.6-flash"],
+        help="Gemini model to use for the transcript audit."
     )
     parser.add_argument(
         "--api-key",
@@ -69,32 +69,37 @@ def main():
 
     audio_path = Path(args.audio)
     if not audio_path.exists():
-        print(f"Error: Audio file not found at: {audio_path}", file=sys.stderr)
+        print("Error: Audio file not found.", file=sys.stderr)
         sys.exit(1)
 
     notes_path = Path(args.notes) if args.notes else None
     if notes_path and not notes_path.exists():
-        print(f"Error: Lecture notes file not found at: {notes_path}", file=sys.stderr)
+        print("Error: Lecture notes file not found.", file=sys.stderr)
         sys.exit(1)
 
     guide_path = Path(args.guide)
     if not guide_path.exists():
-        print(f"Error: Study guide JSON not found at: {guide_path}", file=sys.stderr)
+        print("Error: Study guide JSON not found.", file=sys.stderr)
         sys.exit(1)
 
     key = args.api_key or get_gemini_api_key()
     if not key:
         print("Error: Gemini API key is required. Set GEMINI_API_KEY in .env or provide --api-key.", file=sys.stderr)
         sys.exit(1)
+    try:
+        model = resolve_gemini_model(args.model)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
     print("=" * 70)
-    print("🎓 LECTUREAI: AUDIO & SLIDES FIDELITY AUDITOR")
+    print("🎓 LECTUREAI: LOCAL TRANSCRIPT & SLIDES AUDITOR")
     print("=" * 70)
     print(f"• Audio Recording: {audio_path.name}")
     if notes_path:
         print(f"• Lecture Slides:  {notes_path.name}")
     print(f"• Guide Input:     {guide_path.name}")
-    print(f"• Auditor Model:   {args.model}")
+    print(f"• Auditor Model:   {model}")
     print("=" * 70)
 
     # 1. Load guide
@@ -103,79 +108,52 @@ def main():
     draft_guide = LectureStudyGuide.model_validate(guide_data)
     print(f"Loaded: \"{draft_guide.lecture_title}\" ({len(draft_guide.sections)} sections)")
 
+    print("\n[2/4] Transcribing audio locally with faster-whisper...")
+    transcripts = transcribe_audio_sources([audio_path])
+    transcript_text = format_transcript(transcripts)
+
     client = genai.Client(api_key=key)
-    uploaded_files = []
-
+    notes_file = None
     try:
-        # 2. Upload audio (and optional notes) to Gemini
-        print("\n[2/4] Uploading media files to Gemini API for cross-examination...")
-        audio_file = client.files.upload(file=str(audio_path))
-        uploaded_files.append(audio_file)
-        print(f"• Audio uploaded successfully (URI: {getattr(audio_file, 'uri', 'uploaded')})")
-
-        notes_file = None
         notes_ref_label = None
         if notes_path:
             processed_notes, notes_ref_label = slice_pdf_pages(
                 notes_path, start_page=args.start_slide, end_page=args.end_slide, output_dir=UPLOAD_DIR
             )
             notes_file = client.files.upload(file=str(processed_notes))
-            uploaded_files.append(notes_file)
-            print(f"• Lecture slides uploaded successfully ({notes_ref_label})")
 
-        # 3. Cross-examine & reconcile
-        print("\n[3/4] Cross-examining draft guide against spoken audio recording & slides...")
+        print("\n[3/4] Checking the guide against the transcript and optional slides...")
         reconciled_guide, report = verify_and_reconcile_study_guide(
             client=client,
-            audio_file=audio_file,
+            transcript_text=transcript_text,
             notes_file=notes_file,
             notes_reference=notes_ref_label,
             guide=draft_guide,
-            model=args.model,
+            model=model,
             progress_callback=lambda msg, pct: print(f"  [{pct}%] {msg}")
         )
 
         print("\n" + "-" * 70)
-        print("📊 VERIFICATION & FIDELITY AUDIT REPORT:")
+        print("📊 TRANSCRIPT VERIFICATION REPORT:")
         print("-" * 70)
-        print(f"• Contradictions / Scope Issues Detected: {report.contradictions_detected}")
+        print(f"• Discrepancies Detected: {report.contradictions_detected}")
         if report.notes_audited:
-            print(f"• Lecture Notes Audited:                 {report.notes_reference}")
-            print(f"• Scope Leakages Pruned:                 {report.scope_discrepancies_resolved}")
+            print(f"• Lecture Notes Audited: {report.notes_reference}")
+            print(f"• Scope Issues Resolved: {report.scope_discrepancies_resolved}")
         print(f"• Summary: {report.overall_fidelity_summary}")
+        print("• Audio-to-transcript accuracy was not independently verified.")
 
-        if report.contradictions_detected > 0 and report.contradictions:
-            print("\n📝 RESOLUTION LOG:")
-            for i, c in enumerate(report.contradictions, 1):
-                print(f"\n  Discrepancy #{i}:")
-                print(f"  - Section:       {c.section_title}")
-                print(f"  - Initial Claim: {c.guide_statement}")
-                print(f"  - Audio Truth:   {c.audio_truth}")
-                print(f"  - Correction:    {c.correction_applied}")
-        else:
-            print("\n✓ ZERO CONTRADICTIONS: The study guide is 100% faithful to the recording.")
-
-        # 4. Compile Reconciled PDF
-        print("\n[4/4] Compiling finalized, verified PDF with Audio Fidelity Certificate...")
+        print("\n[4/4] Compiling reconciled study guide...")
         builder = PDFStudyGuideBuilder(reconciled_guide, output_filename=args.output)
         pdf_path = builder.build()
-
-        # Save reconciled JSON
         reconciled_json_path = guide_path.parent / f"reconciled_{guide_path.name}"
-        reconciled_json_path.write_text(
-            reconciled_guide.model_dump_json(indent=2),
-            encoding="utf-8"
-        )
-
-        print("\n" + "=" * 70)
-        print("🎉 RECONCILIATION COMPLETE!")
-        print(f"• Reconciled PDF Saved:  {pdf_path}")
-        print(f"• Reconciled JSON Saved: {reconciled_json_path}")
-        print("=" * 70)
+        reconciled_json_path.write_text(reconciled_guide.model_dump_json(indent=2), encoding="utf-8")
+        print(f"\nReconciled PDF saved: {pdf_path}")
+        print(f"Reconciled JSON saved: {reconciled_json_path}")
     finally:
-        for f in uploaded_files:
+        if notes_file is not None:
             try:
-                client.files.delete(name=f.name)
+                client.files.delete(name=notes_file.name)
             except Exception:
                 pass
 

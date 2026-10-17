@@ -48,38 +48,33 @@
       color-scheme: dark;
     }
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       transition: background-color 0.2s ease, color 0.2s ease;
-      background-color: #f7fafc;
+      background-color: #f8fafc;
       background-image: 
-        radial-gradient(ellipse 80% 50% at 50% -15%, rgba(13, 148, 136, 0.08), transparent 70%),
-        linear-gradient(rgba(13, 148, 136, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(13, 148, 136, 0.035) 1px, transparent 1px);
-      background-size: 100% 100%, 32px 32px, 32px 32px;
-      background-attachment: fixed;
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px;
     }
     html.dark body {
-      background-color: #060e18;
+      background-color: #0b1120;
       background-image: 
-        radial-gradient(ellipse 90% 50% at 50% -15%, rgba(20, 184, 166, 0.16), transparent 70%),
-        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08), transparent 50%),
-        linear-gradient(rgba(45, 212, 191, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(45, 212, 191, 0.035) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-      background-attachment: fixed;
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.12), transparent 70%),
+        linear-gradient(rgba(51, 65, 85, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(51, 65, 85, 0.15) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(204, 235, 230, 0.85);
-      box-shadow: 0 4px 20px -2px rgba(15, 76, 92, 0.05);
-      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .dark .glass-card {
-      background: rgba(10, 20, 32, 0.85);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(45, 212, 191, 0.18);
-      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(45, 212, 191, 0.1);
+      background: #10192b;
+      border: 1px solid rgba(51, 65, 85, 0.65);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     /* Dark scrollbar */
     .dark ::-webkit-scrollbar {
@@ -87,34 +82,34 @@
       height: 8px;
     }
     .dark ::-webkit-scrollbar-track {
-      background: #060e18;
+      background: #0b1120;
     }
     .dark ::-webkit-scrollbar-thumb {
-      background: #193542;
+      background: #1e293b;
       border-radius: 4px;
-      border: 1px solid rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(51, 65, 85, 0.5);
     }
     .dark ::-webkit-scrollbar-thumb:hover {
-      background: #254a5c;
+      background: #334155;
     }
   </style>
 </head>
-<body class="text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200">
+<body class="text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-600 selection:text-white transition-colors duration-200">
 
   <!-- Navigation Bar -->
-  <header class="bg-white/90 dark:bg-[#07131f]/90 backdrop-blur-md border-b border-slate-200 dark:border-teal-500/20 sticky top-0 z-30 shadow-xs transition-colors duration-200">
+  <header class="bg-white/90 dark:bg-[#0b1322]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-200">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
-        <img src="/static/app_icon.png?v=3" alt="LectureAI Biomedical Engineering Edition" class="w-10 h-10 rounded-xl shadow-md ring-1 ring-teal-400/40 object-cover" title="LectureAI Biomedical Engineering Edition">
+        <img src="/static/app_icon.png?v=3" alt="LectureAI Engineering Study Suite" class="w-10 h-10 rounded-xl shadow-md ring-1 ring-slate-300 dark:ring-slate-700 object-cover" title="LectureAI Engineering Study Suite">
         <div>
           <h1 class="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             LectureAI
-            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700/80 inline-flex items-center gap-1.5 shadow-2xs">
-              <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-teal-400 animate-pulse"></span>
-              Biomedical Engineering Edition
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 inline-flex items-center gap-1.5 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+              Engineering Study Suite
             </span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Audio & Lecture Slides &rarr; BME Study Guides, Waveforms, Schematics & Exam Traps</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Bilingual Audio & Lecture Slides &rarr; Multi-Discipline Engineering Guides, Derivations & Exam Prep</p>
         </div>
       </div>
 
@@ -124,11 +119,8 @@
         <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold shadow-xs">
           <span class="text-slate-400 dark:text-slate-400 font-medium">Model:</span>
           <select id="modelSelect" class="bg-transparent font-bold text-brand-700 dark:text-brand-400 focus:outline-none cursor-pointer">
-            <option value="gemini-3.8-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" selected>gemini-3.8-flash (Recommended Base Model)</option>
-            <option value="gemini-3.7-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.7-flash</option>
-            <option value="gemini-3.6-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.6-flash</option>
-            <option value="gemini-3.5-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.5-flash (High Availability Safety Net)</option>
-            <option value="gemini-flash-latest" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-flash-latest</option>
+            <option value="gemini-3.8-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" selected>gemini-3.8-flash (Primary)</option>
+            <option value="gemini-3.6-flash" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">gemini-3.6-flash (Fallback)</option>
           </select>
         </div>
 
@@ -153,22 +145,36 @@
   <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
 
     <!-- Hero Banner -->
-    <div class="rounded-2xl p-6 bg-gradient-to-r from-[#032926] via-[#092231] to-[#051622] text-white shadow-xl relative overflow-hidden border border-teal-500/30">
-      <!-- Decorative ECG Pulse Waveform in Background -->
-      <svg class="absolute right-0 top-1/2 -translate-y-1/2 h-44 w-96 text-teal-400/10 pointer-events-none select-none" viewBox="0 0 500 150" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M0,75 L120,75 L140,45 L160,115 L180,15 L200,135 L220,75 L245,75 L260,55 L275,95 L290,75 L500,75" />
+    <div class="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-[#0c1424] via-[#101c33] to-[#070c18] text-white shadow-xl relative overflow-hidden border border-slate-700/60">
+      <!-- Technical Engineering Blueprint Accent -->
+      <svg class="absolute right-0 top-0 h-full w-2/5 text-blue-400 pointer-events-none select-none hidden md:block opacity-40" viewBox="0 0 400 240" fill="none">
+        <defs>
+          <pattern id="blueprintGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="0.75"/>
+          </pattern>
+        </defs>
+        <rect width="400" height="240" fill="url(#blueprintGrid)" />
+        <!-- Axis & waveform trace -->
+        <path d="M 20 180 L 380 180 M 60 20 L 60 220" stroke="rgba(148, 163, 184, 0.3)" stroke-width="1.2"/>
+        <path d="M 60 140 Q 110 60 160 140 T 260 140 T 360 140" stroke="rgba(96, 165, 250, 0.6)" stroke-width="2" fill="none"/>
+        <circle cx="160" cy="140" r="3.5" fill="#60a5fa"/>
+        <circle cx="260" cy="140" r="3.5" fill="#60a5fa"/>
+        <!-- Circuit / System block -->
+        <rect x="220" y="45" width="90" height="45" rx="6" stroke="rgba(96, 165, 250, 0.5)" stroke-width="1.4" fill="rgba(15, 23, 42, 0.6)"/>
+        <text x="265" y="72" font-family="'JetBrains Mono', monospace" font-size="10" fill="#93c5fd" text-anchor="middle">H(s) / G(s)</text>
+        <path d="M 180 67 L 220 67 M 310 67 L 350 67" stroke="rgba(96, 165, 250, 0.5)" stroke-width="1.4"/>
       </svg>
       <div class="relative z-10 max-w-3xl space-y-3">
-        <div class="inline-flex flex-wrap items-center gap-2 px-2.5 py-1 rounded-full bg-teal-950/70 text-teal-200 border border-teal-500/30 text-xs font-medium backdrop-blur-md">
-          <span>🧬 Bioinstrumentation & Bio-Signals</span>
+        <div class="inline-flex flex-wrap items-center gap-2 px-3 py-1 rounded-full bg-blue-950/70 text-blue-200 border border-blue-500/30 text-xs font-medium backdrop-blur-md shadow-2xs">
+          <span>All Engineering Disciplines</span>
           <span>&bull; Dual Audio & Slide Slicing</span>
-          <span>&bull; ECG/EMG, Schematics & Exam Traps</span>
+          <span>&bull; Formula Derivations, Schematics & Exam Prep</span>
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-          Turn BME Lectures & Slides into Rigorous College Study Guides.
+          Turn Engineering Lectures & Slides into Rigorous College Study Guides.
         </h2>
-        <p class="text-slate-300 text-sm leading-relaxed">
-          Engineered for Biomedical Engineering students: Bioinstrumentation, ECG/EMG/EEG signals, Biomechanics, Biomaterials, Medical Imaging (MRI/CT/US), and Medical Device Safety. Save your college subjects, select your lecture slide ranges, and generate complete exam-grade guides.
+        <p class="text-slate-300 text-sm leading-relaxed max-w-2xl">
+          Engineered for college students across Electrical, Mechanical, Civil, Computer & Software, Chemical, and Biomedical disciplines. Ingest bilingual lecture audio and slides to generate comprehensive topic breakdowns, mathematical formula derivations, system schematics, and realistic exam banks with professor tips.
         </p>
       </div>
     </div>
@@ -352,7 +358,7 @@
                     <span id="notesCountBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">0 items</span>
                   </label>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                    Add slide decks or lecture notes in sequence. Audio remains ground truth; leave empty for audio-only.
+                    Add slide decks or lecture notes in sequence. Gemini checks them against the local transcript; leave empty for audio-only.
                   </p>
                 </div>
                 
@@ -411,45 +417,63 @@
           </div>
 
 
-          <!-- Biomedical Engineering Academic Context & Custom Subject Manager -->
-          <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2.5">
+          <!-- Engineering Academic Context & Custom Subject Manager -->
+          <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <span>🧬 College Course & Lecturer:</span>
+                <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span>Engineering Course &amp; Instructor</span>
               </label>
-              <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Auto-detected if left empty</span>
+              <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Auto-detected from materials if left blank</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input type="text" id="courseInput" placeholder="Course e.g. Bioinstrumentation, Biomechanics, Medical Imaging" 
-                     class="w-full text-xs px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <input type="text" id="courseInput" placeholder="Course e.g. Signals & Systems, Thermodynamics, Operating Systems" 
+                     class="w-full text-xs px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition shadow-2xs">
               <input type="text" id="lecturerInput" placeholder="Professor / Lecturer Name (Optional)" 
-                     class="w-full text-xs px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+                     class="w-full text-xs px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition shadow-2xs">
             </div>
             
-            <!-- Custom College Subjects Manager -->
-            <div class="p-3 bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <span>🎓 My College Subjects</span>
-                  <span class="text-[10px] font-normal text-slate-400 dark:text-slate-500">(Click to select &bull; Click &times; to delete)</span>
+            <!-- Multi-Discipline Presets & Course Manager -->
+            <div class="p-3.5 bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800 rounded-xl space-y-2.5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <span>Quick Course Presets</span>
+                  <span class="text-[10px] font-normal text-slate-400 dark:text-slate-500">(Click to apply &bull; &times; to remove)</span>
                 </span>
-                <button type="button" id="resetSubjectsBtn" onclick="resetDefaultSubjects()" class="text-[10px] text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-semibold hover:underline cursor-pointer">
-                  ↺ Reset BME Defaults
+                <button type="button" id="resetSubjectsBtn" onclick="resetDefaultSubjects()" class="text-[10px] text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-semibold hover:underline cursor-pointer self-start sm:self-auto">
+                  ↺ Reset Course Presets
                 </button>
               </div>
 
+              <!-- Discipline Filter Tabs -->
+              <div class="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-200/70 dark:border-slate-800/80 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                <button type="button" onclick="selectDisciplineFilter('all')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer bg-blue-600 text-white shadow-2xs" data-discipline="all">All</button>
+                <button type="button" onclick="selectDisciplineFilter('ee')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="ee">Electrical</button>
+                <button type="button" onclick="selectDisciplineFilter('me')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="me">Mechanical</button>
+                <button type="button" onclick="selectDisciplineFilter('cs')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="cs">Computer &amp; Software</button>
+                <button type="button" onclick="selectDisciplineFilter('ce')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="ce">Civil</button>
+                <button type="button" onclick="selectDisciplineFilter('chem')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="chem">Chemical</button>
+                <button type="button" onclick="selectDisciplineFilter('bme')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="bme">Biomedical</button>
+                <button type="button" onclick="selectDisciplineFilter('sys')" class="discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400" data-discipline="sys">Robotics &amp; Systems</button>
+              </div>
+
               <!-- Badges Container -->
-              <div id="subjectBadgesContainer" class="flex flex-wrap items-center gap-1.5 min-h-[28px]">
-                <!-- Populated dynamically from localStorage -->
+              <div id="subjectBadgesContainer" class="flex flex-wrap items-center gap-1.5 min-h-[28px] pt-1">
+                <!-- Populated dynamically from localStorage & active discipline filter -->
               </div>
 
               <!-- Add New Subject Input Row -->
-              <div class="flex items-center gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
-                <input type="text" id="newSubjectInput" placeholder="Add your college course (e.g. Clinical Engineering, Biosensors)..." 
-                       class="flex-1 text-xs px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                <input type="text" id="newSubjectInput" placeholder="Add custom course (e.g. Microprocessors, Turbomachinery, Highway Engineering)..." 
+                       class="flex-1 text-xs px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                        onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addCustomSubject(); }">
                 <button type="button" id="addSubjectBtn" onclick="addCustomSubject()" 
-                        class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                        class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
                   <span>+ Add Course</span>
                 </button>
               </div>
@@ -517,9 +541,9 @@
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
         <div id="stepAudio" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 1. Audio Intake</div>
         <div id="stepTranslate" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 2. Synthesis</div>
-        <div id="stepAudit" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 3. Audio Audit</div>
+        <div id="stepAudit" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 3. Transcript Check</div>
         <div id="stepVisuals" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 4. Diagrams</div>
-        <div id="stepPDF" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 5. Verified PDF</div>
+        <div id="stepPDF" class="p-2 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">&bull; 5. Study Guide PDF</div>
       </div>
     </div>
 
@@ -587,17 +611,17 @@
         </div>
       </div>
 
-      <!-- Audio Fidelity & Verification Certificate Banner -->
+      <!-- Transcript-to-guide verification certificate -->
       <div id="verificationCard" class="glass-card rounded-2xl p-5 shadow-sm border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/20 space-y-2.5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold" id="verifBadgeIcon">&check;</span>
-            <span class="text-xs font-bold tracking-wide uppercase text-emerald-800 dark:text-emerald-300" id="verifBadgeTitle">Audio Fidelity & Contradiction Audit: 100% Verified</span>
+            <span class="text-xs font-bold tracking-wide uppercase text-emerald-800 dark:text-emerald-300" id="verifBadgeTitle">Transcript-to-Guide Check</span>
           </div>
-          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400" id="verifTimestamp">Verified against audio recording</span>
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400" id="verifTimestamp">Audio transcription accuracy is not independently verified</span>
         </div>
         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" id="verifSummary">
-          Cross-examined against the original lecture recording. Zero contradictions detected.
+          Checked against the locally generated transcript. Audio-to-transcript accuracy is not independently verified.
         </p>
         <div id="verifReconciliationContainer" class="hidden space-y-1.5 pt-2 border-t border-emerald-100 dark:border-emerald-900/60">
           <p class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Reconciled Discrepancies Log:</p>
@@ -700,7 +724,7 @@
         <button onclick="closeKeyModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-lg cursor-pointer">&times;</button>
       </div>
       <p class="text-xs text-slate-500 dark:text-slate-400">
-        Enter your Google Gemini API key. Audio files are processed securely through your personal API quota.
+        Enter your Google Gemini API key. Audio is transcribed locally; the transcript and selected notes/slides are sent to Gemini for guide generation and checking.
       </p>
       <input type="password" id="modalKeyInput" placeholder="AIzaSy..." 
              class="w-full text-xs font-mono px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
@@ -713,8 +737,8 @@
   </div>
 
   <!-- Footer -->
-  <footer class="border-t border-slate-200 dark:border-teal-900/40 bg-white/60 dark:bg-[#07131f]/70 backdrop-blur-md py-4 mt-12 text-center text-xs text-slate-500 dark:text-teal-400/70">
-    LectureAI &bull; Biomedical Engineering Edition &bull; Bio-Signals, Waveforms, Schematics & Exam Prep
+  <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-[#0b1322]/70 backdrop-blur-md py-4 mt-12 text-center text-xs text-slate-500 dark:text-slate-400">
+    LectureAI &bull; Universal Engineering Study Suite &bull; Electrical &bull; Mechanical &bull; Computer &bull; Civil &bull; Chemical &bull; Biomedical
   </footer>
 
   <script>
@@ -1378,44 +1402,131 @@
     function setFolderModeLock(isFolder) {}
     function switchIntakeMode(mode) {}
 
-    const DEFAULT_BME_SUBJECTS = [
-      "Bioinstrumentation & Biosensors",
-      "Biomedical Signal Processing (ECG/EEG/EMG)",
-      "Biomechanics & Biomaterials",
-      "Medical Imaging Systems (MRI/CT/US)",
-      "Human Anatomy & Physiology for Engineers",
-      "Medical Device Design & Electrical Safety"
-    ];
+    const DISCIPLINE_PRESETS = {
+      all: [
+        "Signals & Linear Systems",
+        "Thermodynamics & Heat Transfer",
+        "Operating Systems & Concurrency",
+        "Structural Analysis & Mechanics",
+        "Power Electronics & Converters",
+        "Bioinstrumentation & Biosensors",
+        "Fluid Mechanics & Aerodynamics",
+        "Chemical Reaction Kinetics",
+        "Control Systems Engineering"
+      ],
+      ee: [
+        "Circuit Analysis & KVL/KCL",
+        "Signals & Linear Systems",
+        "Power Electronics & Converters",
+        "Analog CMOS & Op-Amps",
+        "Electromagnetic Fields & Waves",
+        "Digital Signal Processing (DSP)"
+      ],
+      me: [
+        "Thermodynamics & Heat Transfer",
+        "Fluid Mechanics & Aerodynamics",
+        "Mechanics of Materials (Stress/Strain)",
+        "Machine Design & Kinematics",
+        "Engineering Dynamics & Vibrations"
+      ],
+      cs: [
+        "Operating Systems & Concurrency",
+        "Algorithms & Data Structures",
+        "Computer Architecture & Organization",
+        "Database Management Systems",
+        "Computer Networks & Protocols"
+      ],
+      ce: [
+        "Structural Analysis & Mechanics",
+        "Reinforced Concrete & Steel Design",
+        "Geotechnical & Soil Mechanics",
+        "Fluid Hydraulics & Hydrology"
+      ],
+      chem: [
+        "Chemical Reaction Kinetics & Reactor Design",
+        "Mass Transfer & Separation Processes",
+        "Chemical Engineering Thermodynamics",
+        "Materials Science & Crystallography"
+      ],
+      bme: [
+        "Bioinstrumentation & Biosensors",
+        "Biomedical Signal Processing (ECG/EMG)",
+        "Biomechanics & Biomaterials",
+        "Medical Imaging Systems (MRI/CT/US)"
+      ],
+      sys: [
+        "Control Systems Engineering",
+        "Robotics & Kinematic Modeling",
+        "Operations Research & Optimization"
+      ]
+    };
+
+    let activeDisciplineFilter = 'all';
+
+    function selectDisciplineFilter(discipline) {
+      activeDisciplineFilter = discipline || 'all';
+      const tabs = document.querySelectorAll('.discipline-tab');
+      tabs.forEach(tab => {
+        const d = tab.getAttribute('data-discipline');
+        if (d === activeDisciplineFilter) {
+          tab.className = 'discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer bg-blue-600 text-white shadow-2xs font-bold';
+        } else {
+          tab.className = 'discipline-tab px-2.5 py-1 rounded-lg transition cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold';
+        }
+      });
+      renderSubjectPresets();
+    }
 
     function getCustomSubjects() {
       try {
-        const saved = localStorage.getItem('user_bme_subjects');
-        if (saved) {
+        const saved = localStorage.getItem('user_engineering_subjects') || localStorage.getItem('user_bme_subjects');
+        if (saved && activeDisciplineFilter === 'all') {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch (e) {
         console.error("Failed to load custom subjects:", e);
       }
-      return [...DEFAULT_BME_SUBJECTS];
+      return [...DISCIPLINE_PRESETS[activeDisciplineFilter] || DISCIPLINE_PRESETS.all];
     }
 
     function saveCustomSubjects(subjects) {
       try {
-        localStorage.setItem('user_bme_subjects', JSON.stringify(subjects));
+        localStorage.setItem('user_engineering_subjects', JSON.stringify(subjects));
       } catch (e) {
         console.error("Failed to save custom subjects:", e);
       }
     }
 
+    let subjectPresetDebounceTimer = null;
+
     function initSubjectPresets() {
       const courseInput = document.getElementById('courseInput');
       if (courseInput) {
         courseInput.addEventListener('input', () => {
-          renderSubjectPresets();
+          clearTimeout(subjectPresetDebounceTimer);
+          subjectPresetDebounceTimer = setTimeout(() => {
+            updateActiveSubjectPreset();
+          }, 80);
         });
       }
       renderSubjectPresets();
+    }
+
+    function updateActiveSubjectPreset() {
+      const container = document.getElementById('subjectBadgesContainer');
+      if (!container) return;
+      const currentCourse = (document.getElementById('courseInput')?.value || '').trim().toLowerCase();
+      const badges = container.querySelectorAll('[data-subject-name]');
+      badges.forEach(badge => {
+        const subj = (badge.getAttribute('data-subject-name') || '').toLowerCase();
+        const isActive = currentCourse && subj === currentCourse;
+        if (isActive) {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer select-none bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 shadow-xs ring-1 ring-blue-300 dark:ring-blue-500';
+        } else {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition cursor-pointer select-none bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+        }
+      });
     }
 
     function renderSubjectPresets() {
@@ -1423,21 +1534,22 @@
       if (!container) return;
 
       const subjects = getCustomSubjects();
-      const currentCourse = (document.getElementById('courseInput')?.value || '').trim();
+      const currentCourse = (document.getElementById('courseInput')?.value || '').trim().toLowerCase();
 
       container.innerHTML = '';
 
       if (subjects.length === 0) {
-        container.innerHTML = '<span class="text-[11px] text-slate-400 dark:text-slate-500 italic">No college subjects saved. Add one below!</span>';
+        container.innerHTML = '<span class="text-[11px] text-slate-400 dark:text-slate-500 italic">No college subjects saved in this category. Add one below!</span>';
         return;
       }
 
       subjects.forEach((subj, idx) => {
-        const isActive = currentCourse.toLowerCase() === subj.toLowerCase();
+        const isActive = currentCourse && currentCourse === subj.toLowerCase();
         const badge = document.createElement('div');
+        badge.setAttribute('data-subject-name', subj);
         badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition cursor-pointer select-none ${
           isActive 
-            ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border-brand-400 dark:border-brand-500 shadow-xs font-semibold ring-1 ring-brand-300 dark:ring-brand-500' 
+            ? 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 shadow-xs font-semibold ring-1 ring-blue-300 dark:ring-blue-500' 
             : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
         }`;
 
@@ -1470,7 +1582,7 @@
         input.value = presetName;
         input.focus();
       }
-      renderSubjectPresets();
+      updateActiveSubjectPreset();
     }
 
     function addCustomSubject() {
@@ -1488,6 +1600,7 @@
       }
       input.value = '';
       setSubjectPreset(val);
+      renderSubjectPresets();
     }
 
     function removeCustomSubject(index) {
@@ -1502,8 +1615,9 @@
 
     function resetDefaultSubjects() {
       if (isGenerating) return;
-      if (confirm("Reset subjects list to default Biomedical Engineering courses?")) {
-        saveCustomSubjects([...DEFAULT_BME_SUBJECTS]);
+      const targetList = DISCIPLINE_PRESETS[activeDisciplineFilter] || DISCIPLINE_PRESETS.all;
+      if (confirm(`Reset presets to default ${activeDisciplineFilter.toUpperCase()} courses?`)) {
+        saveCustomSubjects([...targetList]);
         renderSubjectPresets();
       }
     }
@@ -2375,7 +2489,7 @@
       
       if (!isDemo && !hasApiKey) {
         openKeyModal();
-        showError("A Gemini API Key is required to transcribe live audio files. Please enter your API key in the popup, or use 'Instant Demo' to test without a key.");
+        showError("A Gemini API key is required to generate a study guide from live lecture materials. Please enter your key, or use 'Instant Demo' to test without a key.");
         return;
       }
 
@@ -2733,7 +2847,7 @@
       document.getElementById('metricQuestions').innerText = data.exam_questions_count;
       document.getElementById('countHighlightsTab').innerText = data.alerts_count;
 
-      // Populate Audio & Slides Fidelity & Verification Card
+      // Populate transcript-to-guide verification card
       const report = data.verification_report || (data.guide && data.guide.verification_report);
       const verifCard = document.getElementById('verificationCard');
       const verifTitle = document.getElementById('verifBadgeTitle');
@@ -2749,12 +2863,12 @@
           verifTimestamp.innerText = 'Audit could not be completed';
         } else if (report.verified_at) {
           try {
-            verifTimestamp.innerText = `Verified: ${new Date(report.verified_at).toLocaleTimeString()}`;
+            verifTimestamp.innerText = 'Transcript checked; audio recognition accuracy was not independently verified';
           } catch (_) {
-            verifTimestamp.innerText = notesAudited ? 'Verified against audio & lecture slides' : 'Verified against audio recording';
+            verifTimestamp.innerText = 'Transcript checked; audio recognition accuracy was not independently verified';
           }
         }
-        const auditScopeTitle = notesAudited ? 'Audio & Slides Fidelity' : 'Audio Fidelity';
+        const auditScopeTitle = notesAudited ? 'Transcript & Slides Check' : 'Transcript Check';
         if (report.audit_passed === false) {
           verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-rose-300 dark:border-rose-800/60 bg-rose-50/30 dark:bg-rose-950/30 space-y-2.5';
           verifIcon.className = 'w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-xs font-bold';
@@ -2777,7 +2891,7 @@
               <div class="p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/60 space-y-1">
                 <p class="font-bold text-slate-800 dark:text-slate-100 text-xs">${c.section_title}</p>
                 <p class="text-red-600 dark:text-red-400 text-[11px]"><span class="font-semibold">Initial Claim:</span> ${c.guide_statement}</p>
-                <p class="text-emerald-700 dark:text-emerald-400 text-[11px]"><span class="font-semibold">Audio Truth:</span> ${c.audio_truth}</p>
+                <p class="text-emerald-700 dark:text-emerald-400 text-[11px]"><span class="font-semibold">Transcript evidence:</span> ${c.audio_truth}</p>
                 <p class="text-brand-700 dark:text-brand-300 text-[11px] font-medium"><span class="font-semibold">Reconciliation:</span> ${c.correction_applied}</p>
               </div>
             `).join(''));
@@ -2790,17 +2904,15 @@
           verifIcon.innerHTML = '✦';
           verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-amber-800 dark:text-amber-300';
           verifTitle.innerText = `DEMO MODE: SIMULATED AUDIT`;
-          verifSummary.innerText = report.overall_fidelity_summary || 'Verified in simulation: 0 contradictions detected. 100% faithful to lecture simulation.';
+          verifSummary.innerText = report.overall_fidelity_summary || 'Simulated check only; no real recording was processed or checked.';
           reconcContainer.classList.add('hidden');
         } else {
           verifCard.className = 'glass-card rounded-2xl p-5 shadow-sm border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/30 space-y-2.5';
           verifIcon.className = 'w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold';
           verifIcon.innerHTML = '&check;';
           verifTitle.className = 'text-xs font-bold tracking-wide uppercase text-emerald-800 dark:text-emerald-300';
-          verifTitle.innerText = `${auditScopeTitle} & Scope Audit: 100% Verified`;
-          verifSummary.innerText = report.overall_fidelity_summary || (notesAudited
-            ? 'Cross-examined against original lecture recording and lecture slides. Zero contradictions or unmentioned slide leakages detected.'
-            : 'Cross-examined against original lecture recording. Zero contradictions detected.');
+          verifTitle.innerText = `${auditScopeTitle}: No Discrepancies Found`;
+          verifSummary.innerText = report.overall_fidelity_summary || 'Checked against the local transcript. Audio-to-transcript accuracy was not independently verified.';
           reconcContainer.classList.add('hidden');
         }
       } else {

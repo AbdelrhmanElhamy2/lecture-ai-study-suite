@@ -1,6 +1,6 @@
 # 🎓 LectureAI: Complete System Documentation & Codebase Guide
 
-> **An End-to-End AI Application for Converting Spoken University Lectures into Publication-Quality Academic Study Guides, Tailored Diagrams, Exam Readiness Kits, and Audio-Audited Reconciled PDFs.**
+> **An End-to-End Study Suite that transcribes lecture audio locally, then uses Gemini for study-guide generation and transcript checks.**
 
 ---
 
@@ -26,7 +26,7 @@
 2. **Pedagogical Extraction**: Students need more than a generic transcript—they require structured academic chapter notes, governing formulas, comparison tables, visual architectural drawings/flowcharts, and explicit warnings about how the professor tests concepts on exams.
 3. **100% English Academic Standard**: The output must be delivered in formal, publication-ready academic English with zero Arabic glyph rendering defects (tofu boxes).
 4. **Specialized for Biomedical Engineering & College STEM**: Deep domain rigor across Bioinstrumentation, Biosensors, Signal Processing (ECG/EEG/EMG), Biomechanics, Biomaterials, Medical Imaging (MRI/CT/US), Anatomy & Physiology for Engineers, and Medical Device Safety (IEC 60601-1), backed by a persistent **Custom College Subject Manager**.
-5. **Audited Audio Fidelity (Zero Contradictions)**: Incorporates an automated **Audio-vs-Guide Verification & Self-Correction Engine**. The AI cross-examines the generated study guide directly against the original lecture audio recording, catches and resolves any contradictions or discrepancies, and embeds an official **Audio Fidelity & Verification Certificate** in the finalized PDF.
+5. **Transcript-to-Guide Check**: Gemini checks the generated study guide against the locally generated transcript and selected slides. The PDF states that speech recognition accuracy against the source audio was not independently verified.
 
 ---
 
@@ -35,22 +35,21 @@
 ```mermaid
 flowchart TD
     Audio[Lecture Audio Recording: MP3 / M4A / WAV / AAC] --> Ingest[Audio Ingestion & 2GB Stream Handler]
-    Ingest --> MultimodalAPI[Gemini Multimodal Audio File API]
+    Ingest --> LocalWhisper[Local faster-whisper transcription]
     
     subgraph Stage1 [Stage 1: Pedagogical Synthesis]
-        MultimodalAPI --> Transcribe[Bilingual Speech-to-Text & Academic English Translation]
-        Transcribe --> Engine[Pedagogy Engine: Discipline-Aware Structured Extraction]
+        LocalWhisper --> Engine[Gemini pedagogy engine receives transcript and optional slides]
         Engine --> DraftGuide[Draft LectureStudyGuide JSON]
     end
     
-    subgraph Stage2 [Stage 2: Audio-vs-Guide Contradiction Audit]
+    subgraph Stage2 [Stage 2: Transcript-to-Guide Check]
         DraftGuide --> Auditor[Multimodal Chief Academic Auditor]
-        MultimodalAPI --> Auditor
+        LocalWhisper --> Auditor
         Auditor --> FactCheck{Contradictions Detected?}
         FactCheck -- Yes --> Reconcile[Self-Correction: Auto-Harmonize Guide with Spoken Audio]
         Reconcile --> ReconciledGuide[Reconciled LectureStudyGuide JSON]
         Reconcile --> ContradictionLog[Contradiction Resolution Log]
-        FactCheck -- No --> PassAudit[100% Audio Fidelity Confirmed]
+        FactCheck -- No --> PassAudit[No transcript discrepancy found]
         PassAudit --> ReconciledGuide
     end
     
@@ -81,14 +80,15 @@ Here is the complete inventory of files, their exact paths, and their architectu
 | File Name | Absolute Path | Description & Architectural Responsibility |
 | :--- | :--- | :--- |
 | **`app.py`** | [`app.py`](app.py) | **FastAPI Web Server & API Router**: Exposes REST endpoints (`/api/process_audio`, `/api/status/{job_id}`, `/api/config`, `/api/set_key`, `/api/history`, `/api/download/{filename}`), mounts static assets, and manages asynchronous background workers. |
-| **`pipeline.py`** | [`pipeline.py`](pipeline.py) | **Central Pipeline Orchestrator**: Coordinates the complete 5-step flow: audio ingestion &rarr; multimodal synthesis &rarr; audio fact-check & audit &rarr; diagram generation &rarr; PDF compilation. |
-| **`pedagogy_engine.py`** | [`pedagogy_engine.py`](pedagogy_engine.py) | **Google Gemini Multimodal AI & Auditor**: Connects to the Gemini File API and `gemini-3.8-flash`. Contains the master academic system instruction, bilingual translation, strict lecture fidelity mandate, and the `verify_and_reconcile_study_guide()` contradiction auditor. |
+| **`pipeline.py`** | [`pipeline.py`](pipeline.py) | **Central Pipeline Orchestrator**: Resolves sources, transcribes audio locally, then passes transcript and optional slides to Gemini, diagrams, and PDF generation. |
+| **`transcription.py`** | [`transcription.py`](transcription.py) | **Local faster-whisper service**: Lazy model loading, CPU-friendly configuration, ordered timestamped segments, detected language, and safe user-facing errors. |
+| **`pedagogy_engine.py`** | [`pedagogy_engine.py`](pedagogy_engine.py) | **Gemini text and notes engine**: Sends transcript text plus selected slides/notes for guide generation and transcript-to-guide checking. It does not upload audio. |
 | **`models.py`** | [`models.py`](models.py) | **Pydantic Data Models**: Defines strict schema contracts for `LectureStudyGuide`, `LectureSection`, `DoctorAlert`, `TableDefinition`, `DiagramDefinition`, `KeyFormula`, `ExamQuestion`, `ContradictionItem`, `VerificationAuditReport`, and `VerificationResult`. |
 | **`visualizer.py`** | [`visualizer.py`](visualizer.py) | **Academic Diagram Rendering Engine**: Generates 250+ DPI figures across 8 universal visual types (Flowcharts, System Block Diagrams, Timelines, Concept Maps, Function Plots, Cycles, Comparison Bars, Rectifier Waveforms). |
-| **`pdf_builder.py`** | [`pdf_builder.py`](pdf_builder.py) | **ReportLab Publication PDF Compiler**: Builds formal two-pass PDFs (`Page X of Y`), running headers/footers, cover pages, Table of Contents, LaTeX inline math parser, proportional image aspect ratio embedder, Audio Fidelity Certificate, and verbatim transcript appendix. |
+| **`pdf_builder.py`** | [`pdf_builder.py`](pdf_builder.py) | **ReportLab Publication PDF Compiler**: Builds formal two-pass PDFs (`Page X of Y`), covers, tables, diagrams, transcript appendices, and an honest transcript-check certificate. |
 | **`config.py`** | [`config.py`](config.py) | **System Configuration & Storage Manager**: Sets directory paths (`uploads/`, `output_pdfs/`, `generated_assets/`), resolves Gemini API keys from `.env` or environment variables, and configures default model tiers. |
 | **`mock_generator.py`** | [`mock_generator.py`](mock_generator.py) | **Instant Demo Generator**: Generates a complete, realistic Operating Systems (CS302) lecture study guide with Peterson's algorithm, semaphores, deadlock cycles, and Amdahl's Law for instant offline testing without uploading audio. |
-| **`verify_audio_fidelity.py`** | [`verify_audio_fidelity.py`](verify_audio_fidelity.py) | **Standalone Contradiction Auditor CLI**: Takes an audio recording and study guide JSON, cross-examines them for discrepancies, resolves contradictions, and re-compiles the verified PDF on demand. |
+| **`verify_audio_fidelity.py`** | [`verify_audio_fidelity.py`](verify_audio_fidelity.py) | **Standalone transcript-check CLI**: Transcribes the selected audio locally, checks a guide against the transcript and optional notes, then recompiles the PDF. |
 | **`cli.py`** | [`cli.py`](cli.py) | **Terminal Command-Line Interface**: Allows running the complete pipeline from PowerShell or CMD with `--audio`, `--model`, `--subject`, `--mode`, and `--output` flags. |
 
 ---
@@ -97,7 +97,7 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 | File Name | Absolute Path | Description & Architectural Responsibility |
 | :--- | :--- | :--- |
-| **`templates/index.html`** | [`templates/index.html`](templates/index.html) | **Responsive Web Dashboard**: Built with Tailwind CSS and Plus Jakarta Sans font. Features audio dropzone, academic presets (`🩺 Medicine`, `💻 CS`, `⚖️ Law`, `⚡ Engineering`, `📊 Economics`, `📖 Humanities`), 5-step live progress bar, Audio Fidelity Verification card, local history viewer, tabbed preview, and API key modal. |
+| **`templates/index.html`** | [`templates/index.html`](templates/index.html) | **Responsive Web Dashboard**: Features audio/notes intake, a 5-step progress bar, transcript-check status card, local history, guide preview, and API key modal. |
 | **`static/app_icon.png`** | [`static/app_icon.png`](static/app_icon.png) | **Application Brand Icon**: High-resolution PNG logo used in the web navigation bar, favicon, and desktop window header. |
 
 ---
@@ -136,6 +136,16 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 ## 🛠️ Chronology of Problems Solved & Technical Milestones
 
+### Hybrid Local Transcription and Bounded Gemini Model Policy (2026-10-12)
+* **Problem**: Live and standalone paths uploaded audio to Gemini for transcription and verification, the old model chain included unsupported candidates, and PDF/UI language implied independent audio verification.
+* **Solution**:
+  - Added lazy, cached faster-whisper transcription with ordered source segments, timestamps, automatic language detection, CPU/int8 defaults, and user-facing load/decode errors.
+  - Gemini now receives transcript text and selected notes/slides for generation and transcript-to-guide checking. Audio is never uploaded to Gemini. Verification disclosures state that audio-to-transcript accuracy is not independently checked.
+  - Restricted the general Gemini model policy to `gemini-3.8-flash` with `gemini-3.6-flash` as the only overload fallback; updated the UI, example settings, and docs.
+  - Demo mode remains a deterministic simulation without Whisper initialization or external calls.
+* **Files modified**: `transcription.py`, `config.py`, `pipeline.py`, `pedagogy_engine.py`, `verify_audio_fidelity.py`, `models.py`, `pdf_builder.py`, `mock_generator.py`, `app.py`, `cli.py`, `templates/index.html`, `requirements.txt`, `.env.example`, `README.md`, and this document.
+* **Verification evidence**: `python -m unittest tests/test_suite.py -v` passed 35 tests; an isolated combined regression run passed all 46 existing and new tests. The CLI demo produced an isolated 8-page PDF that was rendered and checked for simulation disclosure, tofu glyphs, and unsupported 100% verification claims. A short synthetic speech sample completed local `small`/CPU/`int8` inference with English language metadata and timestamps. Live Gemini API availability was not tested.
+
 ### Active Recall Quiz for Generated Exam Questions
 * **Problem**: Exam answers were available only through separate answer toggles, with no guided recall session or progress feedback.
 * **Solution**:
@@ -156,8 +166,8 @@ Here is the complete inventory of files, their exact paths, and their architectu
 * **Problem**: Encountered `404 NOT_FOUND` with deprecated `gemini-2.5-flash`, followed by temporary `503 UNAVAILABLE` capacity spikes on newer models.
 * **Solution**:
   - Upgraded the API client to the latest Google GenAI SDK (`google-genai`).
-  - Switched the primary model to **`gemini-3.8-flash`** (with `gemini-3.6-flash`, `gemini-3.7-flash`, and `gemini-flash-latest` configured in an automatic multi-model fallback chain).
-  - Added automatic retry with exponential backoff for 503 capacity spikes.
+  - The current policy uses `gemini-3.8-flash` as the primary model and permits only `gemini-3.6-flash` as its overload fallback. Historical fallback behavior described in older milestones has been retired.
+  - Current retry is bounded to two attempts per permitted model for overload/rate-limit errors.
 
 ---
 
@@ -237,14 +247,14 @@ Here is the complete inventory of files, their exact paths, and their architectu
 
 ---
 
-### 8. Audio-vs-Guide Contradiction Verification & Self-Correction Engine
+### 8. Transcript-to-Guide Verification & Self-Correction
 * **Problem**: Even advanced LLMs can occasionally generate subtle contradictions, invert mathematical polarities, misattribute an operating state (e.g. forward vs reverse conduction), or misquote spoken professor exam cautions.
 * **Solution**:
-  - **Phase 2 Audit Stage (`pedagogy_engine.py`)**: After generating the draft study guide, the AI is reinvoked as a neutral **Academic Inspector** with both the live audio recording handle and the draft guide JSON.
-  - **Cross-Examination**: It explicitly cross-checks operational modes, polarity directions, governing formulas, doctor alerts, and testable exam questions against the actual spoken words in the audio.
+  - **Phase 2 Audit Stage (`pedagogy_engine.py`)**: After generating the draft study guide, Gemini checks it against the local transcript, selected notes/slides, and the draft guide JSON.
+  - **Cross-Examination**: It checks operational modes, polarity directions, governing formulas, lecturer alerts, and testable exam questions against transcript text.
   - **Automated Self-Correction**: If any contradictions are detected, the AI generates a corrected `LectureStudyGuide` (`corrected_guide`), resolves every discrepancy, and records a structured `VerificationAuditReport`.
-  - **Audio Fidelity Certificate**: Embeds a formal verification banner on the cover of the PDF and in the web dashboard, displaying the verification status and a reconciliation log of any resolved contradictions.
-  - **Standalone Auditor CLI (`verify_audio_fidelity.py`)**: Enables auditing and reconciling any existing study guide against an audio recording on demand.
+  - **Transcript Check Certificate**: Displays the verification status and reconciliation log. It states that speech recognition accuracy against source audio was not independently checked.
+  - **Standalone CLI (`verify_audio_fidelity.py`)**: Transcribes audio locally, then checks an existing guide against the transcript and optional slides.
 
 ---
 
@@ -358,12 +368,12 @@ OK
 - **1-Click Windows Dependency Installer**: Added `Install_Dependencies.bat` to automate `pip install -r requirements.txt` for users on new machines.
 - **Portability**: Ensured new users can clone or unzip the folder and run `Launch_LectureAI.bat` directly with their own API key saved via the UI.
 
-### Milestone 15: High-Demand Resilience & Multi-Tier Model Fallback (503 Bypass)
-- **Root Cause Analysis**: Google's Gemini servers experienced temporary traffic spikes on preview and latest endpoints (`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, and `gemini-flash-latest`), returning `503 Service Unavailable (High demand)`. Because `gemini-3.5-flash` was missing from the internal candidate fallback list, requests failed instead of transparently cascading to available server capacity.
+### Milestone 15: Historical High-Demand Model Fallback (Superseded)
+- **Historical note**: The model chain documented at the time included additional candidates. That policy is retired; current runtime allows the primary `gemini-3.8-flash` and the sole fallback `gemini-3.6-flash`.
 - **Architectural Enhancements**:
   - **Base Model Retained**: [`config.py`](config.py) and [`.env`](.env) retain **`gemini-3.8-flash`** as the default primary base model.
-  - **Auto-Cascading Fallback Chain**: [`pedagogy_engine.py`](pedagogy_engine.py) structures candidate models strictly by capability hierarchy: `[chosen_model, "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"]`. It evaluates the best available model first: if `gemini-3.8-flash` has a demand spike (503), it promptly tries `gemini-3.7-flash`, then `gemini-3.6-flash`, then `gemini-3.5-flash` (high-availability safety net).
-  - **UI Synchronized**: [`templates/index.html`](templates/index.html) presents `gemini-3.8-flash (Recommended Base Model)` as the default selection, ordered down to `gemini-3.5-flash (High Availability Safety Net)`.
+  - **Current policy**: `config.py` is the single source for the primary and fallback. Unsupported prior candidates were removed from runtime and UI selection.
+  - **UI Synchronized**: [`templates/index.html`](templates/index.html) offers only the configured primary and fallback.
 - **Verification**: Ran full unit test suite (`Ran 7 tests in 22.1s - OK`). Verified live API connectivity and confirmed server response via `/api/config`.
 
 ### Milestone 16: Complete Form & Upload Selection Locking During Generation
@@ -408,9 +418,9 @@ OK
     - `search_session_in_folder()`: Robustly matches session numbers, strips `part \d+` to avoid part misclassification, identifies matched recordings (ordered chronologically) and matched slides, categorizes status (`found_both`, `no_notes`, `no_record`, `not_found`), and lists detected session numbers.
     - `download_selected_folder_items()`: Directly maps local files on disk (0s delay) or selectively downloads only the targeted files by Google Drive ID.
   - **Pedagogy & Synthesis Engine ([`pedagogy_engine.py`](pedagogy_engine.py))**:
-    - `analyze_lecture_audio`: Accepts `List[Path]` for multi-part audio and multi-deck notes. Uploads all files to the Gemini File API.
-    - Prompt Engineering: Guides Gemini to synthesize multiple audio parts chronologically into a unified lecture timeline, while enforcing audio as the absolute ground truth across multi-deck slide transitions.
-    - Dual-Source Auditor (`verify_and_reconcile_study_guide`): Cross-examines generated guides against all audio parts and slide decks.
+    - `analyze_lecture_transcript`: Receives the local ordered transcript and optional note decks. Only note files, never audio, use the Gemini File API.
+    - Prompt Engineering: Guides Gemini to use timestamped transcript parts chronologically with the selected slide ranges.
+    - Transcript Auditor (`verify_and_reconcile_study_guide`): Checks generated guides against transcript text and slide decks; source audio accuracy is outside this check.
   - **Central Orchestrator Pipeline ([`pipeline.py`](pipeline.py))**:
     - Accepts single or list inputs for audio and notes, seamlessly normalizing paths before invoking synthesis and verification.
   - **FastAPI Endpoints ([`app.py`](app.py))**:
@@ -429,7 +439,7 @@ OK
 - **Verification Evidence**:
   - `python cli.py --list-courses` successfully discovered all 6 Fall 2026 courses on `G:\My Drive\fall 2026`.
   - CLI session searches verified: `Power Electronics` Lecture 1, `Bio Informatics` Lecture 1 (2 recording parts + 1 note), and `Electronic Vision` Lecture 1 (audio only warning).
-  - End-to-end API test verified queued background job processing with multi-part audio and slide materials, producing 100% verified publication-quality PDF.
+  - Historical test output passed its then-current publication PDF assertions. The old audio verification wording described by this milestone is superseded by the current transcript-check disclosure.
 
 ### Milestone 12 (2026-10-02): Direct-to-Drive Downloading, Clean File Placement, and Automatic Study Guide Sync
 - **Problem Statement & Root Cause**:

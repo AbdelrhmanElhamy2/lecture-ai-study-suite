@@ -2,11 +2,12 @@ import os
 import shutil
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any
-from config import UPLOAD_DIR, OUTPUT_DIR, get_gemini_api_key
+from config import UPLOAD_DIR, OUTPUT_DIR, get_gemini_api_key, resolve_gemini_model
 from models import LectureStudyGuide
-from pedagogy_engine import analyze_lecture_audio
+from pedagogy_engine import analyze_lecture_transcript
 from pdf_builder import PDFStudyGuideBuilder
 from mock_generator import get_sample_bilingual_lecture_guide
+from transcription import transcribe_audio_sources, format_transcript
 
 from typing import Optional, Callable, Dict, Any, List, Union, Tuple
 
@@ -25,7 +26,8 @@ def process_lecture(
     pdf_options: Optional[Dict[str, bool]] = None,
     use_sample_demo: bool = False,
     custom_output_filename: Optional[str] = None,
-    progress_callback: Optional[Callable[[str, int], None]] = None
+    progress_callback: Optional[Callable[[str, int], None]] = None,
+    cancellation_check: Optional[Callable[[], None]] = None
 ) -> Dict[str, Any]:
     """
     Complete end-to-end universal pipeline:
@@ -51,7 +53,8 @@ def process_lecture(
     else:
         notes_paths = []
 
-    if use_sample_demo or not audio_paths:
+    demo_run = bool(use_sample_demo or not audio_paths)
+    if demo_run:
         callback("Loading comprehensive bilingual lecture simulation...", 20)
         guide = get_sample_bilingual_lecture_guide()
         guide.is_demo = True
@@ -78,9 +81,9 @@ def process_lecture(
                 contradictions=[],
                 is_simulation=True,
                 overall_fidelity_summary=(
-                    "Verified in simulation: 0 contradictions detected. 100% faithful to lecture recording and slides."
+                    "Simulated transcript-to-guide verification; no real recording was processed or checked."
                     if notes_demo_label else
-                    "Verified in simulation: 0 contradictions detected. 100% faithful to lecture materials."
+                    "Simulated guide verification; no real lecture material was processed or checked."
                 ),
                 verified_at="2026-09-22T01:50:00+03:00",
                 notes_audited=bool(notes_demo_label),
@@ -92,24 +95,34 @@ def process_lecture(
     else:
         for ap in audio_paths:
             if not ap.exists():
-                raise FileNotFoundError(f"Audio file not found at: {ap}")
+                raise FileNotFoundError("Audio recording could not be found.")
             
         key = api_key or get_gemini_api_key()
         if not key:
             raise ValueError(
-                "Gemini API key is required to analyze live audio. "
+                "Gemini API key is required for study-guide generation from a live lecture. "
                 "Please provide it in the Web UI or configure GEMINI_API_KEY."
             )
+        selected_model = resolve_gemini_model(model)
             
-        callback("Connecting to Gemini Multimodal Audio API...", 10)
-        guide = analyze_lecture_audio(
-            audio_path=audio_paths,
+        callback("Loading the local Whisper model and transcribing lecture audio...", 12)
+        transcripts = transcribe_audio_sources(
+            audio_paths,
+            progress_callback=callback,
+            cancellation_check=cancellation_check,
+        )
+        transcript_text = format_transcript(transcripts)
+        if not transcript_text.strip():
+            raise ValueError("Local transcription returned no usable text.")
+        callback("Preparing transcript and lecture notes for Gemini...", 48)
+        guide = analyze_lecture_transcript(
+            transcript_text=transcript_text,
             notes_path=notes_paths if notes_paths else None,
             start_slide=start_slide,
             end_slide=end_slide,
             slide_ranges=slide_ranges,
             api_key=key,
-            model=model,
+            model=selected_model,
             course_hint=course_hint,
             lecturer_hint=lecturer_hint,
             study_mode=study_mode,
@@ -126,7 +139,7 @@ def process_lecture(
     
     return {
         "success": True,
-        "is_demo": use_sample_demo,
+        "is_demo": demo_run,
         "pdf_path": str(pdf_path),
         "pdf_filename": pdf_path.name,
         "course_name": guide.course_name,
